@@ -1,4 +1,5 @@
 const http = require("http");
+const https = require("https");
 const fs = require("fs");
 const path = require("path");
 
@@ -20,6 +21,89 @@ function readBody(req) {
     req.on("data", (chunk) => (data += chunk));
     req.on("end", () => resolve(data));
     req.on("error", reject);
+  });
+}
+
+// Call MiniMax using Node's native https module (reliable streaming)
+function callMiniMax(payload) {
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify(payload);
+    const url = new URL(API_URL);
+
+    const options = {
+      hostname: url.hostname,
+      port: 443,
+      path: url.pathname,
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + KEY,
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(data),
+      },
+    };
+
+    const req = https.request(options, (res) => {
+      let body = "";
+      res.setEncoding("utf8");
+      res.on("data", (chunk) => { body += chunk; });
+      res.on("end", () => resolve({ statusCode: res.statusCode, body }));
+      res.on("error", reject);
+    });
+
+    req.on("error", reject);
+    req.setTimeout(120000, () => { req.destroy(new Error("MiniMax request timeout (120s)")); });
+    req.write(data);
+    req.end();
+  });
+}
+
+// Call MiniMax with streaming, pipe SSE to client response
+function callMiniMaxStream(payload, clientRes) {
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify(payload);
+    const url = new URL(API_URL);
+
+    const options = {
+      hostname: url.hostname,
+      port: 443,
+      path: url.pathname,
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + KEY,
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(data),
+      },
+    };
+
+    const req = https.request(options, (res) => {
+      if (res.statusCode !== 200) {
+        let body = "";
+        res.on("data", (chunk) => { body += chunk; });
+        res.on("end", () => reject(new Error("MiniMax HTTP " + res.statusCode + ": " + body.substring(0, 200))));
+        return;
+      }
+
+      // Write SSE headers to client
+      clientRes.writeHead(200, {
+        ...CORS,
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+      });
+
+      res.setEncoding("utf8");
+      res.on("data", (chunk) => {
+        // Forward each chunk directly to browser
+        clientRes.write(chunk);
+      });
+      res.on("end", () => resolve());
+      res.on("error", reject);
+    });
+
+    req.on("error", reject);
+    req.setTimeout(120000, () => { req.destroy(new Error("MiniMax request timeout (120s)")); });
+    req.write(data);
+    req.end();
   });
 }
 
@@ -54,46 +138,11 @@ const server = http.createServer(async (req, res) => {
       const payload = { model: "MiniMax-M2.5-highspeed", messages: msgs, temperature: 0.85, stream: true };
       if (max_tokens && max_tokens > 0) payload.max_tokens = max_tokens;
 
-      const resp = await fetch(API_URL, {
-        method: "POST",
-        headers: { Authorization: "Bearer " + KEY, "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!resp.ok) {
-        const errText = await resp.text();
-        res.writeHead(502, { ...CORS, "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "MiniMax HTTP " + resp.status + ": " + errText.substring(0, 200) }));
-        return;
-      }
-
-      // Stream SSE from MiniMax directly to the browser.
-      // This keeps the Render connection alive (no 30s timeout)
-      // and lets the client accumulate tokens.
-      res.writeHead(200, {
-        ...CORS,
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-      });
-
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          // Forward raw SSE chunks to client
-          res.write(decoder.decode(value, { stream: true }));
-        }
-      } catch (e) {
-        console.error("Stream read error:", e);
-      }
-
+      // Stream SSE from MiniMax directly to browser
+      await callMiniMaxStream(payload, res);
       res.end();
     } catch (err) {
-      console.error("API error:", err);
+      console.error("API error:", err.message);
       if (!res.headersSent) {
         res.writeHead(500, { ...CORS, "Content-Type": "application/json" });
       }
