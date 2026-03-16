@@ -407,9 +407,7 @@ async function callAPI(system, messages, maxTokens=800) {
     });
     clearTimeout(timeout);
 
-    // Server sends keep-alive spaces before the JSON, so use text() and trim
-    const raw = await r.text();
-    const d = JSON.parse(raw.trim());
+    const d = await r.json();
 
     if (!r.ok || d.error) {
       _lastApiError = d.error || ("HTTP " + r.status);

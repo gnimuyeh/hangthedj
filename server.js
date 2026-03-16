@@ -1,5 +1,4 @@
 const http = require("http");
-const https = require("https");
 const fs = require("fs");
 const path = require("path");
 
@@ -24,65 +23,6 @@ function readBody(req) {
   });
 }
 
-// Call MiniMax with streaming, buffer result, return { text, finish_reason, usage }
-function callMiniMax(payload) {
-  return new Promise((resolve, reject) => {
-    const data = JSON.stringify(payload);
-    const url = new URL(API_URL);
-
-    const options = {
-      hostname: url.hostname,
-      port: 443,
-      path: url.pathname,
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer " + KEY,
-        "Content-Type": "application/json",
-        "Content-Length": Buffer.byteLength(data),
-      },
-    };
-
-    const req = https.request(options, (res) => {
-      let body = "";
-      res.setEncoding("utf8");
-      res.on("data", (chunk) => { body += chunk; });
-      res.on("end", () => {
-        if (res.statusCode !== 200) {
-          reject(new Error("MiniMax HTTP " + res.statusCode + ": " + body.substring(0, 200)));
-          return;
-        }
-
-        // Parse SSE stream from buffered body
-        let fullText = "";
-        let finishReason = "?";
-        let usage = {};
-
-        const lines = body.split("\n");
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed || !trimmed.startsWith("data:")) continue;
-          const d = trimmed.slice(5).trim();
-          if (d === "[DONE]") continue;
-          try {
-            const chunk = JSON.parse(d);
-            fullText += chunk.choices?.[0]?.delta?.content || "";
-            if (chunk.choices?.[0]?.finish_reason) finishReason = chunk.choices[0].finish_reason;
-            if (chunk.usage) usage = chunk.usage;
-          } catch {}
-        }
-
-        resolve({ text: fullText, finish_reason: finishReason, usage });
-      });
-      res.on("error", reject);
-    });
-
-    req.on("error", reject);
-    req.setTimeout(120000, () => { req.destroy(new Error("MiniMax timeout (120s)")); });
-    req.write(data);
-    req.end();
-  });
-}
-
 const server = http.createServer(async (req, res) => {
   // Serve index.html
   if (req.method === "GET" && (req.url === "/" || req.url === "/index.html")) {
@@ -91,7 +31,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // API proxy
+  // API proxy — same logic as the Vercel version that worked
   if (req.url === "/api/chat") {
     if (req.method === "OPTIONS") {
       res.writeHead(204, CORS);
@@ -105,43 +45,58 @@ const server = http.createServer(async (req, res) => {
     }
 
     try {
-      const body = JSON.parse(await readBody(req));
-      const { system, messages, max_tokens } = body;
+      const { system, messages, max_tokens } = JSON.parse(await readBody(req));
       const msgs = [];
       if (system) msgs.push({ role: "system", content: system });
-      for (const m of messages || []) msgs.push({ role: m.role, content: m.content });
+      for (const m of (messages || [])) msgs.push({ role: m.role, content: m.content });
 
-      const payload = { model: "MiniMax-M2.5-highspeed", messages: msgs, temperature: 0.85, stream: true };
+      const payload = { model: "MiniMax-M2.5-highspeed", messages: msgs, temperature: 0.85 };
       if (max_tokens && max_tokens > 0) payload.max_tokens = max_tokens;
 
-      // Send headers immediately with chunked encoding
-      // Write spaces every 5s to keep connection alive while MiniMax thinks
-      res.writeHead(200, { ...CORS, "Content-Type": "application/json" });
+      const resp = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + KEY, "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-      const keepAlive = setInterval(() => {
-        try { res.write(" "); } catch {}
-      }, 5000);
+      const raw = await resp.text();
 
-      const result = await callMiniMax(payload);
-      clearInterval(keepAlive);
+      let data;
+      try { data = JSON.parse(raw); } catch {
+        res.writeHead(502, { ...CORS, "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Bad JSON: " + raw.substring(0, 200) }));
+        return;
+      }
 
-      // Strip think tags
-      let text = result.text;
+      if (data.error) {
+        res.writeHead(502, { ...CORS, "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: data.error.message || JSON.stringify(data.error).substring(0, 200) }));
+        return;
+      }
+      if (data.base_resp && data.base_resp.status_code !== 0) {
+        res.writeHead(502, { ...CORS, "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: data.base_resp.status_msg }));
+        return;
+      }
+
+      let text = data.choices?.[0]?.message?.content || "";
+      const fr = data.choices?.[0]?.finish_reason || "?";
+      const u = data.usage || {};
+
       text = text.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
       if (text.includes("<think>")) text = text.replace(/<think>[\s\S]*/g, "").trim();
 
-      res.end(JSON.stringify({ text, finish_reason: result.finish_reason, usage: result.usage }));
+      res.writeHead(200, { ...CORS, "Content-Type": "application/json" });
+      res.end(JSON.stringify({ text, finish_reason: fr, usage: u }));
     } catch (err) {
       console.error("API error:", err.message);
-      if (!res.headersSent) {
-        res.writeHead(500, { ...CORS, "Content-Type": "application/json" });
-      }
+      res.writeHead(500, { ...CORS, "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: err.message }));
     }
     return;
   }
 
-  // 404 for everything else
+  // 404
   res.writeHead(404, { "Content-Type": "text/plain" });
   res.end("Not found");
 });
