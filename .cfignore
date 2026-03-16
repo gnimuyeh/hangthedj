@@ -1,0 +1,11 @@
+sandbox/
+netlify/
+netlify.toml
+*.zip
+*.py
+CLAUDE.md
+api/
+vercel.json
+.vercelignore
+wrangler.toml
+node_modules/
