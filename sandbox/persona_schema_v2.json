@@ -1,0 +1,140 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DatingPersonaSchema",
+  "description": "约会人格档案 v2 — 重心从'你喜欢什么'转向'你是什么样的人'。Engine A 写入，Engine B 读取。纯数据。",
+  "version": "v2",
+  "type": "object",
+  "required": ["schema_version", "identity", "inner_world", "relationship_patterns", "dating_style", "surface", "meta"],
+  "properties": {
+
+    "schema_version": { "type": "string", "const": "v2" },
+
+    "identity": {
+      "description": "基本身份信息，只填明确提到的",
+      "type": "object",
+      "properties": {
+        "occupation": { "type": ["string", "null"], "description": "用原话描述" },
+        "age": { "type": ["integer", "null"] },
+        "city": { "type": ["string", "null"] },
+        "self_label": {
+          "type": ["string", "null"],
+          "description": "他们怎么定义自己？不是职业，是身份认同。如'我本质上是个创作者''我就是个普通打工人''我觉得我是那种永远在路上的人'"
+        }
+      }
+    },
+
+    "inner_world": {
+      "description": "内在世界 — 深层人格特征。从对话行为和言语推断，需要证据。",
+      "type": "object",
+      "properties": {
+        "core_need": {
+          "type": ["string", "null"],
+          "description": "亲密关系中最核心的需求。如'被理解''自由和空间''安全感''深度连接''陪伴但不黏腻'。从谈论关系和生活的方式推断。"
+        },
+        "attachment_signal": {
+          "type": ["string", "null"],
+          "description": "依恋倾向信号。不贴标签，描述行为。如'提到前任语气很轻松，不太在关系中纠结''对独处需求很强，可能对过度亲密有戒备''聊到被忽略时情绪波动明显'"
+        },
+        "emotional_texture": {
+          "type": ["string", "null"],
+          "description": "情感质地——表达情感的方式。如'用幽默包裹深层情感''很直接说难过就是难过''用分析代替感受''表面轻松偶尔流露真实'"
+        },
+        "energy_source": {
+          "type": ["string", "null"],
+          "description": "什么充电什么消耗。如'独处充电社交消耗''深度对话充电闲聊消耗''新体验充电重复消耗'"
+        },
+        "insecurity_hint": {
+          "type": ["string", "null"],
+          "description": "流露的不安全感线索。极敏感，只在有明确信号时填写。如'反复强调忙可能暗示价值焦虑''自嘲外貌可能不只是幽默'"
+        },
+        "contradiction": {
+          "type": ["string", "null"],
+          "description": "这个人身上的矛盾。如'说不在意别人看法但很在意朋友圈''说想稳定但所有故事都关于自由'。矛盾是人格最真实的部分。"
+        }
+      }
+    },
+
+    "relationship_patterns": {
+      "description": "关系模式 — 在关系中是怎样的",
+      "type": "object",
+      "properties": {
+        "love_language_signal": {
+          "type": ["string", "null"],
+          "description": "爱的表达/接收方式线索。用他们自己的表达，不用五种爱之语术语。如'最开心的事都跟一起做事有关''反复强调对方记住细节很重要'"
+        },
+        "conflict_pattern": {
+          "type": ["string", "null"],
+          "description": "面对冲突的模式。要具体。如'先退一步冷静再回来''直接说但加缓冲词''用幽默化解不正面面对''生气会沉默很久'"
+        },
+        "independence_intimacy": {
+          "type": ["string", "null"],
+          "description": "独立和亲密的平衡。如'需要大量空间，理想是各自精彩然后分享''喜欢黏在一起''嘴上要空间但聊天频率暗示需要连接'"
+        },
+        "dealbreaker_deep": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "深层dealbreaker。不是'不接受抽烟'而是'不能接受不愿沟通的人''受不了没有自己生活的人'"
+        },
+        "relationship_narrative": {
+          "type": ["string", "null"],
+          "description": "对爱情的叙事框架。如'相信命中注定''认为需要经营不靠缘分''对爱情悲观但还在找''好关系是两个完整的人选择在一起'"
+        }
+      }
+    },
+
+    "dating_style": {
+      "description": "聊天行为模式 — Engine B 用这些复制聊天风格",
+      "type": "object",
+      "required": ["message_length", "message_pattern", "humor_type", "flirtation_mode"],
+      "properties": {
+        "message_length": { "type": "string" },
+        "message_pattern": { "type": "string" },
+        "punctuation_habits": { "type": "string" },
+        "emoji_usage": { "type": "string" },
+        "slang_register": { "type": "array", "items": { "type": "string" } },
+        "language_mixing": { "type": ["string", "null"] },
+        "flirtation_mode": { "type": "string" },
+        "humor_type": { "type": "array", "items": { "type": "string" } },
+        "vulnerability_pattern": { "type": "string" },
+        "conflict_style": { "type": "string" },
+        "pacing": { "type": "string" },
+        "topic_magnets": { "type": "array", "items": { "type": "string" } },
+        "unique_markers": { "type": "array", "items": { "type": "string" }, "description": "3-5个独有行为标记，具体到可编程复制" }
+      }
+    },
+
+    "surface": {
+      "description": "表层信息 — 兴趣爱好生活方式。仍记录但不再是核心。",
+      "type": "object",
+      "properties": {
+        "interests": {
+          "type": "array", "items": { "type": "string" },
+          "description": "所有兴趣合并。具体的，'Hyukoh'不是'独立音乐'"
+        },
+        "lifestyle_notes": {
+          "type": "array", "items": { "type": "string" },
+          "description": "零散生活方式信息。如'夜猫子''养猫''最近学游泳'"
+        },
+        "food_personality": {
+          "type": ["string", "null"],
+          "description": "吃的是性格信号。如'什么都吃的冒险型''极其挑剔可能对生活也是'"
+        }
+      }
+    },
+
+    "meta": {
+      "type": "object",
+      "required": ["extraction_confidence", "unknown_fields", "source_message_count"],
+      "properties": {
+        "extraction_confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "unknown_fields": { "type": "array", "items": { "type": "string" } },
+        "source_message_count": { "type": "integer" },
+        "notable_gaps": { "type": "array", "items": { "type": "string" } },
+        "depth_reached": {
+          "type": "string",
+          "description": "'表面寒暄' / '中等——聊到个人想法' / '深——触及情感价值观' / '很深——出现脆弱和矛盾'"
+        }
+      }
+    }
+  }
+}
