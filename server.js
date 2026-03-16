@@ -23,6 +23,46 @@ function readBody(req) {
   });
 }
 
+// Read MiniMax streaming response, buffer all tokens, return complete text
+async function readStream(resp) {
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let fullText = "";
+  let finishReason = "?";
+  let usage = {};
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || !trimmed.startsWith("data:")) continue;
+      const data = trimmed.slice(5).trim();
+      if (data === "[DONE]") continue;
+
+      try {
+        const chunk = JSON.parse(data);
+        const delta = chunk.choices?.[0]?.delta?.content || "";
+        fullText += delta;
+        if (chunk.choices?.[0]?.finish_reason) {
+          finishReason = chunk.choices[0].finish_reason;
+        }
+        if (chunk.usage) usage = chunk.usage;
+      } catch {
+        // skip unparseable chunks
+      }
+    }
+  }
+
+  return { text: fullText, finish_reason: finishReason, usage };
+}
+
 const server = http.createServer(async (req, res) => {
   // Serve index.html
   if (req.method === "GET" && (req.url === "/" || req.url === "/index.html")) {
@@ -51,7 +91,7 @@ const server = http.createServer(async (req, res) => {
       if (system) msgs.push({ role: "system", content: system });
       for (const m of messages || []) msgs.push({ role: m.role, content: m.content });
 
-      const payload = { model: "MiniMax-M2.5-highspeed", messages: msgs, temperature: 0.85 };
+      const payload = { model: "MiniMax-M2.5-highspeed", messages: msgs, temperature: 0.85, stream: true };
       if (max_tokens && max_tokens > 0) payload.max_tokens = max_tokens;
 
       const resp = await fetch(API_URL, {
@@ -60,39 +100,26 @@ const server = http.createServer(async (req, res) => {
         body: JSON.stringify(payload),
       });
 
-      const raw = await resp.text();
-
-      let data;
-      try {
-        data = JSON.parse(raw);
-      } catch {
+      if (!resp.ok) {
+        const errText = await resp.text();
         res.writeHead(502, { ...CORS, "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Bad JSON: " + raw.substring(0, 200) }));
+        res.end(JSON.stringify({ error: "MiniMax HTTP " + resp.status + ": " + errText.substring(0, 200) }));
         return;
       }
 
-      if (data.error) {
-        res.writeHead(502, { ...CORS, "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: data.error.message || JSON.stringify(data.error).substring(0, 200) }));
-        return;
-      }
-      if (data.base_resp && data.base_resp.status_code !== 0) {
-        res.writeHead(502, { ...CORS, "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: data.base_resp.status_msg }));
-        return;
-      }
-
-      let text = data.choices?.[0]?.message?.content || "";
-      const fr = data.choices?.[0]?.finish_reason || "?";
-      const u = data.usage || {};
+      // Stream from MiniMax — tokens arrive incrementally, keeping the
+      // connection alive. We buffer everything and return as single JSON.
+      const result = await readStream(resp);
 
       // Strip think tags
+      let text = result.text;
       text = text.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
       if (text.includes("<think>")) text = text.replace(/<think>[\s\S]*/g, "").trim();
 
       res.writeHead(200, { ...CORS, "Content-Type": "application/json" });
-      res.end(JSON.stringify({ text, finish_reason: fr, usage: u }));
+      res.end(JSON.stringify({ text, finish_reason: result.finish_reason, usage: result.usage }));
     } catch (err) {
+      console.error("API error:", err);
       res.writeHead(500, { ...CORS, "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: err.message }));
     }
