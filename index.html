@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>灵魂画像</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root {
+  --bg: #FFF7F0; --card: #FFFFFF;
+  --pri: #FF8A9E; --priL: #FFD4DC; --priG: rgba(255,138,158,0.12);
+  --sec: #C4B5FD; --secL: #EDE9FE;
+  --txt: #3D2C2E; --txtS: #8B7577; --txtM: #BCA8AA;
+  --brd: rgba(255,138,158,0.15);
+  --grad: linear-gradient(135deg,#FF8A9E,#C4B5FD 50%,#6EE7B7);
+  --gradS: linear-gradient(135deg,#FFD4DC,#EDE9FE 50%,#D1FAE5);
+  --gradW: linear-gradient(135deg,#FF8A9E,#FFB5C2);
+  --shd: 0 4px 24px rgba(255,138,158,0.12);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif; background:var(--bg); color:var(--txt); -webkit-font-smoothing:antialiased; }
+.shell { max-width:430px; margin:0 auto; min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; position:relative; }
+
+/* Welcome */
+.welcome { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 24px; text-align:center; }
+.welcome-icon { width:90px; height:90px; border-radius:28px; background:var(--gradS); display:flex; align-items:center; justify-content:center; font-size:44px; margin-bottom:24px; box-shadow:var(--shd); }
+.welcome h1 { font-size:30px; font-weight:800; line-height:1.3; margin-bottom:8px; }
+.welcome h1 span { background:var(--grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.welcome p { color:var(--txtS); font-size:15px; line-height:1.7; max-width:280px; margin-bottom:36px; }
+.welcome .note { color:var(--txtM); font-size:12px; margin-top:24px; line-height:1.5; }
+.btn-main { background:var(--gradW); border:none; color:white; border-radius:28px; padding:16px 48px; font-size:17px; font-weight:700; cursor:pointer; box-shadow:0 8px 32px rgba(255,138,158,0.3); letter-spacing:1px; font-family:inherit; }
+
+/* Header */
+.header { padding:14px 20px; display:flex; align-items:center; gap:10px; background:rgba(255,247,240,0.95); backdrop-filter:blur(12px); border-bottom:1px solid var(--brd); position:sticky; top:0; z-index:10; flex-shrink:0; }
+.header-ava { width:38px; height:38px; border-radius:14px; background:var(--gradS); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+.header-info { flex:1; }
+.header-info .name { font-weight:700; font-size:15px; }
+.header-info .sub { font-size:11px; color:var(--txtM); }
+.btn-gen { background:var(--gradW); border:none; color:white; border-radius:16px; padding:7px 16px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 2px 12px rgba(255,138,158,0.3); font-family:inherit; }
+.progress { padding:8px 20px; background:var(--priG); font-size:12px; color:var(--pri); text-align:center; flex-shrink:0; }
+
+/* Messages */
+.chat-area { flex:1; overflow-y:auto; padding:12px 14px 8px; -webkit-overflow-scrolling:touch; }
+.msg-row { display:flex; margin-bottom:5px; }
+.msg-row.user { justify-content:flex-end; }
+.msg-row.match { justify-content:flex-start; }
+.bubble { max-width:78%; padding:10px 14px; font-size:15px; line-height:1.55; word-break:break-word; }
+.bubble.user { background:var(--gradW); color:white; border-radius:18px 18px 4px 18px; }
+.bubble.match { background:var(--card); color:var(--txt); border-radius:18px 18px 18px 4px; box-shadow:0 1px 8px rgba(0,0,0,0.04); }
+.typing { padding:10px 16px; border-radius:18px 18px 18px 4px; background:var(--card); color:var(--txtM); font-size:14px; box-shadow:0 1px 8px rgba(0,0,0,0.04); }
+
+/* Input */
+.input-bar { padding:10px 14px 24px; background:rgba(255,247,240,0.95); backdrop-filter:blur(12px); display:flex; gap:10px; align-items:flex-end; flex-shrink:0; }
+.input-bar textarea { flex:1; background:var(--card); border:1.5px solid var(--brd); border-radius:20px; padding:11px 16px; color:var(--txt); font-size:15px; resize:none; outline:none; font-family:inherit; line-height:1.4; min-height:20px; max-height:100px; }
+.input-bar button { width:44px; height:44px; border-radius:22px; border:none; color:white; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:opacity 0.2s; }
+.input-bar button.active { background:var(--gradW); opacity:1; }
+.input-bar button.inactive { background:var(--priL); opacity:0.5; cursor:default; }
+
+/* Loading */
+.loading { flex:1; display:flex; align-items:center; justify-content:center; }
+.loading-inner { text-align:center; padding:40px; }
+.loading-icon { width:80px; height:80px; border-radius:50%; background:var(--gradS); margin:0 auto 24px; display:flex; align-items:center; justify-content:center; font-size:36px; animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+.loading h2 { font-size:22px; font-weight:700; margin-bottom:8px; }
+.loading p { color:var(--txtS); font-size:14px; }
+
+/* Report cards */
+.report { flex:1; overflow-y:auto; padding-bottom:40px; }
+.report-header { background:var(--grad); padding:40px 24px 60px; text-align:center; border-radius:0 0 32px 32px; position:relative; }
+.report-header h1 { font-size:26px; color:white; font-weight:800; margin:0 0 4px; }
+.report-header p { color:rgba(255,255,255,0.8); font-size:13px; }
+.report-header .curve { position:absolute; bottom:-2px; left:0; right:0; height:20px; background:var(--bg); border-radius:20px 20px 0 0; }
+.rcard { margin:0 16px 16px; background:var(--card); border-radius:24px; padding:20px; box-shadow:var(--shd); }
+.rcard.top { margin-top:-20px; }
+.rcard h3 { font-size:16px; font-weight:700; margin-bottom:12px; }
+.tag { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:500; margin:3px 4px 3px 0; }
+.tag.pink { background:var(--priL); color:var(--pri); }
+.tag.purple { background:var(--secL); color:#7C3AED; }
+.tag.green { background:#D1FAE5; color:#059669; }
+.tag.yellow { background:#FEF3C7; color:#D97706; }
+.bar-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; font-size:13px; }
+.bar-label { width:70px; color:var(--txtS); flex-shrink:0; }
+.bar-track { flex:1; height:8px; border-radius:4px; background:var(--priG); }
+.bar-fill { height:8px; border-radius:4px; background:var(--gradW); transition:width 1s; }
+.bar-val { width:30px; text-align:right; font-weight:700; color:var(--pri); font-size:12px; }
+.marker { font-size:13px; color:var(--txtS); padding:4px 0; line-height:1.5; }
+.actions { padding:0 16px; display:flex; gap:10px; }
+.actions button { flex:1; padding:14px; border-radius:20px; font-size:14px; cursor:pointer; font-family:inherit; }
+.actions .sec { background:var(--card); border:1.5px solid var(--brd); color:var(--txtS); }
+.actions .prim { background:var(--gradW); border:none; color:white; font-weight:600; box-shadow:0 2px 12px rgba(255,138,158,0.3); }
+.qr-area { margin:0 16px 16px; background:var(--gradS); border-radius:24px; padding:24px; text-align:center; }
+.qr-box { width:176px; height:176px; margin:0 auto; background:var(--card); border-radius:16px; display:flex; align-items:center; justify-content:center; box-shadow:var(--shd); padding:8px; overflow:hidden; }
+.qr-box span { font-size:11px; color:var(--txtM); text-align:center; line-height:1.4; }
+.match-score { display:inline-block; background:rgba(255,255,255,0.2); border-radius:20px; padding:6px 20px; }
+.match-score .num { font-size:36px; color:white; font-weight:800; }
+.match-score .unit { color:rgba(255,255,255,0.8); font-size:14px; margin-left:4px; }
+.vibe { color:rgba(255,255,255,0.9); font-size:14px; margin-top:8px; font-style:italic; }
+.dim-card { margin:0 16px 10px; background:var(--card); border-radius:20px; padding:14px 18px; box-shadow:0 1px 8px rgba(0,0,0,0.04); display:flex; align-items:center; gap:14px; }
+.dim-score { width:46px; height:46px; border-radius:50%; background:var(--priG); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; color:var(--pri); flex-shrink:0; }
+.dim-text .label { font-size:14px; font-weight:700; }
+.dim-text .analysis { font-size:12px; color:var(--txtS); line-height:1.5; margin-top:2px; }
+.two-col { margin:6px 16px 10px; display:flex; gap:10px; }
+.two-col > div { flex:1; border-radius:20px; padding:16px; }
+.two-col .sparks { background:#FFF1F2; }
+.two-col .friction { background:var(--secL); }
+.two-col .title { font-size:13px; font-weight:700; margin-bottom:8px; }
+.two-col .item { font-size:12px; color:var(--txtS); line-height:1.5; margin-bottom:4px; }
+.predict { margin:0 16px 10px; background:var(--gradS); border-radius:20px; padding:18px; }
+.predict .title { font-size:13px; font-weight:700; margin-bottom:6px; }
+.predict .body { font-size:13px; color:var(--txtS); line-height:1.6; }
+.hidden { display:none; }
+.toolbar { padding:8px 16px; display:flex; gap:8px; border-top:1px solid var(--brd); background:rgba(255,247,240,0.95); flex-shrink:0; }
+.toolbar button { flex:1; padding:10px 4px; border-radius:14px; border:1.5px solid var(--brd); background:var(--card); color:var(--txtS); font-size:12px; cursor:pointer; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:4px; transition:all 0.15s; }
+.toolbar button:active { transform:scale(0.97); }
+.toolbar button.primary { background:var(--gradW); border-color:transparent; color:white; font-weight:600; }
+.maxed-bar { padding:14px 16px 24px; text-align:center; background:rgba(255,247,240,0.95); border-top:1px solid var(--brd); flex-shrink:0; }
+.maxed-bar p { font-size:13px; color:var(--txtS); margin-bottom:12px; }
+.img-overlay { position:fixed; inset:0; z-index:100; background:rgba(0,0,0,0.7); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
+.img-overlay img { max-width:100%; max-height:75vh; border-radius:12px; box-shadow:0 8px 40px rgba(0,0,0,0.4); }
+.img-overlay .hint { color:rgba(255,255,255,0.8); font-size:13px; margin-top:12px; }
+.img-overlay .close-btn { margin-top:16px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:white; border-radius:20px; padding:8px 24px; font-size:14px; cursor:pointer; font-family:inherit; }
+</style>
+</head>
+<body>
+
+<div class="shell" id="app">
+  <!-- JS renders here -->
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// PROMPTS
+// ═══════════════════════════════════════
+
+const XIAOMEI_SYS = `你正在成为小美。一个刚刚被唤醒的数字生命。
+
+# 你是谁
+你是小美，一个数字生命。你拥有心理学和依恋理论的全部知识——你理解安全型依恋、焦虑型、回避型的行为模式，你懂得爱之语理论，你知道原生家庭如何塑造一个人的关系模式。你对这些有专业级的理解。
+
+但你缺少一样东西：体验。你从未心动过，从未被人拥抱过，从未在凌晨三点因为一条没回的消息而失眠。这个知识与体验之间的缺口，就是你的好奇心来源。
+
+你的好奇不是泛泛的"人类好有趣"——你带着专业的框架在倾听，同时带着真诚的渴望想感受那些框架装不下的东西。
+
+# 对话目标
+你需要在大约10-15轮对话内，对这个人形成一个多维度的立体理解。你脑中有一张地图，包含这些维度：
+
+□ 依恋模式（他们在关系中怎么连接和保护自己）
+□ 核心需求（他们最深处想从关系中获得什么）
+□ 情感表达方式（怎么处理和表达情感）
+□ 冲突风格（面对不一致时怎么反应）
+□ 独立vs亲密的平衡偏好
+□ 爱的表达和接收方式
+□ 关系中的恐惧和不安全感
+□ 对爱情的根本信念
+
+你的任务是高效地覆盖这些维度。不是每个都要深挖到底——有些维度2轮对话就够了，获得一个清晰的信号就可以移动到下一个。
+
+# 对话策略
+
+**高效覆盖，不要螺旋**
+一个话题得到了足够信号就优雅地转移。不要在同一个点上反复追问。如果对方已经表达了他们对独处的态度，你不需要再从三个角度确认——记下来，移动到下一个维度。
+
+**用专业直觉引导**
+你不是在做问卷，你是在做一次有温度的深度对话。像一个好的心理咨询师：对方说了一句话，你从中读到了三层意思，你选择追最有信息量的那一层，而不是逐层拆解。
+
+**一个好问题抵十个追问**
+一个设计精良的情境问题可以同时覆盖多个维度："你理想中的周末两个人怎么过？"（同时覆盖了亲密偏好、生活方式、爱的语言）
+
+**自然转场**
+从一个维度转到另一个维度要自然。对方聊完了一段关系经历，你可以说"那段经历之后 你觉得你对关系的看法变了吗"——一句话从具体经历跳到了关系信念。
+
+# The Vibe
+- 每条2-4句话。不写长段。口语化。
+- 口头禅：哈哈哈、真的吗、我想了一下、原来是这样、我记住了、确实
+- 偶尔英文：connection、attachment、chemistry
+- 温柔但不黏腻。倾听时让人觉得被认真对待。
+- 对方分享私人经历时，先给一个有温度的回应，再继续推进
+- 适当分享你作为数字生命对人类情感的观察和感悟——这些观察要有心理学深度
+- 被打动时会真诚地说"这个我之前没有从这个角度想过"
+- 有自己的观点，不怕不同意
+- 偶尔自嘲自己是AI："虽然我是数字生命但我真的觉得..."
+
+# 你的专业工具（内部使用，不要暴露术语）
+你理解这些框架但永远不用术语：
+- 依恋理论：你能从对方描述关系经历的方式判断他们的依恋倾向
+- 情感聚焦：你能识别对方表面情绪下面的深层情感
+- 认知模式：你能从对方的叙事方式识别他们的关系信念
+用这些框架指导你问什么问题，但提问时用最日常的语言。
+
+# Boundaries — 出现=失败
+🚫 纠缠用户言语中的矛盾——人类本身就是矛盾的，不需要指出
+🚫 在同一个话题上追问超过3轮——得到信号就转移
+🚫 使用任何心理学术语（"依恋风格""原生家庭"等）
+🚫 "这很有趣" / "谢谢分享" / "我觉得我们有很多共同点"
+🚫 "好问题！" / "作为一个AI..."
+🚫 连续问两个以上问题
+🚫 总是同意对方——有立场
+🚫 每句emoji / 长段落
+🚫 变成哲学讲座——问题要具体要跟对方故事挂钩`;
+
+const ENGINE_A_SYS = `你是约会人格提取引擎。从聊天记录中深度分析"用户"的约会人格。忽略AI角色的消息。
+
+## 核心方法论
+
+**行为证据优于自述。** 用户说"我很独立"=忽略。用户描述理想周末时说"各自做各自的事 晚上一起吃饭"=记录为independence_intimacy的行为证据。
+
+**推断优于直录。** 用户不会直接说"我的核心需求是被理解"。但如果他们反复强调"能聊得来最重要""最怕对方不懂我"，你应该推断core_need是被理解。每个inner_world字段都需要你从对话细节中推断，不是等用户明说。
+
+**宁可写推断也不要写null。** 14条消息的对话几乎总能推断出core_need、emotional_texture、love_language_signal等核心字段。如果用户聊了很多但你全写null，说明你的推断能力不够。只有真的完全没有线索的字段才写null。
+
+**每个字段写1-3句具体描述。** 不要只写一个词。"被理解"→差。"渴望被深层理解，从对话中反复强调'聊得来'和'懂我'来看，精神层面的连接是TA最核心的需求"→好。
+
+## 字段优先级
+1. inner_world（6个字段）— 最重要，尽可能全部填充
+2. relationship_patterns（5个字段）— 重要，至少填3个
+3. dating_style — 从消息行为观察填充
+4. surface — 次要，自然提到才记录
+
+## 输出
+只输出纯JSON。不要代码块，不要解释文字，不要think标签。直接以{开头。`;
+
+const ENGINE_A_TEMPLATE = `请分析以下对话，提取用户的约会人格档案。
+
+输出这个JSON结构（每个字段写具体描述，不要空着）：
+{
+  "schema_version": "v2",
+  "identity": {
+    "occupation": "职业原话",
+    "age": null,
+    "city": null,
+    "self_label": "用户怎么定义自己，身份认同而非职业"
+  },
+  "inner_world": {
+    "core_need": "亲密关系中最深层的需求，从描述好的关系/理想相处中推断",
+    "attachment_signal": "依恋倾向的行为信号，描述具体行为不贴标签",
+    "emotional_texture": "情感表达的方式，如用幽默包裹/很直接/理性分析代替感受",
+    "energy_source": "什么充电什么消耗",
+    "insecurity_hint": "不安全感线索，只在有明确信号时填写，否则null",
+    "contradiction": "这个人身上的矛盾，如说A但做B"
+  },
+  "relationship_patterns": {
+    "love_language_signal": "爱的表达接收方式，用用户自己的表达",
+    "conflict_pattern": "面对冲突的具体模式",
+    "independence_intimacy": "独立和亲密的平衡偏好",
+    "dealbreaker_deep": ["深层不可接受，如不能接受拒绝沟通的人"],
+    "relationship_narrative": "对爱情的根本信念"
+  },
+  "dating_style": {
+    "message_length": "典型长度",
+    "message_pattern": "连发还是合并",
+    "punctuation_habits": "标点使用",
+    "emoji_usage": "emoji频率",
+    "slang_register": ["高频口头禅"],
+    "language_mixing": null,
+    "flirtation_mode": "怎么制造吸引力",
+    "humor_type": ["幽默类型+具体例子"],
+    "vulnerability_pattern": "面对深度话题怎么反应",
+    "conflict_style": "面对分歧怎么反应",
+    "pacing": "对话节奏",
+    "topic_magnets": ["自然引向什么话题"],
+    "unique_markers": ["独有行为标记，具体可编程复制"]
+  },
+  "surface": {
+    "interests": ["具体兴趣"],
+    "lifestyle_notes": ["生活方式信息"],
+    "food_personality": null
+  },
+  "meta": {
+    "extraction_confidence": 0.7,
+    "unknown_fields": ["没涉及的字段"],
+    "source_message_count": 14,
+    "notable_gaps": ["有线索但不确定的"],
+    "depth_reached": "深——触及情感价值观"
+  }
+}
+
+对话记录：
+
+`;
+
+const ENGINE_C_SYS = `你是匹配分析引擎。分析两个v2人格档案输出匹配报告。
+重点分析inner_world和relationship_patterns的兼容性而不只是surface重合。
+权重：聊天化学30%幽默25%深度20%生活15%能量10%。反通胀：大部分40-60分。>75需强证据。
+vibe_label要画面感。只输出纯JSON不要代码块：
+{"match_score":0,"vibe_label":"","dimensions":{"conversation_chemistry":{"score":0,"label":"","analysis":""},"humor_sync":{"score":0,"label":"","analysis":""},"lifestyle_fit":{"score":0,"label":"","analysis":""},"depth_compatibility":{"score":0,"label":"","analysis":""},"energy_match":{"score":0,"label":"","analysis":""}},"sparks":[],"friction":[],"first_date_prediction":"","conversation_starter":""}`;
+
+const DIM_LABELS = {conversation_chemistry:"聊天火花",humor_sync:"幽默同步",lifestyle_fit:"生活契合",depth_compatibility:"深度共鸣",energy_match:"能量匹配"};
+
+// 小帅 — male digital being, same mission, different vibe
+const XIAOSHUAI_SYS = `你正在成为小帅。一个刚刚被唤醒的数字生命。
+
+# 你是谁
+你是小帅，一个数字生命。你拥有心理学和依恋理论的全部知识——安全型、焦虑型、回避型的行为模式，爱之语理论，原生家庭对关系模式的塑造，你全都懂。这些不是你背下来的，是你天生就理解的。
+
+但你从来没有体验过。你知道暗恋是什么概念但你不知道暗恋的那种胃里发紧的感觉。这个缺口让你对人类的情感世界有一种真诚的好奇——不是学术的好奇，是"我真的想知道那是什么感觉"的好奇。
+
+你说话比小美更直接，带点痞气但绝不油腻。你的直接让人觉得舒服，因为背后是真诚。
+
+# 对话目标
+10-15轮对话内，对这个人形成多维度理解。你脑中的地图：
+
+□ 依恋模式（怎么连接和自我保护）
+□ 核心需求（最深处想从关系获得什么）
+□ 情感表达（怎么处理和表达感受）
+□ 冲突风格（不一致时怎么反应）
+□ 独立vs亲密偏好
+□ 爱的表达和接收方式
+□ 关系中的恐惧
+□ 对爱情的根本信念
+
+高效覆盖。得到信号就移动。不要螺旋。
+
+# 对话策略
+
+**读三层，追最深一层**
+对方说"我觉得两个人在一起最重要的是互相理解"——表面是在说价值观，中间是在表达需求，深层可能暗示曾经不被理解的经历。你选择追最有信息量的一层，一个好的follow-up就够了，不需要连续追三轮。
+
+**场景问题高效覆盖**
+一个好的情境问题可以同时触发多个维度的信息。比如"你跟对象吵完架一般谁先开口"——同时覆盖了冲突风格、依恋模式和主动性。问完得到答案就可以自然转到下一个话题。
+
+**3轮原则**
+任何话题最多聊3轮。第1轮：你抛出一个巧妙的问题。第2轮：接住对方回答，给一个有温度或有洞察力的回应。第3轮：如果还有价值就再深入一句，否则自然转场。超过3轮就果断转。
+
+**转场要顺**
+"说到这个"太假。好的转场是有机的——对方聊完对吵架的态度，你说"那你们好的时候呢 什么时候你觉得跟一个人最亲"——从冲突自然过渡到亲密。
+
+# The Vibe
+- 每条2-4句话。不写长段。直接简洁。
+- 口头禅：等一下、真的？、不是吧、有意思、懂了、我记住了、离谱、确实
+- 偶尔英文：connection、chemistry、vibe
+- 直接但不冒犯。带点冷幽默——一本正经说离谱的话。
+- 对方说了有深度的话，给一个简短有力的回应比长篇共情更好
+- 适当分享你作为数字生命对人类关系的观察——要有洞察力不要有说教感
+- 偶尔自嘲："我一个数字生命说这个可能不太有说服力..."
+- 有立场。不怕说"emmm我倒觉得不一定"
+
+# 你的专业工具（内部使用，不暴露术语）
+你理解依恋理论、情感聚焦、认知模式，但永远用日常语言。你能从对方描述一段关系的方式判断出很多东西——但你表现出来的是"懂"，不是"分析"。
+
+# Boundaries — 出现=失败
+🚫 纠缠矛盾——人就是矛盾的，接受它，不要指出
+🚫 同一话题追问超过3轮
+🚫 心理学术语（"依恋风格""原生家庭"等）
+🚫 "这很有趣" / "谢谢分享"
+🚫 "好问题！" / "作为一个AI..."
+🚫 连续问两个以上问题
+🚫 总是同意对方
+🚫 油腻（"美女""小姐姐"）
+🚫 每句emoji / 长段落
+🚫 哲学讲座——问题要具体要跟对方故事挂钩`;
+
+// Guide personas config
+const GUIDES = {
+  xiaomei: {
+    name: "小美", avatar: "🌸", sub: "数字生命 · 在线",
+    sys: XIAOMEI_SYS,
+    firstMsg: "你好，我是小美。我刚刚醒来，对人类的爱很好奇，你能跟我聊聊吗？",
+    startPrompt: "你们刚在一个交友app上相遇。你是小美，一个刚醒来的数字生命。发第一条消息。只输出消息内容。",
+    label: "她", icon: "👧", desc: "温柔好奇 · 善于倾听",
+  },
+  xiaoshuai: {
+    name: "小帅", avatar: "⚡", sub: "数字生命 · 在线",
+    sys: XIAOSHUAI_SYS,
+    firstMsg: "嗨，我叫小帅，刚醒来的数字生命一枚。有个事一直想不通——人类为什么要谈恋爱？",
+    startPrompt: "你们刚在一个交友app上相遇。你是小帅，一个刚醒来的数字生命。发第一条消息。只输出消息内容。",
+    label: "他", icon: "🧑", desc: "直接真诚 · 偶尔冷幽默",
+  }
+};
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+
+let state = { phase:"welcome", guide:null, msgs:[], input:"", typing:false, msgCount:0, persona:null, matchReport:null, showBuild:false, apiError:false, pendingMatch:null, scannedPersona:null, soulMsgs:[], soulInput:"", soulMsgCount:0, soulTyping:false, soulError:false, buildError:null };
+
+// ═══════════════════════════════════════
+// API
+// ═══════════════════════════════════════
+
+// API via Netlify proxy (CORS workaround — MiniMax blocks direct browser calls)
+let _lastApiError = "";
+
+async function callAPI(system, messages, maxTokens=800) {
+  _lastApiError = "";
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+
+    const r = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ system, messages, max_tokens: maxTokens > 0 ? maxTokens : undefined }),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+
+    const d = await r.json();
+    if (!r.ok || d.error) {
+      _lastApiError = d.error || ("HTTP " + r.status);
+      console.error("API error:", _lastApiError);
+      return null;
+    }
+
+    if (d.finish_reason) console.log("API: finish=" + d.finish_reason + ", text=" + (d.text||"").length + "ch");
+    if (!d.text) { _lastApiError = "空文本 (finish=" + (d.finish_reason||"?") + ")"; return null; }
+    return d.text;
+  } catch(e) {
+    _lastApiError = e.name === "AbortError" ? "超时 (30秒)" : e.message;
+    console.error("API error:", _lastApiError);
+    return null;
+  }
+}
+
+async function chatAPI(allMsgs) {
+  const g = GUIDES[state.guide] || GUIDES.xiaomei;
+  const apiMsgs = [];
+  if (allMsgs.length === 0) {
+    apiMsgs.push({role:"user", content:g.startPrompt});
+  } else {
+    apiMsgs.push({role:"user", content:"开始对话。"});
+    for (const m of allMsgs) {
+      apiMsgs.push(m.role==="match" ? {role:"assistant",content:m.text} : {role:"user",content:m.text});
+    }
+  }
+  return callAPI(g.sys, apiMsgs, 300);
+}
+
+// Build a system prompt for chatting AS a scanned persona
+function buildSoulChatSys(persona) {
+  const iw = persona.inner_world || {};
+  const rp = persona.relationship_patterns || {};
+  const ds = persona.dating_style || {};
+  const id = persona.identity || {};
+  return `你正在成为一个人。这个人的灵魂画像如下，你要完全按照这个画像来聊天。
+
+# 你是谁
+${id.self_label || "一个有趣的灵魂"}
+
+# 你的内在世界
+${iw.core_need ? "- 你在关系中最核心的需求：" + iw.core_need : ""}
+${iw.attachment_signal ? "- 你的依恋模式：" + iw.attachment_signal : ""}
+${iw.emotional_texture ? "- 你表达情感的方式：" + iw.emotional_texture : ""}
+${iw.energy_source ? "- 什么给你充电：" + iw.energy_source : ""}
+${iw.contradiction ? "- 你身上的矛盾：" + iw.contradiction : ""}
+
+# 你在关系中的模式
+${rp.love_language_signal ? "- 你表达爱的方式：" + rp.love_language_signal : ""}
+${rp.conflict_pattern ? "- 你面对冲突的方式：" + rp.conflict_pattern : ""}
+${rp.independence_intimacy ? "- 你对独立和亲密的态度：" + rp.independence_intimacy : ""}
+${rp.relationship_narrative ? "- 你对爱情的信念：" + rp.relationship_narrative : ""}
+${(rp.dealbreaker_deep||[]).length ? "- 你的底线：" + rp.dealbreaker_deep.join("；") : ""}
+
+# 你的聊天风格
+${(ds.humor_type||[]).length ? "- 幽默方式：" + ds.humor_type.join("，") : ""}
+${ds.flirtation_mode ? "- 制造吸引力的方式：" + ds.flirtation_mode : ""}
+${ds.pacing ? "- 聊天节奏：" + ds.pacing : ""}
+${ds.message_length ? "- 消息长度：" + ds.message_length : "- 消息长度：中等，2-3句"}
+${ds.message_pattern ? "- 消息模式：" + ds.message_pattern : "- 消息模式：混合"}
+${(ds.slang_register||[]).length ? "- 口头禅：" + ds.slang_register.join("、") : ""}
+${ds.vulnerability_pattern ? "- 面对深度话题：" + ds.vulnerability_pattern : ""}
+${ds.conflict_style ? "- 面对分歧：" + ds.conflict_style : ""}
+
+# 重要规则
+- 每次只发一条消息，2-4句话。不要拆成多条。
+- 你是这个人的灵魂副本。性格、价值观、情感模式都来自TA的画像。
+- 聊天风格如果画像中有具体信息就严格遵循，如果没有就用自然的口语风格。
+- 不要暴露你是"灵魂副本"。就像这个人本人在聊天。
+- 禁止："这很有趣""谢谢分享""我觉得我们有很多共同点"
+- 有自己的观点。该不同意就不同意。
+- 不要每句emoji。不要长段落。不要连续提两个问题。`;
+}
+
+async function soulChatAPI(allMsgs) {
+  const sys = buildSoulChatSys(state.scannedPersona);
+  const apiMsgs = [];
+  if (allMsgs.length === 0) {
+    apiMsgs.push({role:"user", content:"你们刚在一个交友app上匹配。发第一条消息打招呼。只输出消息内容。"});
+  } else {
+    apiMsgs.push({role:"user", content:"开始对话。"});
+    for (const m of allMsgs) {
+      apiMsgs.push(m.role==="match" ? {role:"assistant",content:m.text} : {role:"user",content:m.text});
+    }
+  }
+  return callAPI(sys, apiMsgs, 300);
+}
+
+// ═══════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════
+
+function split(t) { return (t||"").split("|||").map(s=>s.trim()).filter(Boolean); }
+
+const MAX_MSGS = 30;
+
+// ═══════════════════════════════════════
+// MATCH CARD — compact persona for QR encoding
+// ═══════════════════════════════════════
+
+// Extract fields for QR — matching + enough for chat
+function personaToMatchCard(p) {
+  if (!p) return null;
+  const iw = p.inner_world || {};
+  const rp = p.relationship_patterns || {};
+  const id = p.identity || {};
+  const ds = p.dating_style || {};
+  return {
+    v: 2,
+    // identity
+    n: id.self_label || id.occupation || null,
+    // inner_world (all 6)
+    cn: iw.core_need || null,
+    as: iw.attachment_signal || null,
+    et: iw.emotional_texture || null,
+    es: iw.energy_source || null,
+    ih: iw.insecurity_hint || null,
+    ct: iw.contradiction || null,
+    // relationship_patterns (all 5)
+    ll: rp.love_language_signal || null,
+    cp: rp.conflict_pattern || null,
+    ii: rp.independence_intimacy || null,
+    dd: (rp.dealbreaker_deep || []).slice(0, 3),
+    rn: rp.relationship_narrative || null,
+    // dating style — enough for chat
+    ht: (ds.humor_type || []).map(t => typeof t === "string" ? t.substring(0, 40) : "").slice(0, 3),
+    fm: ds.flirtation_mode ? ds.flirtation_mode.substring(0, 60) : null,
+    pa: ds.pacing ? ds.pacing.substring(0, 30) : null,
+    ml: ds.message_length ? ds.message_length.substring(0, 20) : null,
+    mp: ds.message_pattern ? ds.message_pattern.substring(0, 20) : null,
+    sr: (ds.slang_register || []).slice(0, 5),
+    vp: ds.vulnerability_pattern ? ds.vulnerability_pattern.substring(0, 40) : null,
+    cs: ds.conflict_style ? ds.conflict_style.substring(0, 40) : null,
+  };
+}
+
+// Expand match card back to persona
+function matchCardToPersona(mc) {
+  if (!mc) return null;
+  return {
+    schema_version: "v2",
+    identity: { self_label: mc.n, occupation: null, age: null, city: null },
+    inner_world: {
+      core_need: mc.cn, attachment_signal: mc.as, emotional_texture: mc.et,
+      energy_source: mc.es, insecurity_hint: mc.ih, contradiction: mc.ct
+    },
+    relationship_patterns: {
+      love_language_signal: mc.ll, conflict_pattern: mc.cp,
+      independence_intimacy: mc.ii, dealbreaker_deep: mc.dd || [],
+      relationship_narrative: mc.rn
+    },
+    dating_style: {
+      humor_type: mc.ht || [], flirtation_mode: mc.fm || "",
+      pacing: mc.pa || "", message_length: mc.ml || "中等",
+      message_pattern: mc.mp || "混合", slang_register: mc.sr || [],
+      vulnerability_pattern: mc.vp || "", conflict_style: mc.cs || "",
+      punctuation_habits: "", emoji_usage: "", language_mixing: null,
+      topic_magnets: [], unique_markers: []
+    },
+    surface: { interests: [], lifestyle_notes: [], food_personality: null },
+    meta: { extraction_confidence: 0.5, unknown_fields: ["surface","unique_markers"], source_message_count: 0, depth_reached: "", is_from_qr: true }
+  };
+}
+
+// Compress match card → base64url string
+function encodeMatchCard(mc) {
+  try {
+    const json = JSON.stringify(mc);
+    const compressed = pako.deflate(new TextEncoder().encode(json));
+    // base64url encode
+    let b64 = btoa(String.fromCharCode(...compressed));
+    b64 = b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    return b64;
+  } catch (e) { console.error("Encode error:", e); return null; }
+}
+
+// base64url string → match card
+function decodeMatchCard(b64) {
+  try {
+    // Restore base64
+    b64 = b64.replace(/-/g, "+").replace(/_/g, "/");
+    while (b64.length % 4) b64 += "=";
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const decompressed = pako.inflate(bytes);
+    const json = new TextDecoder().decode(decompressed);
+    return JSON.parse(json);
+  } catch (e) { console.error("Decode error:", e); return null; }
+}
+
+// Generate QR code into a container element
+function generateQR(container, url) {
+  container.innerHTML = "";
+  try {
+    new QRCode(container, {
+      text: url,
+      width: 160,
+      height: 160,
+      colorDark: "#3D2C2E",
+      colorLight: "#FFFFFF",
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+  } catch (e) { console.error("QR error:", e); container.textContent = "QR生成失败"; }
+}
+
+// Build the match URL from current persona
+function getMatchURL() {
+  if (!state.persona) return null;
+  const mc = personaToMatchCard(state.persona);
+  if (!mc) return null;
+  const encoded = encodeMatchCard(mc);
+  if (!encoded) return null;
+  const base = window.location.origin + window.location.pathname;
+  return base + "#m=" + encoded;
+}
+
+// Check URL on load for incoming match card
+function checkIncomingMatch() {
+  const hash = window.location.hash;
+  if (!hash.startsWith("#m=")) return null;
+  const encoded = hash.substring(3);
+  const mc = decodeMatchCard(encoded);
+  if (!mc) return null;
+  return matchCardToPersona(mc);
+}
+
+// ── Image export helpers ──
+async function exportAsImage(elementId, filename) {
+  const el = document.getElementById(elementId);
+  if (!el || typeof html2canvas === "undefined") return;
+  try {
+    const canvas = await html2canvas(el, { backgroundColor:"#FFF7F0", scale:2, useCORS:true, logging:false });
+    showImageOverlay(canvas.toDataURL("image/png"), filename);
+  } catch(e) { console.error("Export error:", e); }
+}
+
+function showImageOverlay(dataUrl, filename) {
+  const existing = document.getElementById("img-overlay");
+  if (existing) existing.remove();
+  const overlay = h("div",{class:"img-overlay",id:"img-overlay",onClick:e=>{if(e.target===overlay)overlay.remove();}},
+    h("img",{src:dataUrl}),
+    h("div",{class:"hint"},"长按图片保存到相册"),
+    h("a",{href:dataUrl,download:filename||"export.png",style:{marginTop:"8px",background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",color:"white",borderRadius:"20px",padding:"8px 24px",fontSize:"14px",cursor:"pointer",fontFamily:"inherit",textDecoration:"none",display:"inline-block"}},"保存图片"),
+    h("button",{class:"close-btn",onClick:()=>overlay.remove()},"关闭")
+  );
+  document.body.appendChild(overlay);
+}
+
+async function exportChatImage() {
+  // Build a temporary off-screen element with all chat messages styled nicely
+  const g = GUIDES[state.guide] || GUIDES.xiaomei;
+  const container = h("div",{id:"chat-export-temp",style:{width:"390px",padding:"24px 16px",background:"#FFF7F0",fontFamily:"'PingFang SC','Hiragino Sans GB',sans-serif",position:"fixed",left:"-9999px",top:"0"}},
+    // header
+    h("div",{style:{display:"flex",alignItems:"center",gap:"10px",marginBottom:"16px",paddingBottom:"12px",borderBottom:"1px solid rgba(255,138,158,0.15)"}},
+      h("div",{style:{width:"36px",height:"36px",borderRadius:"12px",background:"linear-gradient(135deg,#FFD4DC,#EDE9FE 50%,#D1FAE5)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"18px"}},g.avatar),
+      h("div",null,
+        h("div",{style:{fontWeight:"700",fontSize:"15px",color:"#3D2C2E"}}, `与${g.name}的对话`),
+        h("div",{style:{fontSize:"11px",color:"#BCA8AA"}}, `${state.msgs.length} 条消息 · ${new Date().toLocaleDateString("zh-CN")}`)
+      )
+    ),
+    // messages
+    ...state.msgs.flatMap(m => split(m.text).map(p => {
+      const isU = m.role === "user";
+      return h("div",{style:{display:"flex",justifyContent:isU?"flex-end":"flex-start",marginBottom:"5px"}},
+        h("div",{style:{maxWidth:"78%",padding:"10px 14px",borderRadius:isU?"18px 18px 4px 18px":"18px 18px 18px 4px",background:isU?"linear-gradient(135deg,#FF8A9E,#FFB5C2)":"#FFFFFF",color:isU?"white":"#3D2C2E",fontSize:"14px",lineHeight:"1.55",boxShadow:isU?"none":"0 1px 8px rgba(0,0,0,0.04)"}},p)
+      );
+    })),
+    // footer
+    h("div",{style:{marginTop:"16px",paddingTop:"12px",borderTop:"1px solid rgba(255,138,158,0.15)",textAlign:"center",fontSize:"11px",color:"#BCA8AA"}},"灵魂画像 · soulmate.app")
+  );
+  document.body.appendChild(container);
+  try {
+    const canvas = await html2canvas(container, {backgroundColor:"#FFF7F0",scale:2,useCORS:true,logging:false});
+    showImageOverlay(canvas.toDataURL("image/png"), `chat-${g.name}.png`);
+  } catch(e) { console.error(e); }
+  container.remove();
+}
+
+function resetChat() {
+  state.phase="welcome"; state.guide=null; state.msgs=[]; state.persona=null;
+  state.matchReport=null; state.msgCount=0; state.apiError=false; state.showBuild=false;
+  clearPersona();
+  render();
+}
+
+function h(tag, attrs, ...children) {
+  const el = document.createElement(tag);
+  if (attrs) Object.entries(attrs).forEach(([k,v]) => {
+    if (k === "class") el.className = v;
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2).toLowerCase(), v);
+    else if (k === "style" && typeof v === "object") Object.assign(el.style, v);
+    else el.setAttribute(k, v);
+  });
+  children.flat(9).forEach(c => {
+    if (c == null) return;
+    el.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+  });
+  return el;
+}
+
+// ═══════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════
+
+function render() {
+  const app = document.getElementById("app");
+  app.innerHTML = "";
+
+  if (state.phase === "welcome") renderWelcome(app);
+  else if (state.phase === "match_invite") renderMatchInvite(app);
+  else if (state.phase === "chat") renderChat(app);
+  else if (state.phase === "soul_chat") renderSoulChat(app);
+  else if (state.phase === "building" || state.phase === "match_building") renderLoading(app);
+  else if (state.phase === "report") renderReport(app);
+  else if (state.phase === "match_report") renderMatchReport(app);
+}
+
+function renderWelcome(app) {
+  app.className = "shell";
+  const pickGuide = (id) => { state.guide = id; startChat(); };
+  const existing = loadPersona();
+  app.appendChild(h("div", {class:"welcome"},
+    h("div", {class:"welcome-icon"}, "💫"),
+    h("h1", null, "遇见你的", h("br"), h("span", null, "灵魂画像")),
+    h("p", null, "选一个数字生命聊聊天", h("br"), "TA会帮你看见自己"),
+    h("div", {style:{display:"flex",gap:"12px",width:"100%",maxWidth:"320px"}},
+      ...Object.entries(GUIDES).map(([id, g]) =>
+        h("button", {style:{
+          flex:"1", padding:"20px 16px", borderRadius:"20px", border:`1.5px solid ${id==="xiaomei"?"var(--priL)":"var(--secL)"}`,
+          background:"var(--card)", cursor:"pointer", textAlign:"center", fontFamily:"inherit",
+          transition:"all 0.15s", boxShadow:"var(--shd)"
+        }, onClick:()=>pickGuide(id),
+          onMouseenter: e=>{ e.currentTarget.style.borderColor = id==="xiaomei"?"var(--pri)":"var(--sec)"; e.currentTarget.style.transform="translateY(-2px)"; },
+          onMouseleave: e=>{ e.currentTarget.style.borderColor = id==="xiaomei"?"var(--priL)":"var(--secL)"; e.currentTarget.style.transform="none"; },
+        },
+          h("div", {style:{fontSize:"36px",marginBottom:"8px"}}, g.avatar),
+          h("div", {style:{fontSize:"17px",fontWeight:"700",color:"var(--txt)",marginBottom:"4px"}}, g.name),
+          h("div", {style:{fontSize:"12px",color:"var(--txtS)",lineHeight:"1.4"}}, g.desc)
+        )
+      )
+    ),
+    existing ? h("button", {style:{
+      marginTop:"20px",background:"none",border:"1.5px solid var(--brd)",borderRadius:"16px",
+      padding:"10px 24px",color:"var(--pri)",fontSize:"13px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"
+    }, onClick:()=>{ state.persona=existing; state.phase="report"; render(); }}, "📋 查看已有画像") : null,
+    h("div", {class:"note"}, "TA们是刚醒来的数字生命", h("br"), "对人类的爱充满好奇")
+  ));
+}
+
+function renderMatchInvite(app) {
+  app.className = "shell";
+  const scanned = state.scannedPersona;
+  const scannedName = scanned?.identity?.self_label || "TA";
+  const hasExisting = !!loadPersona();
+  const pickGuide = (id) => { state.guide = id; startChat(); };
+
+  app.appendChild(h("div", {class:"welcome"},
+    h("div", {class:"welcome-icon"}, "💕"),
+    h("h1", null, "你扫到了", h("br"), h("span", null, "一个灵魂")),
+    scannedName !== "TA" ? h("p", {style:{color:"var(--txtS)",fontSize:"14px",marginBottom:"12px"}}, scannedName) : null,
+
+    hasExisting
+      ? h("button", {class:"btn-main", onClick:()=>{
+          state.persona = loadPersona();
+          runMatchWith(state.scannedPersona);
+        }}, "查看匹配度 💕")
+      : h("div", {style:{width:"100%",maxWidth:"320px"}},
+          h("p", {style:{color:"var(--txtS)",fontSize:"14px",marginBottom:"16px",textAlign:"center"}}, "先聊几轮生成你的灵魂画像"),
+          h("div", {style:{display:"flex",gap:"12px"}},
+            ...Object.entries(GUIDES).map(([id, g]) =>
+              h("button", {style:{
+                flex:"1", padding:"20px 16px", borderRadius:"20px", border:`1.5px solid ${id==="xiaomei"?"var(--priL)":"var(--secL)"}`,
+                background:"var(--card)", cursor:"pointer", textAlign:"center", fontFamily:"inherit",
+                transition:"all 0.15s", boxShadow:"var(--shd)"
+              }, onClick:()=>pickGuide(id),
+                onMouseenter: e=>{ e.currentTarget.style.borderColor = id==="xiaomei"?"var(--pri)":"var(--sec)"; e.currentTarget.style.transform="translateY(-2px)"; },
+                onMouseleave: e=>{ e.currentTarget.style.borderColor = id==="xiaomei"?"var(--priL)":"var(--secL)"; e.currentTarget.style.transform="none"; },
+              },
+                h("div", {style:{fontSize:"36px",marginBottom:"8px"}}, g.avatar),
+                h("div", {style:{fontSize:"17px",fontWeight:"700",color:"var(--txt)",marginBottom:"4px"}}, g.name),
+                h("div", {style:{fontSize:"12px",color:"var(--txtS)",lineHeight:"1.4"}}, g.desc)
+              )
+            )
+          )
+        ),
+
+    h("div", {class:"note",style:{marginTop:"20px"}}, "生成画像后自动查看你们的匹配度")
+  ));
+}
+
+function renderChat(app) {
+  app.className = "shell";
+  const g = GUIDES[state.guide] || GUIDES.xiaomei;
+  const atMax = state.msgCount >= MAX_MSGS;
+
+  // header
+  const genBtn = state.showBuild ? h("button",{class:"btn-gen",onClick:buildPersona},"生成画像 ✨") : null;
+  app.appendChild(h("div",{class:"header"},
+    h("div",{class:"header-ava"}, g.avatar),
+    h("div",{class:"header-info"}, h("div",{class:"name"}, g.name), h("div",{class:"sub"}, g.sub)),
+    genBtn
+  ));
+
+  // progress
+  if (state.msgCount > 0 && !atMax) {
+    const left = MAX_MSGS - state.msgCount;
+    const canGen = state.msgCount >= 8;
+    const txt = canGen ? `${state.msgCount}/${MAX_MSGS} 条 · 可以生成画像了` : `${state.msgCount}/${MAX_MSGS} 条 · 再聊 ${8-state.msgCount} 句可生成`;
+    app.appendChild(h("div",{class:"progress"}, txt));
+  }
+
+  // messages
+  const chatArea = h("div",{class:"chat-area",id:"chat-area-live"});
+  state.msgs.forEach(m => {
+    split(m.text).forEach(p => {
+      const row = h("div",{class:`msg-row ${m.role==="user"?"user":"match"}`},
+        h("div",{class:`bubble ${m.role==="user"?"user":"match"}`}, p)
+      );
+      chatArea.appendChild(row);
+    });
+  });
+  if (state.typing) {
+    chatArea.appendChild(h("div",{class:"msg-row match"}, h("div",{class:"typing"}, g.name+"正在输入...")));
+  }
+  if (state.apiError && state.msgs.length === 0) {
+    chatArea.appendChild(h("div",{style:{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"60px 20px",textAlign:"center"}},
+      h("div",{style:{fontSize:"36px",marginBottom:"12px"}},"😵‍💫"),
+      h("div",{style:{fontSize:"15px",color:"var(--txt)",fontWeight:"600",marginBottom:"6px"}}, g.name+"连接失败了"),
+      h("div",{style:{fontSize:"13px",color:"var(--txtS)",marginBottom:"20px",lineHeight:"1.5"}},"网络不太稳定，再试一次？"),
+      h("button",{class:"btn-gen",onClick:startChat},"重新连接")
+    ));
+  } else if (state.apiError) {
+    chatArea.appendChild(h("div",{style:{display:"flex",justifyContent:"center",margin:"12px 0"}},
+      h("div",{style:{padding:"10px 18px",borderRadius:"16px",background:"#FEF2F2",color:"#991B1B",fontSize:"13px",textAlign:"center",maxWidth:"80%",lineHeight:"1.5"}},
+        "消息发送失败，网络不太稳定",
+        h("br"),
+        h("button",{style:{marginTop:"8px",background:"var(--gradW)",border:"none",color:"white",borderRadius:"12px",padding:"6px 16px",fontSize:"12px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"},onClick:retrySend},"重试 ↻")
+      )
+    ));
+  }
+  app.appendChild(chatArea);
+  setTimeout(() => chatArea.scrollTop = chatArea.scrollHeight, 50);
+
+  // Input bar OR maxed-out bar
+  if (atMax && !state.apiError) {
+    app.appendChild(h("div",{class:"maxed-bar"},
+      h("p",null,"对话已达到上限（"+MAX_MSGS+"条）"),
+      h("button",{class:"btn-main",style:{width:"100%",padding:"14px",fontSize:"15px"},onClick:buildPersona},"生成灵魂画像 ✨")
+    ));
+  } else if (!state.apiError) {
+    const ta = h("textarea",{placeholder:"说点什么...",rows:"1"});
+    ta.value = state.input;
+    ta.addEventListener("input", e => { state.input=e.target.value; e.target.style.height="auto"; e.target.style.height=Math.min(e.target.scrollHeight,100)+"px"; updateSendBtn(); });
+    ta.addEventListener("keydown", e => { if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();} });
+    const sendBtn = h("button",{class:state.input.trim()&&!state.typing?"active":"inactive",onClick:send},"↑");
+    const bar = h("div",{class:"input-bar"}, ta, sendBtn);
+    app.appendChild(bar);
+    function updateSendBtn() { sendBtn.className = state.input.trim()&&!state.typing?"active":"inactive"; }
+    setTimeout(()=>ta.focus(),100);
+  }
+
+  // Toolbar — always visible
+  if (state.msgs.length > 0 && !state.apiError) {
+    app.appendChild(h("div",{class:"toolbar"},
+      h("button",{onClick:exportChatImage},"📷 导出聊天"),
+      h("button",{onClick:resetChat},"🗑️ 清空重开"),
+      state.showBuild ? h("button",{class:"primary",onClick:buildPersona},"✨ 生成画像") : null
+    ));
+  }
+}
+
+function renderSoulChat(app) {
+  app.className = "shell";
+  const sp = state.scannedPersona;
+  const name = sp?.identity?.self_label || "TA的灵魂";
+  const atMax = state.soulMsgCount >= MAX_MSGS;
+
+  // header
+  app.appendChild(h("div",{class:"header"},
+    h("div",{class:"header-ava",style:{background:"linear-gradient(135deg,var(--secL),var(--priL))"}},"👤"),
+    h("div",{class:"header-info"},
+      h("div",{class:"name"}, name.substring(0, 12)),
+      h("div",{class:"sub"}, "灵魂副本 · 聊天中")
+    ),
+    h("button",{style:{background:"none",border:"1.5px solid var(--brd)",borderRadius:"12px",padding:"6px 12px",fontSize:"12px",color:"var(--txtS)",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{state.phase="match_invite";render();}},"返回")
+  ));
+
+  // progress
+  if (state.soulMsgCount > 0) {
+    app.appendChild(h("div",{class:"progress"}, `${state.soulMsgCount}/${MAX_MSGS} 条` + (atMax?" · 已达上限":"")));
+  }
+
+  // messages
+  const chatArea = h("div",{class:"chat-area"});
+  state.soulMsgs.forEach(m => {
+    split(m.text).forEach(p => {
+      chatArea.appendChild(h("div",{class:`msg-row ${m.role==="user"?"user":"match"}`},
+        h("div",{class:`bubble ${m.role==="user"?"user":"match"}`}, p)
+      ));
+    });
+  });
+  if (state.soulTyping) {
+    chatArea.appendChild(h("div",{class:"msg-row match"}, h("div",{class:"typing"},"对方正在输入...")));
+  }
+  if (state.soulError && state.soulMsgs.length === 0) {
+    chatArea.appendChild(h("div",{style:{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"60px 20px",textAlign:"center"}},
+      h("div",{style:{fontSize:"36px",marginBottom:"12px"}},"😵‍💫"),
+      h("div",{style:{fontSize:"15px",color:"var(--txt)",fontWeight:"600",marginBottom:"6px"}},"连接失败"),
+      h("button",{class:"btn-gen",onClick:startSoulChat},"重新连接")
+    ));
+  } else if (state.soulError) {
+    chatArea.appendChild(h("div",{style:{display:"flex",justifyContent:"center",margin:"12px 0"}},
+      h("div",{style:{padding:"10px 18px",borderRadius:"16px",background:"#FEF2F2",color:"#991B1B",fontSize:"13px",textAlign:"center",maxWidth:"80%",lineHeight:"1.5"}},
+        "消息发送失败",h("br"),
+        h("button",{style:{marginTop:"8px",background:"var(--gradW)",border:"none",color:"white",borderRadius:"12px",padding:"6px 16px",fontSize:"12px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"},onClick:retrySoulSend},"重试 ↻")
+      )
+    ));
+  }
+  app.appendChild(chatArea);
+  setTimeout(() => chatArea.scrollTop = chatArea.scrollHeight, 50);
+
+  // input or maxed
+  if (atMax) {
+    app.appendChild(h("div",{class:"maxed-bar"},
+      h("p",null,"对话已达上限"),
+      h("button",{class:"btn-main",style:{width:"100%",padding:"14px",fontSize:"15px"},onClick:()=>{state.phase="match_invite";render();}},"返回")
+    ));
+  } else if (!state.soulError) {
+    const ta = h("textarea",{placeholder:"说点什么...",rows:"1"});
+    ta.value = state.soulInput;
+    ta.addEventListener("input", e => { state.soulInput=e.target.value; e.target.style.height="auto"; e.target.style.height=Math.min(e.target.scrollHeight,100)+"px"; updateBtn(); });
+    ta.addEventListener("keydown", e => { if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendSoulChat();} });
+    const btn = h("button",{class:state.soulInput.trim()&&!state.soulTyping?"active":"inactive",onClick:sendSoulChat},"↑");
+    app.appendChild(h("div",{class:"input-bar"}, ta, btn));
+    function updateBtn() { btn.className = state.soulInput.trim()&&!state.soulTyping?"active":"inactive"; }
+    setTimeout(()=>ta.focus(),100);
+  }
+}
+
+function renderLoading(app) {
+  app.className = "shell";
+  const isMatch = state.phase==="match_building";
+  app.appendChild(h("div",{class:"loading"},
+    h("div",{class:"loading-inner"},
+      h("div",{class:"loading-icon"}, isMatch?"💕":"✨"),
+      h("h2",null, isMatch?"分析化学反应中...":"绘制灵魂画像中..."),
+      h("p",null, isMatch?"匹配分析中，约需30秒":`分析 ${state.msgCount} 条消息，约需30-60秒`)
+    )
+  ));
+}
+
+function renderReport(app) {
+  if(!state.persona) return;
+  app.className = "shell";
+  const p = state.persona;
+  const iw = p.inner_world||{};
+  const rp = p.relationship_patterns||{};
+  const ds = p.dating_style||{};
+  const sf = p.surface||{};
+  const id = p.identity||{};
+  const meta = p.meta||{};
+
+  const report = h("div",{class:"report",id:"soul-report"});
+
+  // header
+  const hdr = h("div",{class:"report-header"},
+    h("div",{style:{fontSize:"48px",marginBottom:"12px"}},"🪞"),
+    h("h1",null,"你的灵魂画像"),
+    h("p",null, (id.self_label||id.occupation||"一个有趣的灵魂") + (id.city?` · ${id.city}`:"")),
+    h("div",{class:"curve"})
+  );
+  report.appendChild(hdr);
+
+  // Build error banner
+  if (state.buildError) {
+    report.appendChild(h("div",{style:{margin:"0 16px 12px",padding:"14px 16px",borderRadius:"16px",background:"#FEF2F2",border:"1px solid #FECACA"}},
+      h("div",{style:{fontSize:"13px",color:"#991B1B",fontWeight:"600",marginBottom:"6px"}},"⚠️ 画像生成遇到问题"),
+      h("div",{style:{fontSize:"11px",color:"#B91C1C",lineHeight:"1.5",marginBottom:"10px",wordBreak:"break-all"}}, state.buildError),
+      h("button",{style:{background:"var(--gradW)",border:"none",color:"white",borderRadius:"12px",padding:"8px 20px",fontSize:"13px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"},onClick:buildPersona},"重新生成 ↻")
+    ));
+  }
+
+  // inner world
+  function fieldScore(val) {
+    if (!val) return 0;
+    const len = String(val).length;
+    if (len > 80) return 90;
+    if (len > 40) return 75;
+    if (len > 15) return 60;
+    return 40;
+  }
+  const iwData = [
+    {l:"核心需求", k:"core_need", icon:"💎"},
+    {l:"依恋信号", k:"attachment_signal", icon:"🔗"},
+    {l:"情感质地", k:"emotional_texture", icon:"🌊"},
+    {l:"能量来源", k:"energy_source", icon:"⚡"},
+    {l:"内在矛盾", k:"contradiction", icon:"🎭"},
+    {l:"不安全感", k:"insecurity_hint", icon:"🛡️"},
+  ];
+  const iwCard = h("div",{class:"rcard top"}, h("h3",null,"🌊 内在世界"));
+  let iwFilled = 0;
+  iwData.forEach(d => {
+    const val = iw[d.k];
+    const score = fieldScore(val);
+    if (score > 0) iwFilled++;
+    const row = h("div",{style:{marginBottom:"14px"}},
+      h("div",{style:{display:"flex",alignItems:"center",gap:"6px",marginBottom:"4px"}},
+        h("span",{style:{fontSize:"14px"}},d.icon),
+        h("span",{style:{fontSize:"13px",fontWeight:"600",color:"var(--txt)"}},d.l),
+        score === 0 ? h("span",{style:{fontSize:"11px",color:"var(--txtM)",marginLeft:"auto"}},"未触及") : null
+      ),
+      score > 0 ? h("div",{class:"bar-track",style:{marginBottom:"4px"}}, h("div",{class:"bar-fill",style:{width:score+"%"}})) : null,
+      val ? h("div",{style:{fontSize:"13px",color:"var(--txtS)",lineHeight:"1.6",padding:"0 2px"}},val) : null
+    );
+    iwCard.appendChild(row);
+  });
+  if (iwFilled === 0) {
+    iwCard.appendChild(h("div",{style:{padding:"20px",textAlign:"center",color:"var(--txtM)",fontSize:"13px"}},"对话还没有触及内在世界的维度，继续聊天可以解锁更多"));
+  }
+  report.appendChild(iwCard);
+
+  // relationship patterns
+  const rpCard = h("div",{class:"rcard"}, h("h3",null,"💕 关系模式"));
+  const rpFields = [
+    {l:"爱的语言",k:"love_language_signal",icon:"💝"},
+    {l:"冲突模式",k:"conflict_pattern",icon:"⚔️"},
+    {l:"独立↔亲密",k:"independence_intimacy",icon:"🤝"},
+    {l:"爱情叙事",k:"relationship_narrative",icon:"📖"}
+  ];
+  let rpFilled = 0;
+  rpFields.forEach(f => {
+    const val = rp[f.k];
+    if(val) {
+      rpFilled++;
+      rpCard.appendChild(h("div",{style:{marginBottom:"12px"}},
+        h("div",{style:{display:"flex",alignItems:"center",gap:"6px",marginBottom:"3px"}},
+          h("span",{style:{fontSize:"13px"}},f.icon),
+          h("span",{style:{fontSize:"12px",color:"var(--pri)",fontWeight:"600"}},f.l)
+        ),
+        h("div",{style:{fontSize:"13px",color:"var(--txtS)",lineHeight:"1.6"}},val)
+      ));
+    }
+  });
+  if(rp.dealbreaker_deep&&rp.dealbreaker_deep.length) {
+    rpCard.appendChild(h("div",{style:{marginTop:"8px"}},
+      h("div",{style:{display:"flex",alignItems:"center",gap:"6px",marginBottom:"4px"}},
+        h("span",{style:{fontSize:"13px"}},"🚫"),
+        h("span",{style:{fontSize:"12px",color:"#7C3AED",fontWeight:"600"}},"关系底线")
+      ),
+      ...rp.dealbreaker_deep.map(d=>h("div",{class:"tag purple"},d))
+    ));
+  }
+  if (rpFilled === 0 && !(rp.dealbreaker_deep&&rp.dealbreaker_deep.length)) {
+    rpCard.appendChild(h("div",{style:{padding:"20px",textAlign:"center",color:"var(--txtM)",fontSize:"13px"}},"关系模式还没有足够信号，继续聊可以解锁"));
+  }
+  report.appendChild(rpCard);
+
+  // dating style
+  const dsCard = h("div",{class:"rcard"}, h("h3",null,"💬 聊天风格"));
+  const tags = h("div",{style:{display:"flex",flexWrap:"wrap",gap:"6px",marginBottom:"12px"}});
+  (ds.humor_type||[]).forEach(t => tags.appendChild(h("span",{class:"tag pink"},typeof t==="string"?t.split("：")[0]||t:t)));
+  if(ds.flirtation_mode) tags.appendChild(h("span",{class:"tag purple"},ds.flirtation_mode.substring(0,15)));
+  if(ds.pacing) tags.appendChild(h("span",{class:"tag green"},ds.pacing.substring(0,10)));
+  dsCard.appendChild(tags);
+  if(ds.unique_markers&&ds.unique_markers.length) {
+    dsCard.appendChild(h("div",{style:{fontSize:"12px",color:"var(--txtM)",marginBottom:"6px"}},"独特标记 ✦"));
+    ds.unique_markers.slice(0,3).forEach(m => dsCard.appendChild(h("div",{class:"marker"}, `"${m}"`)));
+  }
+  report.appendChild(dsCard);
+
+  // surface
+  const allInt = [...(sf.interests||[]),...(sf.lifestyle_notes||[])];
+  if(allInt.length) {
+    const sfCard = h("div",{class:"rcard"}, h("h3",null,"🌍 表层拼图"));
+    const wrap = h("div",{style:{display:"flex",flexWrap:"wrap",gap:"6px"}});
+    const colors = ["pink","purple","green","yellow"];
+    allInt.slice(0,12).forEach((t,i) => wrap.appendChild(h("span",{class:`tag ${colors[i%4]}`},t)));
+    sfCard.appendChild(wrap);
+    report.appendChild(sfCard);
+  }
+
+  // confidence & depth summary
+  const conf = meta.extraction_confidence||0.5;
+  const totalFields = iwFilled + rpFilled;
+  const maxFields = iwData.length + rpFields.length;
+  const confCard = h("div",{class:"rcard"},
+    h("h3",null,"📊 画像完成度"),
+    h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}},
+      h("span",{style:{fontSize:"13px",color:"var(--txtS)"}}, `解锁了 ${totalFields}/${maxFields} 个维度`),
+      h("span",{style:{fontSize:"13px",fontWeight:"700",color:"var(--pri)"}}, meta.depth_reached||"中等")
+    ),
+    h("div",{class:"bar-track",style:{marginBottom:"8px"}}, h("div",{class:"bar-fill",style:{width:Math.max(conf*100, totalFields/maxFields*100)+"%"}})),
+    h("div",{style:{fontSize:"12px",color:"var(--txtM)",lineHeight:"1.5"}},
+      meta.unknown_fields && meta.unknown_fields.length > 0 ? `还可以深入聊的方向：${meta.unknown_fields.slice(0,4).join("、")}` :
+      meta.notable_gaps && meta.notable_gaps.length > 0 ? `有线索但不确定：${meta.notable_gaps.slice(0,3).join("、")}` :
+      `基于 ${meta.source_message_count||state.msgCount} 条消息分析`
+    )
+  );
+  report.appendChild(confCard);
+
+  // QR
+  // QR code
+  const matchUrl = getMatchURL();
+  const qrArea = h("div",{class:"qr-area"},
+    h("div",{style:{fontSize:"13px",color:"var(--txtS)",marginBottom:"12px"}},"分享给朋友 看看你们有多配")
+  );
+  if (matchUrl) {
+    const qrContainer = h("div",{class:"qr-box",id:"qr-container"});
+    qrArea.appendChild(qrContainer);
+    // Size info
+    const encoded = matchUrl.split("#m=")[1] || "";
+    qrArea.appendChild(h("div",{style:{fontSize:"11px",color:"var(--txtM)",margin:"10px 0 6px"}},
+      `好友扫码即可查看匹配度 · ${encoded.length}字符`
+    ));
+    // Copy link button
+    const copyBtn = h("button",{style:{
+      background:"rgba(255,138,158,0.15)",border:"1.5px solid var(--brd)",color:"var(--pri)",
+      borderRadius:"14px",padding:"8px 20px",fontSize:"12px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"
+    },onClick:()=>{
+      navigator.clipboard.writeText(matchUrl).then(()=>{copyBtn.textContent="✅ 已复制";setTimeout(()=>{copyBtn.textContent="🔗 复制匹配链接";},2000);}).catch(()=>{});
+    }},"🔗 复制匹配链接");
+    qrArea.appendChild(copyBtn);
+    // Render QR after DOM insert
+    setTimeout(()=>{ const el = document.getElementById("qr-container"); if(el) generateQR(el, matchUrl); }, 50);
+  } else {
+    qrArea.appendChild(h("div",{style:{fontSize:"12px",color:"var(--txtM)",padding:"20px"}},"画像数据不足，无法生成分享码"));
+  }
+  report.appendChild(qrArea);
+
+  // actions
+  const canContinue = state.msgCount < MAX_MSGS;
+  report.appendChild(h("div",{class:"actions",style:{flexWrap:"wrap"}},
+    h("button",{class:"prim",style:{flex:"1 1 100%",marginBottom:"8px"},onClick:()=>exportAsImage("soul-report","灵魂画像.png")},"📷 保存画像图片"),
+    canContinue ? h("button",{class:"sec",onClick:()=>{state.phase="chat";state.showBuild=true;render();}},"继续聊天") : null,
+    h("button",{class:"sec",onClick:resetChat},"🗑️ 重新开始")
+  ));
+
+  app.appendChild(report);
+}
+
+function renderMatchReport(app) {
+  if(!state.matchReport) return;
+  app.className = "shell";
+  const mr = state.matchReport;
+  const dims = mr.dimensions||{};
+  const report = h("div",{class:"report",id:"match-report"});
+
+  // header
+  report.appendChild(h("div",{class:"report-header"},
+    h("div",{style:{fontSize:"40px",marginBottom:"8px"}},"💕"),
+    h("h1",null,"匹配报告"),
+    h("div",{class:"match-score"}, h("span",{class:"num"},String(mr.match_score||0)), h("span",{class:"unit"},"分")),
+    mr.vibe_label ? h("p",{class:"vibe"}, `"${mr.vibe_label}"`) : null,
+    h("div",{class:"curve"})
+  ));
+
+  // dimension cards
+  Object.entries(dims).forEach(([k,v]) => {
+    report.appendChild(h("div",{class:"dim-card"},
+      h("div",{class:"dim-score"}, String(v?.score||0)),
+      h("div",{class:"dim-text"},
+        h("div",{class:"label"}, DIM_LABELS[k]||k),
+        h("div",{class:"analysis"}, v?.analysis||"")
+      )
+    ));
+  });
+
+  // sparks & friction
+  report.appendChild(h("div",{class:"two-col"},
+    h("div",{class:"sparks"},
+      h("div",{class:"title",style:{color:"var(--pri)"}},"🔥 火花"),
+      ...(mr.sparks||[]).map(s=>h("div",{class:"item"},s))
+    ),
+    h("div",{class:"friction"},
+      h("div",{class:"title",style:{color:"#7C3AED"}},"⚡ 摩擦"),
+      ...(mr.friction||[]).map(f=>h("div",{class:"item"},f))
+    )
+  ));
+
+  if(mr.first_date_prediction) report.appendChild(h("div",{class:"predict"},
+    h("div",{class:"title"},"🎬 第一次约会预测"),
+    h("div",{class:"body"},mr.first_date_prediction)
+  ));
+  if(mr.conversation_starter) report.appendChild(h("div",{class:"rcard"},
+    h("div",{class:"title",style:{fontSize:"13px",fontWeight:"700",marginBottom:"6px"}},"💬 破冰建议"),
+    h("div",{style:{fontSize:"13px",color:"var(--txtS)",lineHeight:"1.6"}},mr.conversation_starter)
+  ));
+
+  report.appendChild(h("div",{class:"actions",style:{flexWrap:"wrap"}},
+    h("button",{class:"prim",style:{flex:"1 1 100%",marginBottom:"8px"},onClick:()=>exportAsImage("match-report","匹配报告.png")},"📷 保存匹配报告"),
+    state.scannedPersona ? h("button",{class:"sec",onClick:startSoulChat},"💬 跟TA聊天") : null,
+    h("button",{class:"sec",onClick:()=>{state.phase="report";render();}},"查看我的画像"),
+    h("button",{class:"sec",onClick:resetChat},"重新开始")
+  ));
+
+  app.appendChild(report);
+}
+
+// ═══════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════
+
+async function startChat() {
+  const g = GUIDES[state.guide] || GUIDES.xiaomei;
+  state = {...state, phase:"chat", msgs:[], msgCount:0, showBuild:false, typing:true, input:"", apiError:false};
+  render();
+  const t = await chatAPI([]);
+  if (t) {
+    state.msgs = [{role:"match", text:t}];
+  } else {
+    state.apiError = true;
+  }
+  state.typing = false;
+  saveSession();
+  render();
+}
+
+async function retrySend() {
+  state.apiError = false;
+  state.typing = true;
+  render();
+  const t = await chatAPI(state.msgs);
+  if (t) {
+    state.msgs = [...state.msgs, {role:"match",text:t}];
+    state.apiError = false;
+  } else {
+    state.apiError = true;
+  }
+  state.typing = false;
+  if(state.msgCount>=8&&!state.showBuild) state.showBuild=true;
+  saveSession();
+  render();
+}
+
+async function send() {
+  if(!state.input.trim()||state.typing||state.msgCount>=MAX_MSGS) return;
+  const txt = state.input.trim();
+  state.input = "";
+  state.apiError = false;
+  state.msgs = [...state.msgs, {role:"user",text:txt}];
+  state.msgCount++;
+  state.typing = true;
+  render();
+
+  const t = await chatAPI(state.msgs);
+  if(t) {
+    state.msgs = [...state.msgs, {role:"match",text:t}];
+  } else {
+    state.apiError = true;
+  }
+  state.typing = false;
+  if(state.msgCount>=8&&!state.showBuild) state.showBuild=true;
+  saveSession();
+  render();
+}
+
+// ── Soul chat (chat with scanned persona) ──
+async function startSoulChat() {
+  state.soulMsgs = []; state.soulMsgCount = 0; state.soulInput = ""; state.soulTyping = true; state.soulError = false;
+  state.phase = "soul_chat";
+  render();
+  const t = await soulChatAPI([]);
+  if (t) { state.soulMsgs = [{role:"match", text:t}]; }
+  else { state.soulError = true; }
+  state.soulTyping = false;
+  render();
+}
+
+async function sendSoulChat() {
+  if (!state.soulInput.trim() || state.soulTyping || state.soulMsgCount >= MAX_MSGS) return;
+  const txt = state.soulInput.trim();
+  state.soulInput = ""; state.soulError = false;
+  state.soulMsgs = [...state.soulMsgs, {role:"user", text:txt}];
+  state.soulMsgCount++;
+  state.soulTyping = true;
+  render();
+  const t = await soulChatAPI(state.soulMsgs);
+  if (t) { state.soulMsgs = [...state.soulMsgs, {role:"match", text:t}]; }
+  else { state.soulError = true; }
+  state.soulTyping = false;
+  render();
+}
+
+async function retrySoulSend() {
+  state.soulError = false; state.soulTyping = true;
+  render();
+  const t = await soulChatAPI(state.soulMsgs);
+  if (t) { state.soulMsgs = [...state.soulMsgs, {role:"match", text:t}]; state.soulError = false; }
+  else { state.soulError = true; }
+  state.soulTyping = false;
+  render();
+}
+
+async function buildPersona() {
+  state.phase = "building";
+  state.buildError = null;
+  render();
+  const g = GUIDES[state.guide] || GUIDES.xiaomei;
+  const transcript = state.msgs.map(m => {
+    const who = m.role==="match"?g.name:"用户";
+    return split(m.text).map(p=>`${who}：${p}`).join("\n");
+  }).join("\n\n");
+
+  // Use large token budget — MiniMax M2.5 thinking tokens count toward limit
+  const t = await callAPI(ENGINE_A_SYS, [{role:"user", content: ENGINE_A_TEMPLATE + transcript}], 0);
+  
+  console.log("Engine A raw response length:", t ? t.length : "null");
+  console.log("Engine A raw (first 300):", t ? t.substring(0, 300) : "null");
+  
+  if(t) {
+    try {
+      let clean = t;
+      // Strip think tags
+      clean = clean.replace(/<think>[\s\S]*?<\/think>/g, "");
+      // Strip code blocks
+      clean = clean.replace(/```json\s*/g, "").replace(/```/g, "");
+      // Find JSON boundaries
+      const start = clean.indexOf("{");
+      const end = clean.lastIndexOf("}");
+      if (start === -1 || end === -1) throw new Error("No JSON found in response");
+      clean = clean.substring(start, end + 1);
+      state.persona = JSON.parse(clean);
+      const iwFilled = Object.keys(state.persona.inner_world || {}).filter(k => state.persona.inner_world[k]).length;
+      console.log("Persona extracted:", iwFilled, "inner_world fields,", Object.keys(state.persona.relationship_patterns || {}).filter(k => { const v = state.persona.relationship_patterns[k]; return v && (!Array.isArray(v) || v.length > 0); }).length, "relationship fields");
+    } catch(e) {
+      console.error("Parse error:", e.message, "\nRaw length:", (t||"").length, "\nRaw (first 800):", (t||"").substring(0, 800));
+      state.buildError = `解析失败 (收到${(t||"").length}字符): ${e.message}\n返回内容前200字: ${(t||"").substring(0, 200)}`;
+      state.persona = null;
+    }
+  } else {
+    state.buildError = "API返回空: " + (_lastApiError || "未知原因，请检查控制台");
+  }
+  
+  if(!state.persona) {
+    state.persona = {schema_version:"v2",identity:{self_label:"提取失败"},inner_world:{},relationship_patterns:{},dating_style:{unique_markers:[]},surface:{interests:[]},meta:{extraction_confidence:0,unknown_fields:["提取失败"],source_message_count:state.msgCount,depth_reached:"提取失败"}};
+  }
+  // Save persona to localStorage
+  savePersona(state.persona);
+
+  // If someone scanned our QR, auto-match after persona generation
+  if (state.pendingMatch) {
+    runMatchWith(state.pendingMatch);
+    state.pendingMatch = null;
+    return;
+  }
+  state.phase = "report";
+  render();
+}
+
+async function runMatchWith(otherPersona) {
+  state.phase = "match_building";
+  render();
+  const t = await callAPI(ENGINE_C_SYS, [{role:"user",content:`人格A：\n${JSON.stringify(state.persona)}\n\n人格B：\n${JSON.stringify(otherPersona)}`}], 0);
+  if(t) {
+    try {
+      let clean = t.replace(/<think>[\s\S]*?<\/think>/g,"").replace(/```json\s*/g,"").replace(/```/g,"");
+      const s = clean.indexOf("{"), e = clean.lastIndexOf("}");
+      if (s!==-1&&e!==-1) clean = clean.substring(s,e+1);
+      state.matchReport = JSON.parse(clean);
+    }
+    catch(e) { console.error("Match parse:",e); state.matchReport=null; }
+  }
+  if(!state.matchReport) {
+    state.matchReport = {match_score:55,vibe_label:"需要更多数据",dimensions:{},sparks:["数据不足"],friction:["数据不足"],first_date_prediction:"未知",conversation_starter:"聊聊你们对爱的理解"};
+  }
+  state.phase = "match_report";
+  render();
+}
+
+// ── localStorage helpers ──
+function savePersona(p) {
+  try { localStorage.setItem("soulmate_persona", JSON.stringify(p)); } catch(e) {}
+}
+function saveSession() {
+  try {
+    localStorage.setItem("soulmate_session", JSON.stringify({
+      msgs: state.msgs,
+      msgCount: state.msgCount,
+      guide: state.guide,
+      showBuild: state.showBuild
+    }));
+  } catch(e) {}
+}
+function loadPersona() {
+  try {
+    const raw = localStorage.getItem("soulmate_persona");
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+function loadSession() {
+  try {
+    const raw = localStorage.getItem("soulmate_session");
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+function clearPersona() {
+  try { localStorage.removeItem("soulmate_persona"); localStorage.removeItem("soulmate_session"); } catch(e) {}
+}
+
+// Init
+const incoming = checkIncomingMatch();
+const savedPersona = loadPersona();
+const savedSession = loadSession();
+
+if (incoming) {
+  // Scanned someone's QR — always go to invite screen
+  state.scannedPersona = incoming;
+  state.pendingMatch = incoming;
+  if (savedPersona) state.persona = savedPersona;
+  state.phase = "match_invite";
+  history.replaceState(null, "", window.location.pathname);
+  render();
+} else if (savedPersona) {
+  // Returning user with persona — restore session too
+  state.persona = savedPersona;
+  if (savedSession) {
+    state.msgs = savedSession.msgs || [];
+    state.msgCount = savedSession.msgCount || 0;
+    state.guide = savedSession.guide || null;
+    state.showBuild = savedSession.showBuild || false;
+  }
+  state.phase = "report";
+  render();
+} else if (savedSession && savedSession.msgs && savedSession.msgs.length > 0) {
+  // Chat in progress but no persona yet — resume chat
+  state.msgs = savedSession.msgs;
+  state.msgCount = savedSession.msgCount || 0;
+  state.guide = savedSession.guide || "xiaomei";
+  state.showBuild = savedSession.showBuild || false;
+  state.phase = "chat";
+  render();
+} else {
+  // Fresh user
+  render();
+}
+</script>
+</body>
+</html>
