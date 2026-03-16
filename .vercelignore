@@ -1,0 +1,6 @@
+sandbox/
+netlify/
+netlify.toml
+*.zip
+*.py
+CLAUDE.md
