@@ -23,46 +23,6 @@ function readBody(req) {
   });
 }
 
-// Read MiniMax streaming response, buffer all tokens, return complete text
-async function readStream(resp) {
-  const reader = resp.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let fullText = "";
-  let finishReason = "?";
-  let usage = {};
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-
-    const lines = buffer.split("\n");
-    buffer = lines.pop() || "";
-
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed || !trimmed.startsWith("data:")) continue;
-      const data = trimmed.slice(5).trim();
-      if (data === "[DONE]") continue;
-
-      try {
-        const chunk = JSON.parse(data);
-        const delta = chunk.choices?.[0]?.delta?.content || "";
-        fullText += delta;
-        if (chunk.choices?.[0]?.finish_reason) {
-          finishReason = chunk.choices[0].finish_reason;
-        }
-        if (chunk.usage) usage = chunk.usage;
-      } catch {
-        // skip unparseable chunks
-      }
-    }
-  }
-
-  return { text: fullText, finish_reason: finishReason, usage };
-}
-
 const server = http.createServer(async (req, res) => {
   // Serve index.html
   if (req.method === "GET" && (req.url === "/" || req.url === "/index.html")) {
@@ -107,20 +67,36 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      // Stream from MiniMax — tokens arrive incrementally, keeping the
-      // connection alive. We buffer everything and return as single JSON.
-      const result = await readStream(resp);
+      // Stream SSE from MiniMax directly to the browser.
+      // This keeps the Render connection alive (no 30s timeout)
+      // and lets the client accumulate tokens.
+      res.writeHead(200, {
+        ...CORS,
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+      });
 
-      // Strip think tags
-      let text = result.text;
-      text = text.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
-      if (text.includes("<think>")) text = text.replace(/<think>[\s\S]*/g, "").trim();
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
 
-      res.writeHead(200, { ...CORS, "Content-Type": "application/json" });
-      res.end(JSON.stringify({ text, finish_reason: result.finish_reason, usage: result.usage }));
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          // Forward raw SSE chunks to client
+          res.write(decoder.decode(value, { stream: true }));
+        }
+      } catch (e) {
+        console.error("Stream read error:", e);
+      }
+
+      res.end();
     } catch (err) {
       console.error("API error:", err);
-      res.writeHead(500, { ...CORS, "Content-Type": "application/json" });
+      if (!res.headersSent) {
+        res.writeHead(500, { ...CORS, "Content-Type": "application/json" });
+      }
       res.end(JSON.stringify({ error: err.message }));
     }
     return;
