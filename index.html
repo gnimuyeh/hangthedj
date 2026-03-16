@@ -386,7 +386,7 @@ async function callAPI(system, messages, maxTokens=800) {
   _lastApiError = "";
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);
+    const timeout = setTimeout(() => controller.abort(), 65000);
 
     const r = await fetch("/api/chat", {
       method: "POST",
@@ -1303,7 +1303,8 @@ async function buildPersona() {
   }).join("\n\n");
 
   // Use large token budget — MiniMax M2.5 thinking tokens count toward limit
-  const t = await callAPI(ENGINE_A_SYS, [{role:"user", content: ENGINE_A_TEMPLATE + transcript}], 0);
+  // reasoning_tokens count toward completion_tokens, so we need a high limit
+  const t = await callAPI(ENGINE_A_SYS, [{role:"user", content: ENGINE_A_TEMPLATE + transcript}], 4096);
   
   console.log("Engine A raw response length:", t ? t.length : "null");
   console.log("Engine A raw (first 300):", t ? t.substring(0, 300) : "null");
@@ -1351,7 +1352,7 @@ async function buildPersona() {
 async function runMatchWith(otherPersona) {
   state.phase = "match_building";
   render();
-  const t = await callAPI(ENGINE_C_SYS, [{role:"user",content:`人格A：\n${JSON.stringify(state.persona)}\n\n人格B：\n${JSON.stringify(otherPersona)}`}], 0);
+  const t = await callAPI(ENGINE_C_SYS, [{role:"user",content:`人格A：\n${JSON.stringify(state.persona)}\n\n人格B：\n${JSON.stringify(otherPersona)}`}], 4096);
   if(t) {
     try {
       let clean = t.replace(/<think>[\s\S]*?<\/think>/g,"").replace(/```json\s*/g,"").replace(/```/g,"");
