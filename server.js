@@ -24,7 +24,7 @@ function readBody(req) {
   });
 }
 
-// Call MiniMax using Node's native https module (reliable streaming)
+// Call MiniMax with streaming, buffer result, return { text, finish_reason, usage }
 function callMiniMax(payload) {
   return new Promise((resolve, reject) => {
     const data = JSON.stringify(payload);
@@ -46,62 +46,38 @@ function callMiniMax(payload) {
       let body = "";
       res.setEncoding("utf8");
       res.on("data", (chunk) => { body += chunk; });
-      res.on("end", () => resolve({ statusCode: res.statusCode, body }));
+      res.on("end", () => {
+        if (res.statusCode !== 200) {
+          reject(new Error("MiniMax HTTP " + res.statusCode + ": " + body.substring(0, 200)));
+          return;
+        }
+
+        // Parse SSE stream from buffered body
+        let fullText = "";
+        let finishReason = "?";
+        let usage = {};
+
+        const lines = body.split("\n");
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith("data:")) continue;
+          const d = trimmed.slice(5).trim();
+          if (d === "[DONE]") continue;
+          try {
+            const chunk = JSON.parse(d);
+            fullText += chunk.choices?.[0]?.delta?.content || "";
+            if (chunk.choices?.[0]?.finish_reason) finishReason = chunk.choices[0].finish_reason;
+            if (chunk.usage) usage = chunk.usage;
+          } catch {}
+        }
+
+        resolve({ text: fullText, finish_reason: finishReason, usage });
+      });
       res.on("error", reject);
     });
 
     req.on("error", reject);
-    req.setTimeout(120000, () => { req.destroy(new Error("MiniMax request timeout (120s)")); });
-    req.write(data);
-    req.end();
-  });
-}
-
-// Call MiniMax with streaming, pipe SSE to client response
-function callMiniMaxStream(payload, clientRes) {
-  return new Promise((resolve, reject) => {
-    const data = JSON.stringify(payload);
-    const url = new URL(API_URL);
-
-    const options = {
-      hostname: url.hostname,
-      port: 443,
-      path: url.pathname,
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer " + KEY,
-        "Content-Type": "application/json",
-        "Content-Length": Buffer.byteLength(data),
-      },
-    };
-
-    const req = https.request(options, (res) => {
-      if (res.statusCode !== 200) {
-        let body = "";
-        res.on("data", (chunk) => { body += chunk; });
-        res.on("end", () => reject(new Error("MiniMax HTTP " + res.statusCode + ": " + body.substring(0, 200))));
-        return;
-      }
-
-      // Write SSE headers to client
-      clientRes.writeHead(200, {
-        ...CORS,
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-      });
-
-      res.setEncoding("utf8");
-      res.on("data", (chunk) => {
-        // Forward each chunk directly to browser
-        clientRes.write(chunk);
-      });
-      res.on("end", () => resolve());
-      res.on("error", reject);
-    });
-
-    req.on("error", reject);
-    req.setTimeout(120000, () => { req.destroy(new Error("MiniMax request timeout (120s)")); });
+    req.setTimeout(120000, () => { req.destroy(new Error("MiniMax timeout (120s)")); });
     req.write(data);
     req.end();
   });
@@ -138,9 +114,23 @@ const server = http.createServer(async (req, res) => {
       const payload = { model: "MiniMax-M2.5-highspeed", messages: msgs, temperature: 0.85, stream: true };
       if (max_tokens && max_tokens > 0) payload.max_tokens = max_tokens;
 
-      // Stream SSE from MiniMax directly to browser
-      await callMiniMaxStream(payload, res);
-      res.end();
+      // Send headers immediately with chunked encoding
+      // Write spaces every 5s to keep connection alive while MiniMax thinks
+      res.writeHead(200, { ...CORS, "Content-Type": "application/json" });
+
+      const keepAlive = setInterval(() => {
+        try { res.write(" "); } catch {}
+      }, 5000);
+
+      const result = await callMiniMax(payload);
+      clearInterval(keepAlive);
+
+      // Strip think tags
+      let text = result.text;
+      text = text.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+      if (text.includes("<think>")) text = text.replace(/<think>[\s\S]*/g, "").trim();
+
+      res.end(JSON.stringify({ text, finish_reason: result.finish_reason, usage: result.usage }));
     } catch (err) {
       console.error("API error:", err.message);
       if (!res.headersSent) {
