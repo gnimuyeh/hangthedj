@@ -1074,19 +1074,17 @@ function renderReport(app) {
   }
 
   // inner world
-  function fieldScore(val) {
-    if (!val) return 0;
-    const len = String(val).length;
-    if (len > 80) return 90;
-    if (len > 40) return 75;
-    if (len > 15) return 60;
-    return 40;
+  // Bold key phrases: wrap first clause (before first ，or 。) in <b>
+  function boldFirst(text) {
+    const s = String(text);
+    const m = s.match(/^(.+?)[，。；—]/);
+    if (m) return `<b>${m[1]}</b>${s.slice(m[1].length)}`;
+    return s.length <= 20 ? `<b>${s}</b>` : s;
   }
   const iwData = [
     {l:"核心需求", k:"core_need", icon:"💎"},
     {l:"依恋信号", k:"attachment_signal", icon:"🔗"},
     {l:"情感质地", k:"emotional_texture", icon:"🌊"},
-    {l:"能量来源", k:"energy_source", icon:"⚡"},
     {l:"内在矛盾", k:"contradiction", icon:"🎭"},
     {l:"不安全感", k:"insecurity_hint", icon:"🛡️"},
   ];
@@ -1094,16 +1092,16 @@ function renderReport(app) {
   let iwFilled = 0;
   iwData.forEach(d => {
     const val = iw[d.k];
-    const score = fieldScore(val);
-    if (score > 0) iwFilled++;
+    if (!val) return;
+    iwFilled++;
+    const desc = h("div",{style:{fontSize:"13px",color:"var(--txtS)",lineHeight:"1.6",padding:"0 2px"}});
+    desc.innerHTML = boldFirst(val);
     const row = h("div",{style:{marginBottom:"14px"}},
       h("div",{style:{display:"flex",alignItems:"center",gap:"6px",marginBottom:"4px"}},
         h("span",{style:{fontSize:"14px"}},d.icon),
-        h("span",{style:{fontSize:"13px",fontWeight:"600",color:"var(--txt)"}},d.l),
-        score === 0 ? h("span",{style:{fontSize:"11px",color:"var(--txtM)",marginLeft:"auto"}},"未触及") : null
+        h("span",{style:{fontSize:"13px",fontWeight:"600",color:"var(--txt)"}},d.l)
       ),
-      score > 0 ? h("div",{class:"bar-track",style:{marginBottom:"4px"}}, h("div",{class:"bar-fill",style:{width:score+"%"}})) : null,
-      val ? h("div",{style:{fontSize:"13px",color:"var(--txtS)",lineHeight:"1.6",padding:"0 2px"}},String(val)) : null
+      desc
     );
     iwCard.appendChild(row);
   });
@@ -1117,20 +1115,21 @@ function renderReport(app) {
   const rpFields = [
     {l:"爱的语言",k:"love_language_signal",icon:"💝"},
     {l:"冲突模式",k:"conflict_pattern",icon:"⚔️"},
-    {l:"独立↔亲密",k:"independence_intimacy",icon:"🤝"},
-    {l:"爱情叙事",k:"relationship_narrative",icon:"📖"}
+    {l:"独立↔亲密",k:"independence_intimacy",icon:"🤝"}
   ];
   let rpFilled = 0;
   rpFields.forEach(f => {
     const val = rp[f.k];
     if(val) {
       rpFilled++;
+      const desc = h("div",{style:{fontSize:"13px",color:"var(--txtS)",lineHeight:"1.6"}});
+      desc.innerHTML = boldFirst(val);
       rpCard.appendChild(h("div",{style:{marginBottom:"12px"}},
         h("div",{style:{display:"flex",alignItems:"center",gap:"6px",marginBottom:"3px"}},
           h("span",{style:{fontSize:"13px"}},f.icon),
           h("span",{style:{fontSize:"12px",color:"var(--pri)",fontWeight:"600"}},f.l)
         ),
-        h("div",{style:{fontSize:"13px",color:"var(--txtS)",lineHeight:"1.6"}},String(val))
+        desc
       ));
     }
   });
