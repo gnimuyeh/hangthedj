@@ -388,8 +388,9 @@ const ENGINE_A_TEMPLATE = `深度分析以下对话，提取用户的关系人�
 
 `;
 
-const ENGINE_C_SYS = `你是匹配分析引擎。分析两个v2人格档案输出匹配报告。
+const ENGINE_C_SYS = `你是匹配分析引擎。分析两个人格档案输出匹配报告。
 输入会标注每个人的名字，在分析文字中使用他们的真实名字而不是A/B。
+注意：一方的档案可能是从QR扫描来的精简版（字段较短或部分为null，可能包含radar_scores数组），这是正常的。用已有的信息做最佳推断。
 重点分析inner_world和relationship_patterns的兼容性而不只是surface重合。
 反通胀：大部分维度40-60分。>75需强证据。match_score是六维度的加权平均。
 vibe_label要画面感（10字以内）。所有文字必须是中文。
@@ -750,45 +751,72 @@ function renderRadar(dims, scores) {
 // MATCH CARD — compact persona for QR encoding
 // ═══════════════════════════════════════
 
-// Extract fields for QR — matching + enough for chat
+// Extract fields for QR — compact v3: radar scores + short keyword phrases
+// Target: <350 chars after compression for scannable QR (version 7-8)
 function personaToMatchCard(p) {
   if (!p) return null;
   const iw = p.inner_world || {};
   const rp = p.relationship_patterns || {};
-  const id = p.identity || {};
+  const rs = p.radar_scores || {};
   const ds = p.dating_style || {};
+  // Truncate to first clause (before first ，。；) or max chars
+  function short(s, max) {
+    if (!s) return "";
+    s = String(s);
+    const m = s.match(/^(.+?)[，。；—]/);
+    return (m ? m[1] : s).substring(0, max || 15);
+  }
   return {
-    v: 2,
-    // identity — prefer userName for the sharer's real name
-    n: state.userName || id.self_label || id.occupation || null,
-    // inner_world (all 6)
-    cn: iw.core_need || null,
-    as: iw.attachment_signal || null,
-    et: iw.emotional_texture || null,
-    es: iw.energy_source || null,
-    ih: iw.insecurity_hint || null,
-    ct: iw.contradiction || null,
-    // relationship_patterns (all 5)
-    ll: rp.love_language_signal || null,
-    cp: rp.conflict_pattern || null,
-    ii: rp.independence_intimacy || null,
-    dd: ensureArr(rp.dealbreaker_deep).slice(0, 3),
-    rn: rp.relationship_narrative || null,
-    // dating style — enough for chat
-    ht: ensureArr(ds.humor_type).map(t => typeof t === "string" ? t.substring(0, 40) : "").slice(0, 3),
-    fm: ds.flirtation_mode ? ds.flirtation_mode.substring(0, 60) : null,
-    pa: ds.pacing ? ds.pacing.substring(0, 30) : null,
-    ml: ds.message_length ? ds.message_length.substring(0, 20) : null,
-    mp: ds.message_pattern ? ds.message_pattern.substring(0, 20) : null,
-    sr: ensureArr(ds.slang_register).slice(0, 5),
-    vp: ds.vulnerability_pattern ? ds.vulnerability_pattern.substring(0, 40) : null,
-    cs: ds.conflict_style ? ds.conflict_style.substring(0, 40) : null,
+    v: 3,
+    n: (state.userName || p.identity?.self_label || "").substring(0, 8),
+    // radar scores — 6 numbers, very compact
+    r: [rs.security||50, rs.emotion||50, rs.independence||50, rs.expression||50, rs.humor||50, rs.adventure||50],
+    // core personality keywords — short first-clause extracts
+    cn: short(iw.core_need),
+    as: short(iw.attachment_signal),
+    ct: short(iw.contradiction),
+    ll: short(rp.love_language_signal),
+    cp: short(rp.conflict_pattern),
+    rn: short(rp.relationship_narrative),
+    dd: ensureArr(rp.dealbreaker_deep).slice(0, 2).map(d => short(d, 6)),
+    // minimal dating style for soul chat
+    ht: ensureArr(ds.humor_type).slice(0, 2).map(t => short(t, 8)),
+    pa: short(ds.pacing, 6),
   };
 }
 
-// Expand match card back to persona
+// Expand match card back to persona (supports v2 and v3)
 function matchCardToPersona(mc) {
   if (!mc) return null;
+  // v3 compact format
+  if (mc.v === 3) {
+    const r = mc.r || [50,50,50,50,50,50];
+    return {
+      schema_version: "v2",
+      identity: { self_label: mc.n || null },
+      inner_world: {
+        core_need: mc.cn || null, attachment_signal: mc.as || null,
+        emotional_texture: null, energy_source: null,
+        insecurity_hint: null, contradiction: mc.ct || null
+      },
+      relationship_patterns: {
+        love_language_signal: mc.ll || null, conflict_pattern: mc.cp || null,
+        independence_intimacy: null, dealbreaker_deep: mc.dd || [],
+        relationship_narrative: mc.rn || null
+      },
+      radar_scores: { security:r[0], emotion:r[1], independence:r[2], expression:r[3], humor:r[4], adventure:r[5] },
+      dating_style: {
+        humor_type: mc.ht || [], pacing: mc.pa || "",
+        flirtation_mode: "", message_length: "中等", message_pattern: "混合",
+        slang_register: [], vulnerability_pattern: "", conflict_style: "",
+        punctuation_habits: "", emoji_usage: "", language_mixing: null,
+        topic_magnets: [], unique_markers: []
+      },
+      surface: { interests: [], lifestyle_notes: [] },
+      meta: { extraction_confidence: 0.5, source_message_count: 0, is_from_qr: true }
+    };
+  }
+  // v2 legacy format
   return {
     schema_version: "v2",
     identity: { self_label: mc.n, occupation: null, age: null, city: null },
@@ -810,7 +838,7 @@ function matchCardToPersona(mc) {
       topic_magnets: [], unique_markers: []
     },
     surface: { interests: [], lifestyle_notes: [], food_personality: null },
-    meta: { extraction_confidence: 0.5, unknown_fields: ["兴趣爱好","独特标记"], source_message_count: 0, depth_reached: "", is_from_qr: true }
+    meta: { extraction_confidence: 0.5, source_message_count: 0, is_from_qr: true }
   };
 }
 
@@ -851,7 +879,7 @@ function generateQR(container, url) {
       height: 160,
       colorDark: "#3D2C2E",
       colorLight: "#FFFFFF",
-      correctLevel: QRCode.CorrectLevel.M,
+      correctLevel: QRCode.CorrectLevel.L,
     });
   } catch (e) { console.error("QR error:", e); container.textContent = "QR生成失败"; }
 }
