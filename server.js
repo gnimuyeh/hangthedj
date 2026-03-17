@@ -24,8 +24,11 @@ function readBody(req) {
 }
 
 const server = http.createServer(async (req, res) => {
-  // Serve index.html
-  if (req.method === "GET" && (req.url === "/" || req.url === "/index.html")) {
+  // Parse URL without hash/query for clean matching
+  const urlPath = req.url.split("?")[0].split("#")[0];
+
+  // Serve index.html for any GET that isn't /api/*
+  if (req.method === "GET" && !urlPath.startsWith("/api/")) {
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
     res.end(INDEX_HTML);
     return;
