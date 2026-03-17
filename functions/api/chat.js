@@ -1,24 +1,18 @@
 const KEY = "sk-api-gwYvxa2sX0-B38idARiZPVmdq70lBjiw3xEsyO71psEkk-bHJHI_3O8vBRkx9r1D_r-x6QGlVrTpDBiV-UxBKCAN3ctFEVZ3MD9E2oNwIWGBj5ZwQMLCup8";
 const API_URL = "https://api.minimaxi.com/v1/chat/completions";
 
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 export async function onRequestOptions() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Headers": "Content-Type",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-    },
-  });
+  return new Response(null, { status: 204, headers: CORS });
 }
 
 export async function onRequestPost({ request }) {
-  const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Content-Type": "application/json",
-  };
+  const headers = { ...CORS, "Content-Type": "application/json" };
 
   try {
     const { system, messages, max_tokens } = await request.json();
@@ -26,7 +20,7 @@ export async function onRequestPost({ request }) {
     if (system) msgs.push({ role: "system", content: system });
     for (const m of (messages || [])) msgs.push({ role: m.role, content: m.content });
 
-    const payload = { model: "MiniMax-M2.5-highspeed", messages: msgs, temperature: 0.85 };
+    const payload = { model: "MiniMax-M2.5-highspeed", messages: msgs, temperature: 0.85, stream: true };
     if (max_tokens && max_tokens > 0) payload.max_tokens = max_tokens;
 
     const resp = await fetch(API_URL, {
@@ -35,30 +29,54 @@ export async function onRequestPost({ request }) {
       body: JSON.stringify(payload),
     });
 
-    const raw = await resp.text();
-
-    let data;
-    try { data = JSON.parse(raw); } catch {
-      return new Response(JSON.stringify({ error: "Bad JSON: " + raw.substring(0, 200) }), { status: 502, headers: corsHeaders });
+    if (!resp.ok) {
+      const errText = await resp.text();
+      return new Response(JSON.stringify({ error: "MiniMax HTTP " + resp.status + ": " + errText.substring(0, 200) }), { status: 502, headers });
     }
 
-    if (data.error) {
-      return new Response(JSON.stringify({ error: data.error.message || JSON.stringify(data.error).substring(0, 200) }), { status: 502, headers: corsHeaders });
-    }
-    if (data.base_resp && data.base_resp.status_code !== 0) {
-      return new Response(JSON.stringify({ error: data.base_resp.status_msg }), { status: 502, headers: corsHeaders });
-    }
+    // Stream from MiniMax, buffer everything, return single JSON response.
+    // Streaming keeps the connection alive — no timeout issues on Cloudflare.
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let fullText = "";
+    let finishReason = "?";
+    let usage = {};
 
-    let text = data.choices?.[0]?.message?.content || "";
-    const fr = data.choices?.[0]?.finish_reason || "?";
-    const u = data.usage || {};
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith("data:")) continue;
+        const data = trimmed.slice(5).trim();
+        if (data === "[DONE]") continue;
+
+        try {
+          const chunk = JSON.parse(data);
+          const delta = chunk.choices?.[0]?.delta?.content || "";
+          fullText += delta;
+          if (chunk.choices?.[0]?.finish_reason) {
+            finishReason = chunk.choices[0].finish_reason;
+          }
+          if (chunk.usage) usage = chunk.usage;
+        } catch {
+          // skip unparseable chunks
+        }
+      }
+    }
 
     // Strip think tags
-    text = text.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
-    if (text.includes("<think>")) text = text.replace(/<think>[\s\S]*/g, "").trim();
+    fullText = fullText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+    if (fullText.includes("<think>")) fullText = fullText.replace(/<think>[\s\S]*/g, "").trim();
 
-    return new Response(JSON.stringify({ text, finish_reason: fr, usage: u }), { status: 200, headers: corsHeaders });
+    return new Response(JSON.stringify({ text: fullText, finish_reason: finishReason, usage }), { status: 200, headers });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers });
   }
 }
