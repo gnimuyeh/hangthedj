@@ -720,10 +720,37 @@ async function exportAsImage(elementId, filename) {
 function showImageOverlay(dataUrl, filename) {
   const existing = document.getElementById("img-overlay");
   if (existing) existing.remove();
+
+  // Convert dataUrl to Blob for share API
+  async function dataUrlToBlob(url) {
+    const r = await fetch(url);
+    return r.blob();
+  }
+
+  // Use Web Share API on mobile (saves directly to Photos on iOS)
+  async function shareImage() {
+    try {
+      const blob = await dataUrlToBlob(dataUrl);
+      const file = new File([blob], filename || "export.png", { type: "image/png" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file] });
+        return;
+      }
+    } catch (e) {
+      if (e.name === "AbortError") return; // user cancelled
+      console.warn("Share failed:", e);
+    }
+    // Fallback: download link
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = filename || "export.png";
+    a.click();
+  }
+
   const overlay = h("div",{class:"img-overlay",id:"img-overlay",onClick:e=>{if(e.target===overlay)overlay.remove();}},
     h("img",{src:dataUrl}),
-    h("div",{class:"hint"},"长按图片保存到相册"),
-    h("a",{href:dataUrl,download:filename||"export.png",style:{marginTop:"8px",background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",color:"white",borderRadius:"20px",padding:"8px 24px",fontSize:"14px",cursor:"pointer",fontFamily:"inherit",textDecoration:"none",display:"inline-block"}},"保存图片"),
+    h("button",{style:{marginTop:"10px",background:"white",border:"none",color:"var(--pri)",borderRadius:"20px",padding:"10px 32px",fontSize:"14px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"},onClick:shareImage},"保存到相册"),
+    h("div",{class:"hint"},"或长按图片保存"),
     h("button",{class:"close-btn",onClick:()=>overlay.remove()},"关闭")
   );
   document.body.appendChild(overlay);
