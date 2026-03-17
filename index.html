@@ -93,10 +93,6 @@ body { font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif
 .qr-area { margin:0 16px 16px; background:var(--gradS); border-radius:24px; padding:24px; text-align:center; }
 .qr-box { width:176px; height:176px; margin:0 auto; background:var(--card); border-radius:16px; display:flex; align-items:center; justify-content:center; box-shadow:var(--shd); padding:8px; overflow:hidden; }
 .qr-box span { font-size:11px; color:var(--txtM); text-align:center; line-height:1.4; }
-.match-score { display:inline-block; background:rgba(255,255,255,0.2); border-radius:20px; padding:6px 20px; }
-.match-score .num { font-size:36px; color:white; font-weight:800; }
-.match-score .unit { color:rgba(255,255,255,0.8); font-size:14px; margin-left:4px; }
-.vibe { color:rgba(255,255,255,0.9); font-size:14px; margin-top:8px; font-style:italic; }
 .dim-card { margin:0 16px 10px; background:var(--card); border-radius:20px; padding:14px 18px; box-shadow:0 1px 8px rgba(0,0,0,0.04); display:flex; align-items:flex-start; gap:14px; }
 .dim-score { width:42px; height:42px; border-radius:50%; background:var(--priG); display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; color:var(--pri); flex-shrink:0; }
 .dim-text { flex:1; min-width:0; }
@@ -118,14 +114,21 @@ body { font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif
 .radar-svg { display:block; margin:0 auto; max-width:100%; height:auto; }
 
 /* Match header with names */
-.match-header { background:var(--grad); padding:36px 20px 56px; text-align:center; border-radius:0 0 32px 32px; position:relative; }
-.match-header .curve { position:absolute; bottom:-2px; left:0; right:0; height:20px; background:var(--bg); border-radius:20px 20px 0 0; }
-.match-header .names-row { display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:16px; }
-.match-header .name-bubble { width:clamp(60px,18vw,80px); height:clamp(60px,18vw,80px); border-radius:50%; background:rgba(255,255,255,0.22); display:flex; align-items:center; justify-content:center; font-size:clamp(14px,4vw,18px); font-weight:800; color:white; backdrop-filter:blur(4px); border:2px solid rgba(255,255,255,0.35); }
-.match-header .heart-score { width:clamp(56px,16vw,72px); height:clamp(56px,16vw,72px); position:relative; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.match-header .heart-score .heart-bg { position:absolute; inset:0; font-size:clamp(56px,16vw,72px); line-height:1; opacity:0.9; display:flex; align-items:center; justify-content:center; }
-.match-header .heart-score .score-num { position:relative; z-index:1; font-size:clamp(18px,5vw,22px); font-weight:900; color:white; margin-top:2px; }
-.match-header .name-label { color:rgba(255,255,255,0.9); font-size:clamp(12px,3.5vw,14px); font-weight:600; margin-top:6px; max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.match-header { background:var(--grad); padding:40px 20px 60px; text-align:center; border-radius:0 0 32px 32px; position:relative; overflow:hidden; }
+.match-header::before { content:""; position:absolute; top:-40px; left:-40px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.06); }
+.match-header::after { content:""; position:absolute; bottom:20px; right:-30px; width:100px; height:100px; border-radius:50%; background:rgba(255,255,255,0.05); }
+.match-header .curve { position:absolute; bottom:-2px; left:0; right:0; height:20px; background:var(--bg); border-radius:20px 20px 0 0; z-index:1; }
+.match-header .names-row { display:flex; align-items:center; justify-content:center; gap:clamp(12px,4vw,24px); margin-bottom:20px; position:relative; z-index:1; }
+.match-header .name-col { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.match-header .name-bubble { width:clamp(64px,18vw,80px); height:clamp(64px,18vw,80px); border-radius:50%; background:rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center; font-size:clamp(16px,4.5vw,20px); font-weight:800; color:white; border:2.5px solid rgba(255,255,255,0.4); box-shadow:0 4px 20px rgba(0,0,0,0.08); }
+.match-header .name-label { color:rgba(255,255,255,0.95); font-size:clamp(13px,3.5vw,15px); font-weight:700; max-width:80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; letter-spacing:0.3px; }
+.match-header .score-circle { width:clamp(72px,20vw,88px); height:clamp(72px,20vw,88px); border-radius:50%; background:rgba(255,255,255,0.2); border:3px solid rgba(255,255,255,0.5); display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0 4px 24px rgba(0,0,0,0.1), inset 0 0 20px rgba(255,255,255,0.1); flex-shrink:0; }
+.match-header .score-circle .score-num { font-size:clamp(24px,7vw,32px); font-weight:900; color:white; line-height:1; }
+.match-header .score-circle .score-unit { font-size:11px; color:rgba(255,255,255,0.8); font-weight:600; margin-top:1px; letter-spacing:1px; }
+.match-header .match-link { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:4px; opacity:0.7; }
+.match-header .match-link .link-dot { width:4px; height:4px; border-radius:50%; background:rgba(255,255,255,0.5); }
+.match-header .match-link .link-line { width:clamp(16px,5vw,28px); height:1.5px; background:rgba(255,255,255,0.3); border-radius:1px; }
+.match-header .vibe { color:rgba(255,255,255,0.95); font-size:15px; margin-top:0; font-style:normal; font-weight:600; letter-spacing:0.5px; position:relative; z-index:1; }
 
 /* Dim card last child spacing */
 .dim-card:last-of-type { margin-bottom:16px; }
@@ -1467,26 +1470,34 @@ function renderMatchReport(app) {
   const dims = mr.dimensions||{};
   const report = h("div",{class:"report",id:"match-report"});
 
-  // header — names with heart score in the middle
+  // header — names with score circle in the middle
   const myName = state.userName || "你";
   const otherName = state.scannedPersona?.identity?.self_label || "TA";
   const nameInitial = (n) => n.length <= 2 ? n : n.substring(0, 2);
   const hdr = h("div",{class:"match-header"},
     h("div",{class:"names-row"},
-      h("div",{style:{display:"flex",flexDirection:"column",alignItems:"center"}},
+      h("div",{class:"name-col"},
         h("div",{class:"name-bubble"}, nameInitial(myName)),
         h("div",{class:"name-label"}, myName)
       ),
-      h("div",{class:"heart-score"},
-        h("div",{class:"heart-bg"}, "❤️"),
-        h("div",{class:"score-num"}, String(mr.match_score||0))
+      h("div",{class:"match-link"},
+        h("div",{class:"link-line"}),
+        h("div",{class:"link-dot"})
       ),
-      h("div",{style:{display:"flex",flexDirection:"column",alignItems:"center"}},
+      h("div",{class:"score-circle"},
+        h("div",{class:"score-num"}, String(mr.match_score||0)),
+        h("div",{class:"score-unit"}, "分")
+      ),
+      h("div",{class:"match-link"},
+        h("div",{class:"link-dot"}),
+        h("div",{class:"link-line"})
+      ),
+      h("div",{class:"name-col"},
         h("div",{class:"name-bubble"}, nameInitial(otherName)),
         h("div",{class:"name-label"}, otherName)
       )
     ),
-    mr.vibe_label ? h("p",{class:"vibe"}, `"${mr.vibe_label}"`) : null,
+    mr.vibe_label ? h("p",{class:"vibe"}, `「${mr.vibe_label}」`) : null,
     h("div",{class:"curve"})
   );
   report.appendChild(hdr);
