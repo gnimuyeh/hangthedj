@@ -482,7 +482,7 @@ const GUIDES = {
 // STATE
 // ═══════════════════════════════════════
 
-let state = { phase:"welcome", guide:null, userName:"", msgs:[], input:"", typing:false, msgCount:0, persona:null, matchReport:null, showBuild:false, apiError:false, pendingMatch:null, scannedPersona:null, soulMsgs:[], soulInput:"", soulMsgCount:0, soulTyping:false, soulError:false, buildError:null };
+let state = { phase:"welcome", guide:null, userName:"", msgs:[], input:"", typing:false, msgCount:0, persona:null, matchReport:null, showBuild:false, apiError:false, pendingMatch:null, scannedPersona:null, soulMsgs:[], soulInput:"", soulMsgCount:0, soulTyping:false, soulError:false, buildError:null, failedCalls:[] };
 
 // ═══════════════════════════════════════
 // API
@@ -1336,12 +1336,17 @@ function renderReport(app) {
     report.appendChild(lwCard);
   }
 
-  // Build error banner
+  // Build error banner — retry only failed sections
   if (state.buildError) {
+    const retryFn = state.failedCalls.length ? retryFailedCalls : buildPersona;
+    const retryLabel = state.failedCalls.length ? `重试失败部分 (${state.failedCalls.join("+")}) ↻` : "全部重新生成 ↻";
     report.appendChild(h("div",{style:{margin:"0 16px 12px",padding:"14px 16px",borderRadius:"16px",background:"#FEF2F2",border:"1px solid #FECACA"}},
       h("div",{style:{fontSize:"13px",color:"#991B1B",fontWeight:"600",marginBottom:"6px"}},"⚠️ 画像生成遇到问题"),
       h("div",{style:{fontSize:"11px",color:"#B91C1C",lineHeight:"1.5",marginBottom:"10px",wordBreak:"break-all"}}, state.buildError),
-      h("button",{style:{background:"var(--gradW)",border:"none",color:"white",borderRadius:"12px",padding:"8px 20px",fontSize:"13px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"},onClick:buildPersona},"重新生成 ↻")
+      h("div",{style:{display:"flex",gap:"8px",flexWrap:"wrap"}},
+        h("button",{style:{background:"var(--gradW)",border:"none",color:"white",borderRadius:"12px",padding:"8px 16px",fontSize:"13px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"},onClick:retryFn}, retryLabel),
+        state.failedCalls.length > 0 && state.failedCalls.length < 3 ? h("button",{style:{background:"none",border:"1px solid var(--bdr)",borderRadius:"12px",padding:"8px 16px",fontSize:"12px",color:"var(--txtM)",cursor:"pointer",fontFamily:"inherit"},onClick:buildPersona},"全部重新生成") : null
+      )
     ));
   }
 
@@ -1712,89 +1717,117 @@ function safeParseJSON(raw) {
   catch(e) { console.warn("safeParseJSON failed:", e.message, "raw length:", raw.length, "first 300:", raw.substring(0, 300)); return null; }
 }
 
-async function buildPersona() {
-  state.phase = "building";
-  state.buildError = null;
-  render();
+// Extraction call definitions — used by buildPersona and retryFailedCalls
+const EXTRACTION_CALLS = [
+  { id: "A1", label: "心理分析", sys: () => ENGINE_A1_SYS, tpl: () => ENGINE_A1_TEMPLATE, maxTok: 16000,
+    merge: (persona, parsed) => { persona.inner_world = parsed.inner_world || {}; persona.relationship_patterns = parsed.relationship_patterns || {}; } },
+  { id: "A2", label: "金句生成", sys: () => ENGINE_A2_SYS, tpl: () => ENGINE_A2_TEMPLATE, maxTok: 8000,
+    merge: (persona, parsed) => { persona.soul_summary = parsed.soul_summary || {}; persona.love_warning = parsed.love_warning || {}; persona.radar_scores = parsed.radar_scores || {}; } },
+  { id: "A3", label: "风格分析", sys: () => ENGINE_A3_SYS, tpl: () => ENGINE_A3_TEMPLATE, maxTok: 8000,
+    merge: (persona, parsed) => { persona.identity = parsed.identity || {}; persona.dating_style = parsed.dating_style || { unique_markers: [] }; persona.surface = parsed.surface || { interests: [] }; persona.meta = parsed.meta || { source_message_count: state.msgCount, depth_reached: "未知" }; } },
+];
+
+// Run a single extraction call with retry (2 attempts, 1.5s backoff)
+async function runExtractionCall(call, transcript) {
+  const msg = [{role:"user", content: call.tpl() + transcript}];
+  let r = await callAPI(call.sys(), msg, call.maxTok, 0.3);
+  if (!r) {
+    console.log(`${call.id} first attempt failed (${_lastApiError}), retrying in 1.5s...`);
+    await new Promise(ok => setTimeout(ok, 1500));
+    _lastApiError = "";
+    r = await callAPI(call.sys(), msg, call.maxTok, 0.3);
+  }
+  if (!r) return null;
+  return safeParseJSON(r);
+}
+
+function getTranscript() {
   const g = GUIDES[state.guide] || GUIDES.xiaomei;
-  const transcript = state.msgs.map(m => {
+  return state.msgs.map(m => {
     const who = m.role==="match"?g.name:"用户";
     return split(m.text).map(p=>`${who}：${p}`).join("\n");
   }).join("\n\n");
+}
 
-  // --- Split extraction: 3 parallel focused calls ---
-  // Each call extracts a small subset of fields, producing ~500-1200 chars of JSON.
-  // Small outputs complete in one shot — no continuation/bracket repair needed.
-  // Safari retry helper
-  async function callWithRetry(sys, msgs, maxTok, temp) {
-    let r = await callAPI(sys, msgs, maxTok, temp);
-    if (!r && _lastApiError && /Load failed|fetch/i.test(_lastApiError)) {
-      console.log("Retrying extraction call (Safari background suspension)");
-      _lastApiError = "";
-      r = await callAPI(sys, msgs, maxTok, temp);
-    }
-    return r;
-  }
+async function buildPersona() {
+  state.phase = "building";
+  state.buildError = null;
+  state.failedCalls = [];
+  render();
+  const transcript = getTranscript();
 
   console.log("Engine A: starting 3 parallel extraction calls...");
-  const [r1, r2, r3] = await Promise.all([
-    callWithRetry(ENGINE_A1_SYS, [{role:"user", content: ENGINE_A1_TEMPLATE + transcript}], 16000, 0.3),
-    callWithRetry(ENGINE_A2_SYS, [{role:"user", content: ENGINE_A2_TEMPLATE + transcript}], 8000, 0.3),
-    callWithRetry(ENGINE_A3_SYS, [{role:"user", content: ENGINE_A3_TEMPLATE + transcript}], 8000, 0.3),
-  ]);
+  const results = await Promise.all(
+    EXTRACTION_CALLS.map(call => runExtractionCall(call, transcript))
+  );
 
-  // Parse each independently
-  const p1 = safeParseJSON(r1); // {inner_world, relationship_patterns}
-  const p2 = safeParseJSON(r2); // {soul_summary, love_warning, radar_scores}
-  const p3 = safeParseJSON(r3); // {identity, dating_style, surface, meta}
+  // Merge results
+  state.persona = { schema_version: "v2", identity: {}, inner_world: {}, relationship_patterns: {}, soul_summary: {}, love_warning: {}, radar_scores: {}, dating_style: { unique_markers: [] }, surface: { interests: [] }, meta: { source_message_count: state.msgCount, depth_reached: "未知" } };
 
-  console.log("Engine A results — A1:", p1 ? Object.keys(p1) : "FAILED",
-              "A2:", p2 ? Object.keys(p2) : "FAILED",
-              "A3:", p3 ? Object.keys(p3) : "FAILED");
-
-  // Merge into complete persona
   const failures = [];
-  if (!p1) failures.push("心理分析");
-  if (!p2) failures.push("金句生成");
-  if (!p3) failures.push("风格分析");
+  EXTRACTION_CALLS.forEach((call, i) => {
+    if (results[i]) {
+      call.merge(state.persona, results[i]);
+      console.log(`${call.id} (${call.label}): OK`, Object.keys(results[i]));
+    } else {
+      failures.push(call);
+      console.warn(`${call.id} (${call.label}): FAILED`);
+    }
+  });
+
+  state.failedCalls = failures.map(f => f.id);
 
   if (failures.length === 3) {
-    // Total failure
     state.buildError = "所有分析请求都失败了，请检查网络后重试";
-    state.persona = null;
-  } else {
-    state.persona = {
-      schema_version: "v2",
-      identity: p3?.identity || {},
-      inner_world: p1?.inner_world || {},
-      relationship_patterns: p1?.relationship_patterns || {},
-      soul_summary: p2?.soul_summary || {},
-      love_warning: p2?.love_warning || {},
-      radar_scores: p2?.radar_scores || {},
-      dating_style: p3?.dating_style || { unique_markers: [] },
-      surface: p3?.surface || { interests: [] },
-      meta: p3?.meta || { source_message_count: state.msgCount, depth_reached: "未知" },
-    };
-    if (failures.length) {
-      state.buildError = `部分分析失败（${failures.join("、")}），可点击重新生成`;
-    }
-    const iwFilled = Object.keys(state.persona.inner_world).filter(k => state.persona.inner_world[k]).length;
-    const rpFilled = Object.keys(state.persona.relationship_patterns).filter(k => { const v = state.persona.relationship_patterns[k]; return v && (!Array.isArray(v) || v.length > 0); }).length;
-    console.log("Persona merged:", iwFilled, "inner_world fields,", rpFilled, "relationship fields");
+    state.persona.identity.self_label = "提取失败";
+    state.persona.meta.extraction_confidence = 0;
+    state.persona.meta.depth_reached = "提取失败";
+  } else if (failures.length) {
+    state.buildError = `部分分析失败（${failures.map(f=>f.label).join("、")}）`;
   }
 
-  if(!state.persona) {
-    state.persona = {schema_version:"v2",identity:{self_label:"提取失败"},inner_world:{},relationship_patterns:{},dating_style:{unique_markers:[]},surface:{interests:[]},meta:{extraction_confidence:0,unknown_fields:["提取失败"],source_message_count:state.msgCount,depth_reached:"提取失败"}};
-  }
-  // Save persona to localStorage
   savePersona(state.persona);
 
-  // If someone scanned our QR, auto-match after persona generation
   if (state.pendingMatch) {
     runMatchWith(state.pendingMatch);
     state.pendingMatch = null;
     return;
   }
+  state.phase = "report";
+  render();
+}
+
+// Retry only the failed extraction calls, merge into existing persona
+async function retryFailedCalls() {
+  if (!state.failedCalls.length) return;
+  const toRetry = EXTRACTION_CALLS.filter(c => state.failedCalls.includes(c.id));
+  state.buildError = null;
+  state.phase = "building";
+  render();
+  const transcript = getTranscript();
+
+  console.log("Retrying failed calls:", toRetry.map(c => c.id));
+  const results = await Promise.all(
+    toRetry.map(call => runExtractionCall(call, transcript))
+  );
+
+  const stillFailed = [];
+  toRetry.forEach((call, i) => {
+    if (results[i]) {
+      call.merge(state.persona, results[i]);
+      console.log(`Retry ${call.id}: OK`);
+    } else {
+      stillFailed.push(call);
+      console.warn(`Retry ${call.id}: still failed`);
+    }
+  });
+
+  state.failedCalls = stillFailed.map(f => f.id);
+  if (stillFailed.length) {
+    state.buildError = `仍有部分失败（${stillFailed.map(f=>f.label).join("、")}）`;
+  }
+
+  savePersona(state.persona);
   state.phase = "report";
   render();
 }
