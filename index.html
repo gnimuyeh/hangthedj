@@ -1380,9 +1380,23 @@ async function buildPersona() {
     return split(m.text).map(p=>`${who}：${p}`).join("\n");
   }).join("\n\n");
 
-  // MiniMax M2.5 reasoning tokens eat into max_tokens budget unpredictably.
-  // 32K gives enough room for ~15K reasoning + ~3K JSON output.
-  const t = await callAPI(ENGINE_A_SYS, [{role:"user", content: ENGINE_A_TEMPLATE + transcript}], 32000);
+  // Safari/iOS kills network connections when the tab is backgrounded.
+  // Auto-retry once if the request fails with "Load failed".
+  let t = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    // MiniMax M2.5 reasoning tokens eat into max_tokens budget unpredictably.
+    // 32K gives enough room for ~15K reasoning + ~3K JSON output.
+    t = await callAPI(ENGINE_A_SYS, [{role:"user", content: ENGINE_A_TEMPLATE + transcript}], 32000);
+    if (t) break;
+    // Only retry on "Load failed" (Safari background suspension)
+    if (attempt === 0 && _lastApiError && /Load failed|fetch/i.test(_lastApiError)) {
+      console.log("Retrying extraction (Safari background suspension detected)");
+      state.buildError = null;
+      _lastApiError = "";
+      continue;
+    }
+    break;
+  }
   
   console.log("Engine A raw response length:", t ? t.length : "null");
   console.log("Engine A raw (first 300):", t ? t.substring(0, 300) : "null");
