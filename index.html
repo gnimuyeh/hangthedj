@@ -72,8 +72,8 @@ body { font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif
 .report-header h1 { font-size:26px; color:white; font-weight:800; margin:0 0 4px; }
 .report-header p { color:rgba(255,255,255,0.8); font-size:13px; }
 .report-header .curve { position:absolute; bottom:-2px; left:0; right:0; height:20px; background:var(--bg); border-radius:20px 20px 0 0; }
-.rcard { margin:0 16px 16px; background:var(--card); border-radius:24px; padding:20px; box-shadow:var(--shd); }
-.rcard.top { margin-top:-20px; }
+.rcard { margin:0 16px 16px; background:var(--card); border-radius:24px; padding:20px; box-shadow:var(--shd); overflow:hidden; }
+.rcard.top { margin-top:-20px; position:relative; z-index:1; }
 .rcard h3 { font-size:16px; font-weight:700; margin-bottom:12px; }
 .tag { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:500; margin:3px 4px 3px 0; }
 .tag.pink { background:var(--priL); color:var(--pri); }
@@ -86,7 +86,7 @@ body { font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif
 .bar-fill { height:8px; border-radius:4px; background:var(--gradW); transition:width 1s; }
 .bar-val { width:30px; text-align:right; font-weight:700; color:var(--pri); font-size:12px; }
 .marker { font-size:13px; color:var(--txtS); padding:4px 0; line-height:1.5; }
-.actions { padding:0 16px; display:flex; gap:10px; }
+.actions { padding:0 16px 16px; display:flex; gap:10px; }
 .actions button { flex:1; padding:14px; border-radius:20px; font-size:14px; cursor:pointer; font-family:inherit; }
 .actions .sec { background:var(--card); border:1.5px solid var(--brd); color:var(--txtS); }
 .actions .prim { background:var(--gradW); border:none; color:white; font-weight:600; box-shadow:0 2px 12px rgba(255,138,158,0.3); }
@@ -97,34 +97,38 @@ body { font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif
 .match-score .num { font-size:36px; color:white; font-weight:800; }
 .match-score .unit { color:rgba(255,255,255,0.8); font-size:14px; margin-left:4px; }
 .vibe { color:rgba(255,255,255,0.9); font-size:14px; margin-top:8px; font-style:italic; }
-.dim-card { margin:0 16px 10px; background:var(--card); border-radius:20px; padding:14px 18px; box-shadow:0 1px 8px rgba(0,0,0,0.04); display:flex; align-items:center; gap:14px; }
-.dim-score { width:46px; height:46px; border-radius:50%; background:var(--priG); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; color:var(--pri); flex-shrink:0; }
+.dim-card { margin:0 16px 10px; background:var(--card); border-radius:20px; padding:14px 18px; box-shadow:0 1px 8px rgba(0,0,0,0.04); display:flex; align-items:flex-start; gap:14px; }
+.dim-score { width:42px; height:42px; border-radius:50%; background:var(--priG); display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; color:var(--pri); flex-shrink:0; }
+.dim-text { flex:1; min-width:0; }
 .dim-text .label { font-size:14px; font-weight:700; }
-.dim-text .analysis { font-size:12px; color:var(--txtS); line-height:1.5; margin-top:2px; }
-.two-col { margin:6px 16px 10px; display:flex; gap:10px; }
-.two-col > div { flex:1; border-radius:20px; padding:16px; }
+.dim-text .analysis { font-size:12px; color:var(--txtS); line-height:1.5; margin-top:2px; word-break:break-word; }
+.two-col { margin:0 16px 16px; display:flex; gap:10px; }
+.two-col > div { flex:1; border-radius:20px; padding:16px; min-width:0; }
 .two-col .sparks { background:#FFF1F2; }
 .two-col .friction { background:var(--secL); }
 .two-col .title { font-size:13px; font-weight:700; margin-bottom:8px; }
-.two-col .item { font-size:12px; color:var(--txtS); line-height:1.5; margin-bottom:4px; }
-.predict { margin:0 16px 10px; background:var(--gradS); border-radius:20px; padding:18px; }
+.two-col .item { font-size:12px; color:var(--txtS); line-height:1.5; margin-bottom:4px; word-break:break-word; }
+.predict { margin:0 16px 16px; background:var(--gradS); border-radius:20px; padding:18px; }
 .predict .title { font-size:13px; font-weight:700; margin-bottom:6px; }
 .predict .body { font-size:13px; color:var(--txtS); line-height:1.6; }
+
 /* Radar chart */
-.radar-wrap { margin:0 16px 16px; background:var(--card); border-radius:24px; padding:24px 16px 20px; box-shadow:var(--shd); text-align:center; }
-.radar-wrap.top { margin-top:-20px; }
-.radar-wrap h3 { font-size:16px; font-weight:700; margin-bottom:16px; }
-.radar-svg { display:block; margin:0 auto; }
+.radar-wrap { margin:0 16px 16px; background:var(--card); border-radius:24px; padding:20px 8px 16px; box-shadow:var(--shd); text-align:center; overflow:hidden; }
+.radar-wrap.top { margin-top:-20px; position:relative; z-index:1; }
+.radar-svg { display:block; margin:0 auto; max-width:100%; height:auto; }
 
 /* Match header with names */
 .match-header { background:var(--grad); padding:36px 20px 56px; text-align:center; border-radius:0 0 32px 32px; position:relative; }
 .match-header .curve { position:absolute; bottom:-2px; left:0; right:0; height:20px; background:var(--bg); border-radius:20px 20px 0 0; }
-.match-header .names-row { display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:16px; }
-.match-header .name-bubble { width:80px; height:80px; border-radius:50%; background:rgba(255,255,255,0.22); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800; color:white; backdrop-filter:blur(4px); border:2px solid rgba(255,255,255,0.35); }
-.match-header .heart-score { width:72px; height:72px; position:relative; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.match-header .heart-score .heart-bg { position:absolute; inset:0; font-size:72px; line-height:1; opacity:0.9; }
-.match-header .heart-score .score-num { position:relative; z-index:1; font-size:22px; font-weight:900; color:white; margin-top:4px; }
-.match-header .name-label { color:rgba(255,255,255,0.9); font-size:14px; font-weight:600; margin-top:6px; }
+.match-header .names-row { display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:16px; }
+.match-header .name-bubble { width:clamp(60px,18vw,80px); height:clamp(60px,18vw,80px); border-radius:50%; background:rgba(255,255,255,0.22); display:flex; align-items:center; justify-content:center; font-size:clamp(14px,4vw,18px); font-weight:800; color:white; backdrop-filter:blur(4px); border:2px solid rgba(255,255,255,0.35); }
+.match-header .heart-score { width:clamp(56px,16vw,72px); height:clamp(56px,16vw,72px); position:relative; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.match-header .heart-score .heart-bg { position:absolute; inset:0; font-size:clamp(56px,16vw,72px); line-height:1; opacity:0.9; display:flex; align-items:center; justify-content:center; }
+.match-header .heart-score .score-num { position:relative; z-index:1; font-size:clamp(18px,5vw,22px); font-weight:900; color:white; margin-top:2px; }
+.match-header .name-label { color:rgba(255,255,255,0.9); font-size:clamp(12px,3.5vw,14px); font-weight:600; margin-top:6px; max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* Dim card last child spacing */
+.dim-card:last-of-type { margin-bottom:16px; }
 
 .hidden { display:none; }
 .toolbar { padding:8px 16px; display:flex; gap:8px; border-top:1px solid var(--brd); background:rgba(255,247,240,0.95); flex-shrink:0; }
@@ -676,9 +680,12 @@ const MATCH_DIMS = [
   {key:"tacit",       label:"默契指数", icon:"🤝"},
 ];
 
-function renderRadar(dims, scores, size) {
-  size = size || 140;
-  const cx = size + 50, cy = size + 40;
+function renderRadar(dims, scores) {
+  // Use a fixed viewBox coordinate system; SVG scales via CSS max-width:100%
+  const R = 100; // chart radius in viewBox units
+  const pad = 48; // padding for labels
+  const vw = (R + pad) * 2, vh = (R + pad) * 2;
+  const cx = vw / 2, cy = vh / 2;
   const levels = 3;
   const n = dims.length;
   const angleStep = (Math.PI * 2) / n;
@@ -688,43 +695,48 @@ function renderRadar(dims, scores, size) {
     return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
   }
   function hexPoints(r) {
-    return dims.map((_, i) => polar(startAngle + i * angleStep, r)).map(p => p.join(",")).join(" ");
+    return dims.map((_, i) => polar(startAngle + i * angleStep, r)).map(p => p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
   }
 
-  let svg = `<svg class="radar-svg" width="${(size+50)*2}" height="${(size+40)*2}" viewBox="0 0 ${(size+50)*2} ${(size+40)*2}" xmlns="http://www.w3.org/2000/svg">`;
+  let svg = `<svg class="radar-svg" viewBox="0 0 ${vw} ${vh}" xmlns="http://www.w3.org/2000/svg">`;
 
   // grid polygons
   for (let l = 1; l <= levels; l++) {
-    const r = (size / levels) * l;
+    const r = (R / levels) * l;
     svg += `<polygon points="${hexPoints(r)}" fill="none" stroke="rgba(255,138,158,0.15)" stroke-width="1"/>`;
   }
   // axis lines
   for (let i = 0; i < n; i++) {
-    const [x, y] = polar(startAngle + i * angleStep, size);
-    svg += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="rgba(255,138,158,0.1)" stroke-width="1"/>`;
+    const [x, y] = polar(startAngle + i * angleStep, R);
+    svg += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(255,138,158,0.1)" stroke-width="1"/>`;
   }
 
   // data polygon
   const dataPoints = dims.map((d, i) => {
     const val = Math.min(100, Math.max(0, scores[d.key] || 0));
-    const r = (val / 100) * size;
+    const r = (val / 100) * R;
     return polar(startAngle + i * angleStep, r);
   });
-  const dataPoly = dataPoints.map(p => p.join(",")).join(" ");
-  svg += `<polygon points="${dataPoly}" fill="rgba(255,138,158,0.18)" stroke="#FF8A9E" stroke-width="2"/>`;
+  const dataPoly = dataPoints.map(p => p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
+  svg += `<polygon points="${dataPoly}" fill="rgba(255,138,158,0.18)" stroke="#FF8A9E" stroke-width="1.5"/>`;
   // data dots
   dataPoints.forEach(([x, y]) => {
-    svg += `<circle cx="${x}" cy="${y}" r="4" fill="#FF8A9E" stroke="white" stroke-width="1.5"/>`;
+    svg += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="#FF8A9E" stroke="white" stroke-width="1"/>`;
   });
 
   // labels with scores
   dims.forEach((d, i) => {
-    const labelR = size + 28;
-    const [x, y] = polar(startAngle + i * angleStep, labelR);
+    const angle = startAngle + i * angleStep;
+    const labelR = R + 20;
+    const [x, y] = polar(angle, labelR);
     const val = scores[d.key] || 0;
-    const anchor = x < cx - 10 ? "end" : x > cx + 10 ? "start" : "middle";
-    svg += `<text x="${x}" y="${y-6}" text-anchor="${anchor}" font-size="11" font-weight="600" fill="#3D2C2E">${d.icon} ${d.label}</text>`;
-    svg += `<text x="${x}" y="${y+10}" text-anchor="${anchor}" font-size="12" font-weight="800" fill="#FF8A9E">${val}</text>`;
+    const anchor = x < cx - 5 ? "end" : x > cx + 5 ? "start" : "middle";
+    // Nudge top/bottom labels vertically for readability
+    const isTop = angle > -Math.PI * 0.75 && angle < -Math.PI * 0.25;
+    const isBottom = angle > Math.PI * 0.25 && angle < Math.PI * 0.75;
+    const yOff = isTop ? -4 : isBottom ? 8 : 0;
+    svg += `<text x="${x.toFixed(1)}" y="${(y + yOff - 5).toFixed(1)}" text-anchor="${anchor}" font-size="10" font-weight="600" fill="#3D2C2E" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif">${d.label}</text>`;
+    svg += `<text x="${x.toFixed(1)}" y="${(y + yOff + 8).toFixed(1)}" text-anchor="${anchor}" font-size="11" font-weight="800" fill="#FF8A9E" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif">${val}</text>`;
   });
 
   svg += `</svg>`;
@@ -1254,7 +1266,7 @@ function renderReport(app) {
   const hasRadar = Object.values(radar).some(v => v > 0);
   if (hasRadar) {
     const radarCard = h("div",{class:"radar-wrap top"});
-    radarCard.innerHTML = renderRadar(PERSONA_DIMS, radar, 110);
+    radarCard.innerHTML = renderRadar(PERSONA_DIMS, radar);
     report.appendChild(radarCard);
   }
 
@@ -1485,7 +1497,7 @@ function renderMatchReport(app) {
   const hasRadar = Object.values(matchScores).some(v => v > 0);
   if (hasRadar) {
     const radarCard = h("div",{class:"radar-wrap top"});
-    radarCard.innerHTML = renderRadar(MATCH_DIMS, matchScores, 110);
+    radarCard.innerHTML = renderRadar(MATCH_DIMS, matchScores);
     report.appendChild(radarCard);
   }
 
