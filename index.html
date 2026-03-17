@@ -482,7 +482,7 @@ const GUIDES = {
 // STATE
 // ═══════════════════════════════════════
 
-let state = { phase:"welcome", guide:null, userName:"", msgs:[], input:"", typing:false, msgCount:0, persona:null, matchReport:null, showBuild:false, apiError:false, pendingMatch:null, scannedPersona:null, soulMsgs:[], soulInput:"", soulMsgCount:0, soulTyping:false, soulError:false, buildError:null, failedCalls:[] };
+let state = { phase:"welcome", guide:null, userName:"", msgs:[], input:"", typing:false, msgCount:0, persona:null, matchReport:null, showBuild:false, apiError:false, pendingMatch:null, scannedPersona:null, soulMsgs:[], soulInput:"", soulMsgCount:0, soulTyping:false, soulError:false, buildError:null, failedCalls:[], extractionProgress:null };
 
 // ═══════════════════════════════════════
 // API
@@ -560,6 +560,77 @@ async function callAPI(system, messages, maxTokens=800, temperature) {
   } catch(e) {
     _lastApiError = e.name === "AbortError" ? "超时 (5分钟)" : e.message;
     console.error("API error:", _lastApiError);
+    return null;
+  }
+}
+
+// Streaming API call for extraction — keeps connection alive via SSE, captures partial output
+async function callAPIStream(system, messages, maxTokens, temperature, onProgress) {
+  _lastApiError = "";
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 300000);
+
+    const body = { system, messages };
+    if (maxTokens > 0) body.max_tokens = maxTokens;
+    if (temperature !== undefined) body.temperature = temperature;
+
+    const r = await fetch("/api/chat/stream", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+
+    if (!r.ok) {
+      const errBody = await r.text();
+      _lastApiError = "HTTP " + r.status + ": " + errBody.substring(0, 200);
+      console.error("API stream error:", _lastApiError);
+      return null;
+    }
+
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = "";
+    let fullText = "";
+    let finishReason = "?";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split("\n");
+      buf = lines.pop() || "";
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith("data: ")) continue;
+        try {
+          const evt = JSON.parse(trimmed.slice(6));
+          if (evt.delta) {
+            fullText += evt.delta;
+            if (onProgress) onProgress(fullText.length);
+          }
+          if (evt.done) finishReason = evt.finish_reason || "stop";
+        } catch {}
+      }
+    }
+
+    // Strip think tags client-side (worker sends raw text for streaming)
+    fullText = fullText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+    if (fullText.includes("<think>")) fullText = fullText.replace(/<think>[\s\S]*/g, "").trim();
+
+    _lastFinishReason = finishReason;
+    if (!fullText) {
+      _lastApiError = "纯推理响应 (无内容输出)";
+      console.warn("API stream: think-only response, no content after stripping");
+      return null;
+    }
+    console.log("API stream: finish=" + finishReason + ", text=" + fullText.length + "ch");
+    return fullText;
+  } catch (e) {
+    _lastApiError = e.name === "AbortError" ? "超时 (5分钟)" : e.message;
+    console.error("API stream error:", _lastApiError);
     return null;
   }
 }
@@ -1260,13 +1331,32 @@ function renderSoulChat(app) {
 function renderLoading(app) {
   app.className = "shell";
   const isMatch = state.phase==="match_building";
-  app.appendChild(h("div",{class:"loading"},
-    h("div",{class:"loading-inner"},
-      h("div",{class:"loading-icon"}, isMatch?"💕":"✨"),
-      h("h2",null, isMatch?"分析化学反应中...":"绘制灵魂画像中..."),
-      h("p",null, isMatch?"匹配分析中，约需30秒":`分析 ${state.msgCount} 条消息，约需30-60秒`)
-    )
-  ));
+
+  const inner = h("div",{class:"loading-inner"},
+    h("div",{class:"loading-icon"}, isMatch?"💕":"✨"),
+    h("h2",null, isMatch?"分析化学反应中...":"绘制灵魂画像中...")
+  );
+
+  if (!isMatch && state.extractionProgress) {
+    const ep = state.extractionProgress;
+    const labels = { A1: "心理分析", A2: "金句生成", A3: "风格分析" };
+    const statusLine = h("div",{style:"display:flex;gap:12px;justify-content:center;margin-top:12px;font-size:13px"});
+    for (const id of ["A1","A2","A3"]) {
+      const s = ep[id] || "pending";
+      let icon, color;
+      if (s === "done") { icon = "✓"; color = "#10B981"; }
+      else if (s === "failed") { icon = "✗"; color = "#EF4444"; }
+      else if (s.startsWith("running")) { icon = "⏳"; color = "#F59E0B"; }
+      else { icon = "○"; color = "#9CA3AF"; }
+      statusLine.appendChild(h("span",{style:`color:${color};font-weight:600`}, `${labels[id]} ${icon}`));
+    }
+    inner.appendChild(statusLine);
+    inner.appendChild(h("p",{style:"font-size:11px;color:var(--txtM);margin-top:8px"}, `分析 ${state.msgCount} 条消息，约需30-60秒`));
+  } else {
+    inner.appendChild(h("p",null, isMatch?"匹配分析中，约需30秒":`分析 ${state.msgCount} 条消息，约需30-60秒`));
+  }
+
+  app.appendChild(h("div",{class:"loading"}, inner));
 }
 
 function renderReport(app) {
@@ -1704,17 +1794,50 @@ async function retrySoulSend() {
   render();
 }
 
-// Parse raw LLM output into JSON, stripping think tags and code blocks
+// Parse raw LLM output into JSON with progressive repair strategies
 function safeParseJSON(raw) {
   if (!raw) return null;
+
+  // Step 1: Strip think tags and code blocks
   let clean = raw.replace(/<think>[\s\S]*?<\/think>/g, "")
                   .replace(/<think>[\s\S]*/g, "")
                   .replace(/```json\s*/g, "").replace(/```/g, "");
+
+  // Step 2: Find the JSON object start
   const start = clean.indexOf("{");
   if (start === -1) return null;
   clean = clean.substring(start);
-  try { return JSON.parse(clean); }
-  catch(e) { console.warn("safeParseJSON failed:", e.message, "raw length:", raw.length, "first 300:", raw.substring(0, 300)); return null; }
+
+  // Step 3: Brace-depth matching to find exact JSON boundary (ignore trailing garbage)
+  let depth = 0, end = -1, inStr = false, esc = false;
+  for (let i = 0; i < clean.length; i++) {
+    const ch = clean[i];
+    if (esc) { esc = false; continue; }
+    if (ch === '\\' && inStr) { esc = true; continue; }
+    if (ch === '"') { inStr = !inStr; continue; }
+    if (inStr) continue;
+    if (ch === '{') depth++;
+    if (ch === '}') { depth--; if (depth === 0) { end = i; break; } }
+  }
+  if (end !== -1) clean = clean.substring(0, end + 1);
+
+  // Step 4: Try direct parse
+  try { return JSON.parse(clean); } catch {}
+
+  // Step 5: Fix common LLM output issues
+  let fixed = clean;
+  // Remove trailing commas before } or ]
+  fixed = fixed.replace(/,\s*([}\]])/g, '$1');
+  try { return JSON.parse(fixed); } catch {}
+
+  // Step 6: Truncate at last valid closing brace
+  const lastBrace = fixed.lastIndexOf("}");
+  if (lastBrace > 0) {
+    try { return JSON.parse(fixed.substring(0, lastBrace + 1)); } catch {}
+  }
+
+  console.warn("safeParseJSON: all repair failed. len:", raw.length, "first 500:", raw.substring(0, 500));
+  return null;
 }
 
 // Extraction call definitions — used by buildPersona and retryFailedCalls
@@ -1727,18 +1850,29 @@ const EXTRACTION_CALLS = [
     merge: (persona, parsed) => { persona.identity = parsed.identity || {}; persona.dating_style = parsed.dating_style || { unique_markers: [] }; persona.surface = parsed.surface || { interests: [] }; persona.meta = parsed.meta || { source_message_count: state.msgCount, depth_reached: "未知" }; } },
 ];
 
-// Run a single extraction call with retry (2 attempts, 1.5s backoff)
-async function runExtractionCall(call, transcript) {
+// Run a single extraction call with 3-attempt retry + exponential backoff via SSE streaming
+async function runExtractionCall(call, transcript, onProgress) {
   const msg = [{role:"user", content: call.tpl() + transcript}];
-  let r = await callAPI(call.sys(), msg, call.maxTok, 0.3);
-  if (!r) {
-    console.log(`${call.id} first attempt failed (${_lastApiError}), retrying in 1.5s...`);
-    await new Promise(ok => setTimeout(ok, 1500));
-    _lastApiError = "";
-    r = await callAPI(call.sys(), msg, call.maxTok, 0.3);
+  const delays = [1000, 3000, 9000];
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) {
+      console.log(`${call.id} attempt ${attempt+1}, waiting ${delays[attempt-1]}ms...`);
+      await new Promise(ok => setTimeout(ok, delays[attempt - 1]));
+      _lastApiError = "";
+    }
+    const r = await callAPIStream(call.sys(), msg, call.maxTok, 0.3, onProgress);
+    if (r) {
+      const parsed = safeParseJSON(r);
+      if (parsed) return parsed;
+      console.warn(`${call.id} attempt ${attempt+1}: JSON parse failed`);
+      _lastApiError = "JSON解析失败";
+      // JSON parse failure is retryable — continue to next attempt
+    } else {
+      console.warn(`${call.id} attempt ${attempt+1} failed: ${_lastApiError}`);
+    }
   }
-  if (!r) return null;
-  return safeParseJSON(r);
+  return null;
 }
 
 function getTranscript() {
@@ -1753,13 +1887,31 @@ async function buildPersona() {
   state.phase = "building";
   state.buildError = null;
   state.failedCalls = [];
+  state.extractionProgress = { A1: "pending", A2: "pending", A3: "pending" };
   render();
   const transcript = getTranscript();
 
-  console.log("Engine A: starting 3 parallel extraction calls...");
-  const results = await Promise.all(
-    EXTRACTION_CALLS.map(call => runExtractionCall(call, transcript))
-  );
+  console.log("Engine A: starting 3 staggered extraction calls...");
+
+  // Stagger by 500ms to avoid rate limit bursts
+  const promises = EXTRACTION_CALLS.map((call, i) => {
+    return new Promise(resolve => {
+      setTimeout(async () => {
+        state.extractionProgress[call.id] = "running";
+        render();
+        const result = await runExtractionCall(call, transcript, (bytes) => {
+          state.extractionProgress[call.id] = "running:" + bytes;
+          // Throttle render: only update every 20 chars
+          if (bytes % 20 < 5) render();
+        });
+        state.extractionProgress[call.id] = result ? "done" : "failed";
+        render();
+        resolve(result);
+      }, i * 500);
+    });
+  });
+
+  const results = await Promise.all(promises);
 
   // Merge results
   state.persona = { schema_version: "v2", identity: {}, inner_world: {}, relationship_patterns: {}, soul_summary: {}, love_warning: {}, radar_scores: {}, dating_style: { unique_markers: [] }, surface: { interests: [] }, meta: { source_message_count: state.msgCount, depth_reached: "未知" } };
@@ -1786,6 +1938,7 @@ async function buildPersona() {
     state.buildError = `部分分析失败（${failures.map(f=>f.label).join("、")}）`;
   }
 
+  state.extractionProgress = null;
   savePersona(state.persona);
 
   if (state.pendingMatch) {
@@ -1803,13 +1956,33 @@ async function retryFailedCalls() {
   const toRetry = EXTRACTION_CALLS.filter(c => state.failedCalls.includes(c.id));
   state.buildError = null;
   state.phase = "building";
+  state.extractionProgress = {};
+  for (const id of ["A1","A2","A3"]) {
+    state.extractionProgress[id] = state.failedCalls.includes(id) ? "pending" : "done";
+  }
   render();
   const transcript = getTranscript();
 
   console.log("Retrying failed calls:", toRetry.map(c => c.id));
-  const results = await Promise.all(
-    toRetry.map(call => runExtractionCall(call, transcript))
-  );
+
+  // Stagger retries too
+  const promises = toRetry.map((call, i) => {
+    return new Promise(resolve => {
+      setTimeout(async () => {
+        state.extractionProgress[call.id] = "running";
+        render();
+        const result = await runExtractionCall(call, transcript, (bytes) => {
+          state.extractionProgress[call.id] = "running:" + bytes;
+          if (bytes % 20 < 5) render();
+        });
+        state.extractionProgress[call.id] = result ? "done" : "failed";
+        render();
+        resolve(result);
+      }, i * 500);
+    });
+  });
+
+  const results = await Promise.all(promises);
 
   const stillFailed = [];
   toRetry.forEach((call, i) => {
@@ -1827,6 +2000,7 @@ async function retryFailedCalls() {
     state.buildError = `仍有部分失败（${stillFailed.map(f=>f.label).join("、")}）`;
   }
 
+  state.extractionProgress = null;
   savePersona(state.persona);
   state.phase = "report";
   render();
