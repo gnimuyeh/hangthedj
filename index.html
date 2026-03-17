@@ -1342,9 +1342,9 @@ async function buildPersona() {
     return split(m.text).map(p=>`${who}：${p}`).join("\n");
   }).join("\n\n");
 
-  // Use large token budget — MiniMax M2.5 thinking tokens count toward limit
-  // reasoning_tokens count toward completion_tokens, so we need a high limit
-  const t = await callAPI(ENGINE_A_SYS, [{role:"user", content: ENGINE_A_TEMPLATE + transcript}], 16384);
+  // Omit max_tokens for extraction — MiniMax M2.5 reasoning tokens eat into the budget
+  // unpredictably. Let the API use its own default limit for best results.
+  const t = await callAPI(ENGINE_A_SYS, [{role:"user", content: ENGINE_A_TEMPLATE + transcript}], 0);
   
   console.log("Engine A raw response length:", t ? t.length : "null");
   console.log("Engine A raw (first 300):", t ? t.substring(0, 300) : "null");
@@ -1366,35 +1366,44 @@ async function buildPersona() {
         parsed = JSON.parse(clean);
       } catch(parseErr) {
         console.warn("JSON parse failed, attempting repair. finish_reason:", _lastFinishReason);
-        // Scan backwards to find last complete value boundary
-        // Look for patterns like: ","  "}  "]  null,  true,  false,  number
+        // Find all quote positions and their context (in-string or not) in one pass
         let repaired = null;
-        // Strategy: find last `"` that ends a complete string value, then truncate
-        // A complete string value ends with `"` followed by , or } or ] or whitespace
-        for (let i = clean.length - 1; i > 0; i--) {
-          if (clean[i] === '"' && clean[i-1] !== '\\') {
-            // This quote might end a complete value — try truncating here
-            let candidate = clean.substring(0, i + 1);
-            // Close unclosed brackets/braces
-            const stack = [];
-            let inStr = false;
-            for (let j = 0; j < candidate.length; j++) {
-              const c = candidate[j];
-              if (c === '"' && (j === 0 || candidate[j-1] !== '\\')) { inStr = !inStr; continue; }
-              if (inStr) continue;
-              if (c === '{' || c === '[') stack.push(c);
-              if (c === '}' || c === ']') stack.pop();
+        const stack = [];
+        let inStr = false;
+        const quoteEndsValue = []; // positions where " ends a value (not a key)
+        let afterColon = false;
+        for (let j = 0; j < clean.length; j++) {
+          const c = clean[j];
+          if (c === '"' && (j === 0 || clean[j-1] !== '\\')) {
+            if (inStr) {
+              // Closing quote — record if this ends a value (not a key)
+              if (afterColon) quoteEndsValue.push({ pos: j, stack: [...stack] });
+              inStr = false;
+              afterColon = false;
+            } else {
+              inStr = true;
             }
-            let suffix = "";
-            for (let j = stack.length - 1; j >= 0; j--) {
-              suffix += stack[j] === '{' ? '}' : ']';
-            }
-            try {
-              repaired = JSON.parse(candidate + suffix);
-              console.log("JSON repair succeeded, truncated at position", i, "of", clean.length);
-              break;
-            } catch { /* try next position */ }
+            continue;
           }
+          if (inStr) continue;
+          if (c === ':') afterColon = true;
+          if (c === ',' || c === '{' || c === '[') afterColon = false;
+          if (c === '{' || c === '[') stack.push(c);
+          if (c === '}' || c === ']') stack.pop();
+        }
+        // Try from last complete value boundary backwards
+        for (let k = quoteEndsValue.length - 1; k >= 0; k--) {
+          const { pos, stack: openStack } = quoteEndsValue[k];
+          let candidate = clean.substring(0, pos + 1);
+          let suffix = "";
+          for (let j = openStack.length - 1; j >= 0; j--) {
+            suffix += openStack[j] === '{' ? '}' : ']';
+          }
+          try {
+            repaired = JSON.parse(candidate + suffix);
+            console.log("JSON repair succeeded, truncated at position", pos, "of", clean.length, "recovered", Object.keys(repaired).length, "top-level keys");
+            break;
+          } catch { /* try next position */ }
         }
         if (!repaired) throw new Error(parseErr.message);
         parsed = repaired;
