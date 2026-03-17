@@ -413,7 +413,8 @@ async function callAPI(system, messages, maxTokens=800) {
   _lastApiError = "";
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120000);
+    // 5 min timeout for long extractions (reasoning model can be slow)
+    const timeout = setTimeout(() => controller.abort(), 300000);
 
     const r = await fetch("/api/chat", {
       method: "POST",
@@ -423,10 +424,44 @@ async function callAPI(system, messages, maxTokens=800) {
     });
     clearTimeout(timeout);
 
-    const d = await r.json();
+    if (!r.ok) {
+      const errBody = await r.text();
+      _lastApiError = "HTTP " + r.status + ": " + errBody.substring(0, 200);
+      console.error("API error:", _lastApiError);
+      return null;
+    }
 
-    if (!r.ok || d.error) {
-      _lastApiError = d.error || ("HTTP " + r.status);
+    // Handle SSE streaming response
+    let d = null;
+    const ct = r.headers.get("content-type") || "";
+    if (ct.includes("text/event-stream")) {
+      const reader = r.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        // Parse SSE: look for "data: " lines (ignore ":" keepalive comments)
+        const lines = buf.split("\n");
+        buf = lines.pop() || "";
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith("data: ")) {
+            try { d = JSON.parse(trimmed.slice(6)); } catch {}
+          }
+        }
+      }
+      // Check remaining buffer
+      if (buf.trim().startsWith("data: ")) {
+        try { d = JSON.parse(buf.trim().slice(6)); } catch {}
+      }
+    } else {
+      d = await r.json();
+    }
+
+    if (!d || d.error) {
+      _lastApiError = d?.error || "空响应";
       console.error("API error:", _lastApiError);
       return null;
     }
@@ -436,7 +471,7 @@ async function callAPI(system, messages, maxTokens=800) {
     if (!d.text) { _lastApiError = "空文本 (finish=" + (d.finish_reason||"?") + ")"; return null; }
     return d.text;
   } catch(e) {
-    _lastApiError = e.name === "AbortError" ? "超时 (120秒)" : e.message;
+    _lastApiError = e.name === "AbortError" ? "超时 (5分钟)" : e.message;
     console.error("API error:", _lastApiError);
     return null;
   }
@@ -1345,9 +1380,9 @@ async function buildPersona() {
     return split(m.text).map(p=>`${who}：${p}`).join("\n");
   }).join("\n\n");
 
-  // Omit max_tokens for extraction — MiniMax M2.5 reasoning tokens eat into the budget
-  // unpredictably. Let the API use its own default limit for best results.
-  const t = await callAPI(ENGINE_A_SYS, [{role:"user", content: ENGINE_A_TEMPLATE + transcript}], 0);
+  // MiniMax M2.5 reasoning tokens eat into max_tokens budget unpredictably.
+  // 32K gives enough room for ~15K reasoning + ~3K JSON output.
+  const t = await callAPI(ENGINE_A_SYS, [{role:"user", content: ENGINE_A_TEMPLATE + transcript}], 32000);
   
   console.log("Engine A raw response length:", t ? t.length : "null");
   console.log("Engine A raw (first 300):", t ? t.substring(0, 300) : "null");
