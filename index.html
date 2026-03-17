@@ -479,10 +479,10 @@ ${rp.love_language_signal ? "- 你表达爱的方式：" + rp.love_language_sign
 ${rp.conflict_pattern ? "- 你面对冲突的方式：" + rp.conflict_pattern : ""}
 ${rp.independence_intimacy ? "- 你对独立和亲密的态度：" + rp.independence_intimacy : ""}
 ${rp.relationship_narrative ? "- 你对爱情的信念：" + rp.relationship_narrative : ""}
-${(rp.dealbreaker_deep||[]).length ? "- 你的底线：" + rp.dealbreaker_deep.join("；") : ""}
+${ensureArr(rp.dealbreaker_deep).length ? "- 你的底线：" + ensureArr(rp.dealbreaker_deep).join("；") : ""}
 
 # 你的聊天风格
-${(ds.humor_type||[]).length ? "- 幽默方式：" + ds.humor_type.join("，") : ""}
+${ensureArr(ds.humor_type).length ? "- 幽默方式：" + ensureArr(ds.humor_type).join("，") : ""}
 ${ds.flirtation_mode ? "- 制造吸引力的方式：" + ds.flirtation_mode : ""}
 ${ds.pacing ? "- 聊天节奏：" + ds.pacing : ""}
 ${ds.message_length ? "- 消息长度：" + ds.message_length : "- 消息长度：中等，2-3句"}
@@ -520,6 +520,7 @@ async function soulChatAPI(allMsgs) {
 // ═══════════════════════════════════════
 
 function split(t) { return (t||"").split("|||").map(s=>s.trim()).filter(Boolean); }
+function ensureArr(v) { return Array.isArray(v) ? v : (v ? [String(v)] : []); }
 
 const MAX_MSGS = 30;
 
@@ -549,15 +550,15 @@ function personaToMatchCard(p) {
     ll: rp.love_language_signal || null,
     cp: rp.conflict_pattern || null,
     ii: rp.independence_intimacy || null,
-    dd: (rp.dealbreaker_deep || []).slice(0, 3),
+    dd: ensureArr(rp.dealbreaker_deep).slice(0, 3),
     rn: rp.relationship_narrative || null,
     // dating style — enough for chat
-    ht: (ds.humor_type || []).map(t => typeof t === "string" ? t.substring(0, 40) : "").slice(0, 3),
+    ht: ensureArr(ds.humor_type).map(t => typeof t === "string" ? t.substring(0, 40) : "").slice(0, 3),
     fm: ds.flirtation_mode ? ds.flirtation_mode.substring(0, 60) : null,
     pa: ds.pacing ? ds.pacing.substring(0, 30) : null,
     ml: ds.message_length ? ds.message_length.substring(0, 20) : null,
     mp: ds.message_pattern ? ds.message_pattern.substring(0, 20) : null,
-    sr: (ds.slang_register || []).slice(0, 5),
+    sr: ensureArr(ds.slang_register).slice(0, 5),
     vp: ds.vulnerability_pattern ? ds.vulnerability_pattern.substring(0, 40) : null,
     cs: ds.conflict_style ? ds.conflict_style.substring(0, 40) : null,
   };
@@ -1082,16 +1083,17 @@ function renderReport(app) {
       ));
     }
   });
-  if(rp.dealbreaker_deep&&rp.dealbreaker_deep.length) {
+  const dealbreakers = ensureArr(rp.dealbreaker_deep);
+  if(dealbreakers.length) {
     rpCard.appendChild(h("div",{style:{marginTop:"8px"}},
       h("div",{style:{display:"flex",alignItems:"center",gap:"6px",marginBottom:"4px"}},
         h("span",{style:{fontSize:"13px"}},"🚫"),
         h("span",{style:{fontSize:"12px",color:"#7C3AED",fontWeight:"600"}},"关系底线")
       ),
-      ...rp.dealbreaker_deep.map(d=>h("div",{class:"tag purple"},String(d)))
+      ...dealbreakers.map(d=>h("div",{class:"tag purple"},String(d)))
     ));
   }
-  if (rpFilled === 0 && !(rp.dealbreaker_deep&&rp.dealbreaker_deep.length)) {
+  if (rpFilled === 0 && !dealbreakers.length) {
     rpCard.appendChild(h("div",{style:{padding:"20px",textAlign:"center",color:"var(--txtM)",fontSize:"13px"}},"关系模式还没有足够信号，继续聊可以解锁"));
   }
   report.appendChild(rpCard);
@@ -1099,18 +1101,19 @@ function renderReport(app) {
   // dating style
   const dsCard = h("div",{class:"rcard"}, h("h3",null,"💬 聊天风格"));
   const tags = h("div",{style:{display:"flex",flexWrap:"wrap",gap:"6px",marginBottom:"12px"}});
-  (ds.humor_type||[]).forEach(t => tags.appendChild(h("span",{class:"tag pink"},typeof t==="string"?t.split("：")[0]||t:String(t))));
+  ensureArr(ds.humor_type).forEach(t => tags.appendChild(h("span",{class:"tag pink"},typeof t==="string"?t.split("：")[0]||t:String(t))));
   if(ds.flirtation_mode) tags.appendChild(h("span",{class:"tag purple"},ds.flirtation_mode.substring(0,15)));
   if(ds.pacing) tags.appendChild(h("span",{class:"tag green"},ds.pacing.substring(0,10)));
   dsCard.appendChild(tags);
-  if(ds.unique_markers&&ds.unique_markers.length) {
+  const markers = ensureArr(ds.unique_markers);
+  if(markers.length) {
     dsCard.appendChild(h("div",{style:{fontSize:"12px",color:"var(--txtM)",marginBottom:"6px"}},"独特标记 ✦"));
-    ds.unique_markers.slice(0,3).forEach(m => dsCard.appendChild(h("div",{class:"marker"}, `"${m}"`)));
+    markers.slice(0,3).forEach(m => dsCard.appendChild(h("div",{class:"marker"}, `"${m}"`)));
   }
   report.appendChild(dsCard);
 
   // surface
-  const allInt = [...(sf.interests||[]),...(sf.lifestyle_notes||[])];
+  const allInt = [...ensureArr(sf.interests),...ensureArr(sf.lifestyle_notes)];
   if(allInt.length) {
     const sfCard = h("div",{class:"rcard"}, h("h3",null,"🌍 表层拼图"));
     const wrap = h("div",{style:{display:"flex",flexWrap:"wrap",gap:"6px"}});
@@ -1132,8 +1135,8 @@ function renderReport(app) {
     ),
     h("div",{class:"bar-track",style:{marginBottom:"8px"}}, h("div",{class:"bar-fill",style:{width:Math.max(conf*100, totalFields/maxFields*100)+"%"}})),
     h("div",{style:{fontSize:"12px",color:"var(--txtM)",lineHeight:"1.5"}},
-      meta.unknown_fields && meta.unknown_fields.length > 0 ? `还可以深入聊的方向：${meta.unknown_fields.slice(0,4).join("、")}` :
-      meta.notable_gaps && meta.notable_gaps.length > 0 ? `有线索但不确定：${meta.notable_gaps.slice(0,3).join("、")}` :
+      ensureArr(meta.unknown_fields).length > 0 ? `还可以深入聊的方向：${ensureArr(meta.unknown_fields).slice(0,4).join("、")}` :
+      ensureArr(meta.notable_gaps).length > 0 ? `有线索但不确定：${ensureArr(meta.notable_gaps).slice(0,3).join("、")}` :
       `基于 ${meta.source_message_count||state.msgCount} 条消息分析`
     )
   );
