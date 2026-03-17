@@ -407,6 +407,7 @@ let state = { phase:"welcome", guide:null, msgs:[], input:"", typing:false, msgC
 
 // API via Netlify proxy (CORS workaround — MiniMax blocks direct browser calls)
 let _lastApiError = "";
+let _lastFinishReason = "";
 
 async function callAPI(system, messages, maxTokens=800) {
   _lastApiError = "";
@@ -431,6 +432,7 @@ async function callAPI(system, messages, maxTokens=800) {
     }
 
     if (d.finish_reason) console.log("API: finish=" + d.finish_reason + ", text=" + (d.text||"").length + "ch");
+    _lastFinishReason = d.finish_reason || "";
     if (!d.text) { _lastApiError = "空文本 (finish=" + (d.finish_reason||"?") + ")"; return null; }
     return d.text;
   } catch(e) {
@@ -1342,7 +1344,7 @@ async function buildPersona() {
 
   // Use large token budget — MiniMax M2.5 thinking tokens count toward limit
   // reasoning_tokens count toward completion_tokens, so we need a high limit
-  const t = await callAPI(ENGINE_A_SYS, [{role:"user", content: ENGINE_A_TEMPLATE + transcript}], 4096);
+  const t = await callAPI(ENGINE_A_SYS, [{role:"user", content: ENGINE_A_TEMPLATE + transcript}], 16384);
   
   console.log("Engine A raw response length:", t ? t.length : "null");
   console.log("Engine A raw (first 300):", t ? t.substring(0, 300) : "null");
@@ -1356,10 +1358,37 @@ async function buildPersona() {
       clean = clean.replace(/```json\s*/g, "").replace(/```/g, "");
       // Find JSON boundaries
       const start = clean.indexOf("{");
-      const end = clean.lastIndexOf("}");
-      if (start === -1 || end === -1) throw new Error("No JSON found in response");
-      clean = clean.substring(start, end + 1);
-      const parsed = JSON.parse(clean);
+      if (start === -1) throw new Error("No JSON found in response");
+      clean = clean.substring(start);
+      // Try parsing; if truncated (finish_reason=length), attempt repair
+      let parsed;
+      try {
+        parsed = JSON.parse(clean);
+      } catch(parseErr) {
+        console.warn("JSON parse failed, attempting repair. finish_reason:", _lastFinishReason);
+        // Truncate to last complete value boundary
+        let repaired = clean;
+        // Remove trailing incomplete string value (cut mid-sentence)
+        repaired = repaired.replace(/,\s*"[^"]*":\s*"[^"]*$/, "");
+        repaired = repaired.replace(/,\s*"[^"]*":\s*\[[^\]]*$/, "");
+        repaired = repaired.replace(/,\s*"[^"]*":\s*$/, "");
+        // Close any unclosed strings
+        const quoteCount = (repaired.match(/(?<!\\)"/g) || []).length;
+        if (quoteCount % 2 !== 0) repaired += '"';
+        // Close unclosed brackets/braces
+        const opens = (repaired.match(/\{/g) || []).length;
+        const closes = (repaired.match(/\}/g) || []).length;
+        const openBrackets = (repaired.match(/\[/g) || []).length;
+        const closeBrackets = (repaired.match(/\]/g) || []).length;
+        for (let i = 0; i < openBrackets - closeBrackets; i++) repaired += "]";
+        for (let i = 0; i < opens - closes; i++) repaired += "}";
+        try {
+          parsed = JSON.parse(repaired);
+          console.log("JSON repair succeeded");
+        } catch(e2) {
+          throw new Error(parseErr.message);
+        }
+      }
       // Validate: detect template echo-back (field descriptions leaked as values)
       const templatePhrases = ["底层动力","自我保护","背后的驱动力","情感的质地","最真实的自己","裂缝在哪里","两种真实需求","深层模式是什么","不要列举行为","深层反应模式","心理逻辑","不可触碰的价值","底层信念"];
       function isTemplateEcho(val) {
