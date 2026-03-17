@@ -864,7 +864,7 @@ function matchCardToPersona(mc) {
     const r = mc.r || [50,50,50,50,50,50];
     return {
       schema_version: "v2",
-      identity: { self_label: mc.n || null },
+      identity: { self_label: mc.n || null, name: mc.n || null },
       inner_world: {
         core_need: mc.cn || null, attachment_signal: mc.as || null,
         emotional_texture: null, energy_source: null,
@@ -890,7 +890,7 @@ function matchCardToPersona(mc) {
   // v2 legacy format
   return {
     schema_version: "v2",
-    identity: { self_label: mc.n, occupation: null, age: null, city: null },
+    identity: { self_label: mc.n, name: mc.n, occupation: null, age: null, city: null },
     inner_world: {
       core_need: mc.cn, attachment_signal: mc.as, emotional_texture: mc.et,
       energy_source: mc.es, insecurity_hint: mc.ih, contradiction: mc.ct
@@ -1141,7 +1141,7 @@ function renderWelcome(app) {
 function renderMatchInvite(app) {
   app.className = "shell";
   const scanned = state.scannedPersona;
-  const scannedName = scanned?.identity?.self_label || "TA";
+  const scannedName = scanned?.identity?.name || scanned?.identity?.self_label || "TA";
   const hasExisting = !!loadPersona();
   const pickGuide = (id) => { state.guide = id; state.phase = "welcome"; render(); };
 
@@ -1263,7 +1263,7 @@ function renderChat(app) {
 function renderSoulChat(app) {
   app.className = "shell";
   const sp = state.scannedPersona;
-  const name = sp?.identity?.self_label || "TA的灵魂";
+  const name = sp?.identity?.name || sp?.identity?.self_label || "TA的灵魂";
   const atMax = state.soulMsgCount >= MAX_MSGS;
 
   // header
@@ -1614,7 +1614,7 @@ function renderMatchReport(app) {
 
   // header — names with score circle in the middle
   const myName = state.userName || "你";
-  const otherName = state.scannedPersona?.identity?.self_label || "TA";
+  const otherName = state.scannedPersona?.identity?.name || state.scannedPersona?.identity?.self_label || "TA";
   const nameInitial = (n) => n.length <= 2 ? n : n.substring(0, 2);
   const hdr = h("div",{class:"match-header"},
     h("div",{class:"names-row"},
@@ -2010,7 +2010,7 @@ async function runMatchWith(otherPersona) {
   state.phase = "match_building";
   render();
   const myName = state.userName || "A";
-  const otherName = otherPersona?.identity?.self_label || "B";
+  const otherName = otherPersona?.identity?.name || otherPersona?.identity?.self_label || "B";
   const t = await callAPI(ENGINE_C_SYS, [{role:"user",content:`${myName}的人格：\n${JSON.stringify(state.persona)}\n\n${otherName}的人格：\n${JSON.stringify(otherPersona)}`}], 4096);
   if(t) {
     try {
