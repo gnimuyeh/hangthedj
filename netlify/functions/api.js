@@ -12,12 +12,12 @@ exports.handler = async (event) => {
   if (event.httpMethod !== "POST") return { statusCode: 405, headers: h, body: '{"error":"POST only"}' };
 
   try {
-    const { system, messages, max_tokens } = JSON.parse(event.body);
+    const { system, messages, max_tokens, temperature } = JSON.parse(event.body);
     const msgs = [];
     if (system) msgs.push({ role: "system", content: system });
     for (const m of (messages || [])) msgs.push({ role: m.role, content: m.content });
 
-    const payload = { model: "MiniMax-M2.5-highspeed", messages: msgs, temperature: 0.85, stream: true };
+    const payload = { model: "MiniMax-M2.5-highspeed", messages: msgs, temperature: temperature !== undefined ? temperature : 0.85, stream: true };
     if (max_tokens && max_tokens > 0) payload.max_tokens = max_tokens;
 
     const resp = await fetch(API_URL, {

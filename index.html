@@ -584,7 +584,7 @@ async function chatAPI(allMsgs) {
       apiMsgs.push(m.role==="match" ? {role:"assistant",content:m.text} : {role:"user",content:m.text});
     }
   }
-  return callAPI(g.sys, apiMsgs, 300);
+  return callAPI(g.sys, apiMsgs, 1200);
 }
 
 // Build a system prompt for chatting AS a scanned persona
@@ -643,7 +643,7 @@ async function soulChatAPI(allMsgs) {
       apiMsgs.push(m.role==="match" ? {role:"assistant",content:m.text} : {role:"user",content:m.text});
     }
   }
-  return callAPI(sys, apiMsgs, 300);
+  return callAPI(sys, apiMsgs, 1200);
 }
 
 // ═══════════════════════════════════════
