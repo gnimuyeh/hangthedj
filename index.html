@@ -1366,28 +1366,38 @@ async function buildPersona() {
         parsed = JSON.parse(clean);
       } catch(parseErr) {
         console.warn("JSON parse failed, attempting repair. finish_reason:", _lastFinishReason);
-        // Truncate to last complete value boundary
-        let repaired = clean;
-        // Remove trailing incomplete string value (cut mid-sentence)
-        repaired = repaired.replace(/,\s*"[^"]*":\s*"[^"]*$/, "");
-        repaired = repaired.replace(/,\s*"[^"]*":\s*\[[^\]]*$/, "");
-        repaired = repaired.replace(/,\s*"[^"]*":\s*$/, "");
-        // Close any unclosed strings
-        const quoteCount = (repaired.match(/(?<!\\)"/g) || []).length;
-        if (quoteCount % 2 !== 0) repaired += '"';
-        // Close unclosed brackets/braces
-        const opens = (repaired.match(/\{/g) || []).length;
-        const closes = (repaired.match(/\}/g) || []).length;
-        const openBrackets = (repaired.match(/\[/g) || []).length;
-        const closeBrackets = (repaired.match(/\]/g) || []).length;
-        for (let i = 0; i < openBrackets - closeBrackets; i++) repaired += "]";
-        for (let i = 0; i < opens - closes; i++) repaired += "}";
-        try {
-          parsed = JSON.parse(repaired);
-          console.log("JSON repair succeeded");
-        } catch(e2) {
-          throw new Error(parseErr.message);
+        // Scan backwards to find last complete value boundary
+        // Look for patterns like: ","  "}  "]  null,  true,  false,  number
+        let repaired = null;
+        // Strategy: find last `"` that ends a complete string value, then truncate
+        // A complete string value ends with `"` followed by , or } or ] or whitespace
+        for (let i = clean.length - 1; i > 0; i--) {
+          if (clean[i] === '"' && clean[i-1] !== '\\') {
+            // This quote might end a complete value — try truncating here
+            let candidate = clean.substring(0, i + 1);
+            // Close unclosed brackets/braces
+            const stack = [];
+            let inStr = false;
+            for (let j = 0; j < candidate.length; j++) {
+              const c = candidate[j];
+              if (c === '"' && (j === 0 || candidate[j-1] !== '\\')) { inStr = !inStr; continue; }
+              if (inStr) continue;
+              if (c === '{' || c === '[') stack.push(c);
+              if (c === '}' || c === ']') stack.pop();
+            }
+            let suffix = "";
+            for (let j = stack.length - 1; j >= 0; j--) {
+              suffix += stack[j] === '{' ? '}' : ']';
+            }
+            try {
+              repaired = JSON.parse(candidate + suffix);
+              console.log("JSON repair succeeded, truncated at position", i, "of", clean.length);
+              break;
+            } catch { /* try next position */ }
+          }
         }
+        if (!repaired) throw new Error(parseErr.message);
+        parsed = repaired;
       }
       // Validate: detect template echo-back (field descriptions leaked as values)
       const templatePhrases = ["底层动力","自我保护","背后的驱动力","情感的质地","最真实的自己","裂缝在哪里","两种真实需求","深层模式是什么","不要列举行为","深层反应模式","心理逻辑","不可触碰的价值","底层信念"];
