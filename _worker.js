@@ -21,12 +21,12 @@ async function handleChat(request) {
   }
 
   try {
-    const { system, messages, max_tokens } = await request.json();
+    const { system, messages, max_tokens, temperature: reqTemp } = await request.json();
     const msgs = [];
     if (system) msgs.push({ role: "system", content: system });
     for (const m of (messages || [])) msgs.push({ role: m.role, content: m.content });
 
-    const payload = { model: "MiniMax-M2.5-highspeed", messages: msgs, temperature: 0.85, stream: true };
+    const payload = { model: "MiniMax-M2.5-highspeed", messages: msgs, temperature: reqTemp ?? 0.85, stream: true };
     if (max_tokens && max_tokens > 0) payload.max_tokens = max_tokens;
 
     const resp = await fetch(API_URL, {
