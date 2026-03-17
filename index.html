@@ -312,6 +312,7 @@ const ENGINE_A_TEMPLATE = `深度分析以下对话，提取用户的关系人�
 `;
 
 const ENGINE_C_SYS = `你是匹配分析引擎。分析两个v2人格档案输出匹配报告。
+输入会标注每个人的名字，在分析文字中使用他们的真实名字而不是A/B。
 重点分析inner_world和relationship_patterns的兼容性而不只是surface重合。
 权重：聊天化学30%幽默25%深度20%生活15%能量10%。反通胀：大部分40-60分。>75需强证据。
 vibe_label要画面感（10字以内）。所有文字必须是中文。
@@ -412,7 +413,7 @@ const GUIDES = {
 // STATE
 // ═══════════════════════════════════════
 
-let state = { phase:"welcome", guide:null, msgs:[], input:"", typing:false, msgCount:0, persona:null, matchReport:null, showBuild:false, apiError:false, pendingMatch:null, scannedPersona:null, soulMsgs:[], soulInput:"", soulMsgCount:0, soulTyping:false, soulError:false, buildError:null };
+let state = { phase:"welcome", guide:null, userName:"", msgs:[], input:"", typing:false, msgCount:0, persona:null, matchReport:null, showBuild:false, apiError:false, pendingMatch:null, scannedPersona:null, soulMsgs:[], soulInput:"", soulMsgCount:0, soulTyping:false, soulError:false, buildError:null };
 
 // ═══════════════════════════════════════
 // API
@@ -589,8 +590,8 @@ function personaToMatchCard(p) {
   const ds = p.dating_style || {};
   return {
     v: 2,
-    // identity
-    n: id.self_label || id.occupation || null,
+    // identity — prefer userName for the sharer's real name
+    n: state.userName || id.self_label || id.occupation || null,
     // inner_world (all 6)
     cn: iw.core_need || null,
     as: iw.attachment_signal || null,
@@ -759,7 +760,7 @@ async function exportChatImage() {
 }
 
 function resetChat() {
-  state.phase="welcome"; state.guide=null; state.msgs=[]; state.persona=null;
+  state.phase="welcome"; state.guide=null; state.userName=""; state.msgs=[]; state.persona=null;
   state.matchReport=null; state.msgCount=0; state.apiError=false; state.showBuild=false;
   clearPersona();
   render();
@@ -810,8 +811,37 @@ function render() {
 
 function renderWelcome(app) {
   app.className = "shell";
-  const pickGuide = (id) => { state.guide = id; startChat(); };
+  const pickGuide = (id) => { state.guide = id; render(); };
   const existing = loadPersona();
+
+  // If guide already picked, show name input
+  if (state.guide) {
+    const g = GUIDES[state.guide];
+    const submitName = () => {
+      const name = (state.userName || "").trim();
+      if (!name) return;
+      startChat();
+    };
+    app.appendChild(h("div", {class:"welcome"},
+      h("div", {style:{fontSize:"48px",marginBottom:"12px"}}, g.avatar),
+      h("div", {style:{fontSize:"15px",color:"var(--txtS)",marginBottom:"20px"}}, `${g.name}想认识你`),
+      h("div", {style:{width:"100%",maxWidth:"260px"}},
+        h("input", {type:"text", placeholder:"你的名字", value:state.userName||"", maxLength:"12",
+          style:{width:"100%",padding:"12px 16px",borderRadius:"16px",border:"1.5px solid var(--brd)",fontSize:"15px",
+            textAlign:"center",fontFamily:"inherit",outline:"none",background:"var(--card)",boxSizing:"border-box"},
+          onInput:e=>{ state.userName = e.target.value; },
+          onKeydown:e=>{ if(e.key==="Enter") submitName(); }
+        }),
+        h("button", {class:"btn-main", style:{width:"100%",marginTop:"12px"}, onClick:submitName}, "开始聊天 →")
+      ),
+      h("button", {style:{marginTop:"16px",background:"none",border:"none",color:"var(--txtM)",fontSize:"12px",cursor:"pointer",fontFamily:"inherit"},
+        onClick:()=>{ state.guide=null; render(); }}, "← 换一个")
+    ));
+    // Auto-focus the input
+    setTimeout(()=>{ const inp = app.querySelector("input"); if(inp) inp.focus(); }, 50);
+    return;
+  }
+
   app.appendChild(h("div", {class:"welcome"},
     h("div", {class:"welcome-icon"}, "💫"),
     h("h1", null, "遇见你的", h("br"), h("span", null, "灵魂画像")),
@@ -845,7 +875,7 @@ function renderMatchInvite(app) {
   const scanned = state.scannedPersona;
   const scannedName = scanned?.identity?.self_label || "TA";
   const hasExisting = !!loadPersona();
-  const pickGuide = (id) => { state.guide = id; startChat(); };
+  const pickGuide = (id) => { state.guide = id; state.phase = "welcome"; render(); };
 
   app.appendChild(h("div", {class:"welcome"},
     h("div", {class:"welcome-icon"}, "💕"),
@@ -1056,9 +1086,10 @@ function renderReport(app) {
   const report = h("div",{class:"report",id:"soul-report"});
 
   // header
+  const displayName = state.userName || "你";
   const hdr = h("div",{class:"report-header"},
     h("div",{style:{fontSize:"48px",marginBottom:"12px"}},"🪞"),
-    h("h1",null,"你的灵魂画像"),
+    h("h1",null, `${displayName}的灵魂画像`),
     h("p",null, (id.self_label||id.occupation||"一个有趣的灵魂") + (id.city?` · ${id.city}`:"")),
     h("div",{class:"curve"})
   );
@@ -1243,9 +1274,11 @@ function renderMatchReport(app) {
   const report = h("div",{class:"report",id:"match-report"});
 
   // header
+  const myName = state.userName || "你";
+  const otherName = state.scannedPersona?.identity?.self_label || "TA";
   report.appendChild(h("div",{class:"report-header"},
     h("div",{style:{fontSize:"40px",marginBottom:"8px"}},"💕"),
-    h("h1",null,"匹配报告"),
+    h("h1",null, `${myName} × ${otherName}`),
     h("div",{class:"match-score"}, h("span",{class:"num"},String(mr.match_score||0)), h("span",{class:"unit"},"分")),
     mr.vibe_label ? h("p",{class:"vibe"}, `"${mr.vibe_label}"`) : null,
     h("div",{class:"curve"})
@@ -1537,7 +1570,9 @@ async function buildPersona() {
 async function runMatchWith(otherPersona) {
   state.phase = "match_building";
   render();
-  const t = await callAPI(ENGINE_C_SYS, [{role:"user",content:`人格A：\n${JSON.stringify(state.persona)}\n\n人格B：\n${JSON.stringify(otherPersona)}`}], 4096);
+  const myName = state.userName || "A";
+  const otherName = otherPersona?.identity?.self_label || "B";
+  const t = await callAPI(ENGINE_C_SYS, [{role:"user",content:`${myName}的人格：\n${JSON.stringify(state.persona)}\n\n${otherName}的人格：\n${JSON.stringify(otherPersona)}`}], 4096);
   if(t) {
     try {
       let clean = t.replace(/<think>[\s\S]*?<\/think>/g,"").replace(/```json\s*/g,"").replace(/```/g,"");
@@ -1564,7 +1599,8 @@ function saveSession() {
       msgs: state.msgs,
       msgCount: state.msgCount,
       guide: state.guide,
-      showBuild: state.showBuild
+      showBuild: state.showBuild,
+      userName: state.userName
     }));
   } catch(e) {}
 }
@@ -1594,6 +1630,7 @@ if (incoming) {
   state.scannedPersona = incoming;
   state.pendingMatch = incoming;
   if (savedPersona) state.persona = savedPersona;
+  if (savedSession) state.userName = savedSession.userName || "";
   state.phase = "match_invite";
   history.replaceState(null, "", window.location.pathname);
   render();
@@ -1605,6 +1642,7 @@ if (incoming) {
     state.msgCount = savedSession.msgCount || 0;
     state.guide = savedSession.guide || null;
     state.showBuild = savedSession.showBuild || false;
+    state.userName = savedSession.userName || "";
   }
   state.phase = "report";
   render();
@@ -1614,6 +1652,7 @@ if (incoming) {
   state.msgCount = savedSession.msgCount || 0;
   state.guide = savedSession.guide || "xiaomei";
   state.showBuild = savedSession.showBuild || false;
+  state.userName = savedSession.userName || "";
   state.phase = "chat";
   render();
 } else {
