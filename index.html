@@ -1748,34 +1748,59 @@ async function buildPersona() {
     return split(m.text).map(p=>`${who}：${p}`).join("\n");
   }).join("\n\n");
 
-  // Safari/iOS kills network connections when the tab is backgrounded.
-  // Auto-retry once if the request fails with "Load failed".
-  let t = null;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    // MiniMax M2.5 reasoning tokens eat into max_tokens budget unpredictably.
-    // 32K gives enough room for ~15K reasoning + ~3K JSON output.
-    // Lower temperature (0.4) for extraction — this is analytical, not creative.
-    // Reduces variance in output completeness between runs.
-    t = await callAPI(ENGINE_A_SYS, [{role:"user", content: ENGINE_A_TEMPLATE + transcript}], 32000, 0.4);
-    if (t) break;
-    // Only retry on "Load failed" (Safari background suspension)
-    if (attempt === 0 && _lastApiError && /Load failed|fetch/i.test(_lastApiError)) {
-      console.log("Retrying extraction (Safari background suspension detected)");
-      state.buildError = null;
-      _lastApiError = "";
-      continue;
-    }
-    break;
-  }
-  
-  console.log("Engine A raw response length:", t ? t.length : "null");
-  console.log("Engine A finish_reason:", _lastFinishReason);
-  console.log("Engine A raw (first 500):", t ? t.substring(0, 500) : "null");
-  if (t) console.log("Engine A raw (last 200):", t.substring(Math.max(0, t.length - 200)));
+  // --- Extraction with auto-continuation ---
+  // MiniMax M2.5 reasoning tokens eat into max_tokens unpredictably.
+  // If the JSON is truncated (finish_reason=length), we send the partial
+  // output back and ask the model to continue. Loop until valid JSON.
+  const MAX_CONTINUATIONS = 3;
+  let accumulated = "";
+  let extractionFailed = false;
 
-  if(t) {
+  // Initial call
+  let t = await callAPI(ENGINE_A_SYS, [{role:"user", content: ENGINE_A_TEMPLATE + transcript}], 32000, 0.4);
+  // Safari retry on "Load failed"
+  if (!t && _lastApiError && /Load failed|fetch/i.test(_lastApiError)) {
+    console.log("Retrying extraction (Safari background suspension detected)");
+    _lastApiError = "";
+    t = await callAPI(ENGINE_A_SYS, [{role:"user", content: ENGINE_A_TEMPLATE + transcript}], 32000, 0.4);
+  }
+
+  if (!t) {
+    extractionFailed = true;
+    state.buildError = "API返回空: " + (_lastApiError || "未知原因，请检查控制台");
+  } else {
+    accumulated = t;
+    console.log("Engine A initial response:", accumulated.length, "chars, finish_reason:", _lastFinishReason);
+
+    // Continuation loop: if truncated, ask model to continue
+    for (let cont = 0; cont < MAX_CONTINUATIONS && _lastFinishReason === "length"; cont++) {
+      console.log(`Engine A continuation ${cont + 1}/${MAX_CONTINUATIONS}...`);
+      // Send the partial output as assistant message, ask to continue
+      const contResult = await callAPI(
+        "你正在输出一个JSON人格画像，但因为长度限制被截断了。请从截断处继续输出，不要重复已输出的内容，不要添加任何解释文字，直接继续JSON。",
+        [
+          {role: "user", content: "继续输出被截断的JSON。"},
+          {role: "assistant", content: accumulated.slice(-3000)},  // last 3K chars for context
+          {role: "user", content: "从截断处继续，直接输出JSON内容，不要重复前面的部分。"}
+        ],
+        16000, 0.3
+      );
+      if (!contResult) {
+        console.warn("Continuation call failed:", _lastApiError);
+        break;
+      }
+      console.log(`Continuation ${cont + 1} got ${contResult.length} chars, finish_reason: ${_lastFinishReason}`);
+      accumulated += contResult;
+    }
+
+    console.log("Engine A total response:", accumulated.length, "chars");
+    console.log("Engine A raw (first 500):", accumulated.substring(0, 500));
+    console.log("Engine A raw (last 200):", accumulated.substring(Math.max(0, accumulated.length - 200)));
+  }
+
+  if (!extractionFailed && accumulated) {
     try {
-      let clean = t;
+      let clean = accumulated;
       // Strip think tags
       clean = clean.replace(/<think>[\s\S]*?<\/think>/g, "");
       // Strip code blocks
@@ -1784,12 +1809,12 @@ async function buildPersona() {
       const start = clean.indexOf("{");
       if (start === -1) throw new Error("No JSON found in response");
       clean = clean.substring(start);
-      // Try parsing; if truncated (finish_reason=length), attempt repair
+      // Try parsing; if still truncated after continuations, attempt bracket repair
       let parsed;
       try {
         parsed = JSON.parse(clean);
       } catch(parseErr) {
-        console.warn("JSON parse failed, attempting repair. finish_reason:", _lastFinishReason);
+        console.warn("JSON parse failed after continuations, attempting bracket repair. finish_reason:", _lastFinishReason);
         // Find all quote positions and their context (in-string or not) in one pass
         let repaired = null;
         const stack = [];
@@ -1800,7 +1825,6 @@ async function buildPersona() {
           const c = clean[j];
           if (c === '"' && (j === 0 || clean[j-1] !== '\\')) {
             if (inStr) {
-              // Closing quote — record if this ends a value (not a key)
               if (afterColon) quoteEndsValue.push({ pos: j, stack: [...stack] });
               inStr = false;
               afterColon = false;
@@ -1815,7 +1839,6 @@ async function buildPersona() {
           if (c === '{' || c === '[') stack.push(c);
           if (c === '}' || c === ']') stack.pop();
         }
-        // Try from last complete value boundary backwards
         for (let k = quoteEndsValue.length - 1; k >= 0; k--) {
           const { pos, stack: openStack } = quoteEndsValue[k];
           let candidate = clean.substring(0, pos + 1);
@@ -1825,7 +1848,7 @@ async function buildPersona() {
           }
           try {
             repaired = JSON.parse(candidate + suffix);
-            console.log("JSON repair succeeded, truncated at position", pos, "of", clean.length, "recovered", Object.keys(repaired).length, "top-level keys");
+            console.log("JSON bracket repair succeeded, truncated at position", pos, "of", clean.length, "recovered", Object.keys(repaired).length, "top-level keys");
             break;
           } catch { /* try next position */ }
         }
@@ -1842,7 +1865,6 @@ async function buildPersona() {
       const echoCount = Object.values(iw).filter(v => isTemplateEcho(v)).length;
       if (echoCount >= 3) {
         console.warn("Template echo detected:", echoCount, "fields contain template descriptions");
-        // Null out echoed fields so report shows "未触及" instead of template text
         for (const k of Object.keys(iw)) {
           if (isTemplateEcho(iw[k])) iw[k] = null;
         }
@@ -1854,18 +1876,12 @@ async function buildPersona() {
       state.persona = parsed;
       const iwFilled = Object.keys(state.persona.inner_world || {}).filter(k => state.persona.inner_world[k]).length;
       const rpFilled = Object.keys(state.persona.relationship_patterns || {}).filter(k => { const v = state.persona.relationship_patterns[k]; return v && (!Array.isArray(v) || v.length > 0); }).length;
-      console.log("Persona extracted:", iwFilled, "inner_world fields,", rpFilled, "relationship fields, finish_reason:", _lastFinishReason);
-      // Warn if extraction was truncated
-      if (_lastFinishReason === "length" && iwFilled < 3) {
-        state.buildError = "模型输出被截断（思考过程太长），画像不完整。可以点重新生成再试一次。";
-      }
+      console.log("Persona extracted:", iwFilled, "inner_world fields,", rpFilled, "relationship fields");
     } catch(e) {
-      console.error("Parse error:", e.message, "\nRaw length:", (t||"").length, "\nRaw (first 800):", (t||"").substring(0, 800));
-      state.buildError = `解析失败 (收到${(t||"").length}字符): ${e.message}\n返回内容前200字: ${(t||"").substring(0, 200)}`;
+      console.error("Parse error:", e.message, "\nRaw length:", accumulated.length, "\nRaw (first 800):", accumulated.substring(0, 800));
+      state.buildError = `解析失败 (收到${accumulated.length}字符): ${e.message}\n返回内容前200字: ${accumulated.substring(0, 200)}`;
       state.persona = null;
     }
-  } else {
-    state.buildError = "API返回空: " + (_lastApiError || "未知原因，请检查控制台");
   }
   
   if(!state.persona) {
