@@ -1,25 +1,18 @@
 const KEY = "sk-api-gwYvxa2sX0-B38idARiZPVmdq70lBjiw3xEsyO71psEkk-bHJHI_3O8vBRkx9r1D_r-x6QGlVrTpDBiV-UxBKCAN3ctFEVZ3MD9E2oNwIWGBj5ZwQMLCup8";
 const API_URL = "https://api.minimaxi.com/v1/chat/completions";
 
-export default async (req) => {
-  const corsHeaders = {
+exports.handler = async (event) => {
+  const h = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Content-Type": "application/json",
   };
-
-  if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders });
-  }
-  if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "POST only" }), {
-      status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers: h, body: "" };
+  if (event.httpMethod !== "POST") return { statusCode: 405, headers: h, body: '{"error":"POST only"}' };
 
   try {
-    const { system, messages, max_tokens } = await req.json();
+    const { system, messages, max_tokens } = JSON.parse(event.body);
     const msgs = [];
     if (system) msgs.push({ role: "system", content: system });
     for (const m of (messages || [])) msgs.push({ role: m.role, content: m.content });
@@ -35,15 +28,12 @@ export default async (req) => {
 
     if (!resp.ok) {
       const errText = await resp.text();
-      return new Response(JSON.stringify({ error: "MiniMax HTTP " + resp.status + ": " + errText.substring(0, 200) }), {
-        status: 502,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return { statusCode: 502, headers: h, body: JSON.stringify({ error: "MiniMax HTTP " + resp.status + ": " + errText.substring(0, 200) }) };
     }
 
-    // Stream from MiniMax: collect all SSE chunks, buffer the full content,
-    // then return as a single JSON response. The streaming keeps the
-    // Netlify connection alive past the 26s timeout.
+    // Use streaming to read from MiniMax — tokens arrive incrementally,
+    // which is faster than waiting for the full non-streaming response.
+    // We buffer everything and return as a single JSON response.
     const reader = resp.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
@@ -83,18 +73,8 @@ export default async (req) => {
     fullText = fullText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
     if (fullText.includes("<think>")) fullText = fullText.replace(/<think>[\s\S]*/g, "").trim();
 
-    return new Response(JSON.stringify({ text: fullText, finish_reason: finishReason, usage }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return { statusCode: 200, headers: h, body: JSON.stringify({ text: fullText, finish_reason: finishReason, usage }) };
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return { statusCode: 500, headers: h, body: JSON.stringify({ error: err.message }) };
   }
-};
-
-export const config = {
-  path: "/api/chat",
 };

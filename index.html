@@ -397,7 +397,7 @@ async function callAPI(system, messages, maxTokens=800) {
   _lastApiError = "";
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 65000);
+    const timeout = setTimeout(() => controller.abort(), 120000);
 
     const r = await fetch("/api/chat", {
       method: "POST",
@@ -408,6 +408,7 @@ async function callAPI(system, messages, maxTokens=800) {
     clearTimeout(timeout);
 
     const d = await r.json();
+
     if (!r.ok || d.error) {
       _lastApiError = d.error || ("HTTP " + r.status);
       console.error("API error:", _lastApiError);
@@ -418,7 +419,7 @@ async function callAPI(system, messages, maxTokens=800) {
     if (!d.text) { _lastApiError = "空文本 (finish=" + (d.finish_reason||"?") + ")"; return null; }
     return d.text;
   } catch(e) {
-    _lastApiError = e.name === "AbortError" ? "超时 (30秒)" : e.message;
+    _lastApiError = e.name === "AbortError" ? "超时 (120秒)" : e.message;
     console.error("API error:", _lastApiError);
     return null;
   }
@@ -705,7 +706,7 @@ function h(tag, attrs, ...children) {
   });
   children.flat(9).forEach(c => {
     if (c == null) return;
-    el.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+    el.appendChild(c instanceof Node ? c : document.createTextNode(String(c)));
   });
   return el;
 }
@@ -718,13 +719,24 @@ function render() {
   const app = document.getElementById("app");
   app.innerHTML = "";
 
-  if (state.phase === "welcome") renderWelcome(app);
-  else if (state.phase === "match_invite") renderMatchInvite(app);
-  else if (state.phase === "chat") renderChat(app);
-  else if (state.phase === "soul_chat") renderSoulChat(app);
-  else if (state.phase === "building" || state.phase === "match_building") renderLoading(app);
-  else if (state.phase === "report") renderReport(app);
-  else if (state.phase === "match_report") renderMatchReport(app);
+  try {
+    if (state.phase === "welcome") renderWelcome(app);
+    else if (state.phase === "match_invite") renderMatchInvite(app);
+    else if (state.phase === "chat") renderChat(app);
+    else if (state.phase === "soul_chat") renderSoulChat(app);
+    else if (state.phase === "building" || state.phase === "match_building") renderLoading(app);
+    else if (state.phase === "report") renderReport(app);
+    else if (state.phase === "match_report") renderMatchReport(app);
+  } catch (e) {
+    console.error("Render error:", e);
+    app.className = "shell";
+    app.appendChild(h("div",{style:{padding:"40px 24px",textAlign:"center"}},
+      h("div",{style:{fontSize:"36px",marginBottom:"12px"}},"😵"),
+      h("div",{style:{fontSize:"15px",fontWeight:"600",marginBottom:"8px"}},"页面渲染出错"),
+      h("div",{style:{fontSize:"12px",color:"var(--txtS)",marginBottom:"16px",wordBreak:"break-all"}},String(e.message)),
+      h("button",{class:"btn-main",onClick:resetChat},"重新开始")
+    ));
+  }
 }
 
 function renderWelcome(app) {
@@ -1022,7 +1034,7 @@ function renderReport(app) {
         score === 0 ? h("span",{style:{fontSize:"11px",color:"var(--txtM)",marginLeft:"auto"}},"未触及") : null
       ),
       score > 0 ? h("div",{class:"bar-track",style:{marginBottom:"4px"}}, h("div",{class:"bar-fill",style:{width:score+"%"}})) : null,
-      val ? h("div",{style:{fontSize:"13px",color:"var(--txtS)",lineHeight:"1.6",padding:"0 2px"}},val) : null
+      val ? h("div",{style:{fontSize:"13px",color:"var(--txtS)",lineHeight:"1.6",padding:"0 2px"}},String(val)) : null
     );
     iwCard.appendChild(row);
   });
@@ -1049,7 +1061,7 @@ function renderReport(app) {
           h("span",{style:{fontSize:"13px"}},f.icon),
           h("span",{style:{fontSize:"12px",color:"var(--pri)",fontWeight:"600"}},f.l)
         ),
-        h("div",{style:{fontSize:"13px",color:"var(--txtS)",lineHeight:"1.6"}},val)
+        h("div",{style:{fontSize:"13px",color:"var(--txtS)",lineHeight:"1.6"}},String(val))
       ));
     }
   });
@@ -1059,7 +1071,7 @@ function renderReport(app) {
         h("span",{style:{fontSize:"13px"}},"🚫"),
         h("span",{style:{fontSize:"12px",color:"#7C3AED",fontWeight:"600"}},"关系底线")
       ),
-      ...rp.dealbreaker_deep.map(d=>h("div",{class:"tag purple"},d))
+      ...rp.dealbreaker_deep.map(d=>h("div",{class:"tag purple"},String(d)))
     ));
   }
   if (rpFilled === 0 && !(rp.dealbreaker_deep&&rp.dealbreaker_deep.length)) {
@@ -1070,7 +1082,7 @@ function renderReport(app) {
   // dating style
   const dsCard = h("div",{class:"rcard"}, h("h3",null,"💬 聊天风格"));
   const tags = h("div",{style:{display:"flex",flexWrap:"wrap",gap:"6px",marginBottom:"12px"}});
-  (ds.humor_type||[]).forEach(t => tags.appendChild(h("span",{class:"tag pink"},typeof t==="string"?t.split("：")[0]||t:t)));
+  (ds.humor_type||[]).forEach(t => tags.appendChild(h("span",{class:"tag pink"},typeof t==="string"?t.split("：")[0]||t:String(t))));
   if(ds.flirtation_mode) tags.appendChild(h("span",{class:"tag purple"},ds.flirtation_mode.substring(0,15)));
   if(ds.pacing) tags.appendChild(h("span",{class:"tag green"},ds.pacing.substring(0,10)));
   dsCard.appendChild(tags);
