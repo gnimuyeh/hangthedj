@@ -13,12 +13,13 @@ export async function onRequestOptions() {
 
 export async function onRequestPost({ request }) {
   try {
-    const { system, messages, max_tokens } = await request.json();
+    const { system, messages, max_tokens, temperature } = await request.json();
     const msgs = [];
     if (system) msgs.push({ role: "system", content: system });
     for (const m of (messages || [])) msgs.push({ role: m.role, content: m.content });
 
-    const payload = { model: "MiniMax-M2.5-highspeed", messages: msgs, temperature: 0.85, stream: true };
+    const temp = (typeof temperature === "number") ? temperature : 0.85;
+    const payload = { model: "MiniMax-M2.5-highspeed", messages: msgs, temperature: temp, stream: true };
     if (max_tokens && max_tokens > 0) payload.max_tokens = max_tokens;
 
     const resp = await fetch(API_URL, {

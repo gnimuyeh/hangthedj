@@ -409,17 +409,21 @@ let state = { phase:"welcome", guide:null, msgs:[], input:"", typing:false, msgC
 let _lastApiError = "";
 let _lastFinishReason = "";
 
-async function callAPI(system, messages, maxTokens=800) {
+async function callAPI(system, messages, maxTokens=800, temperature) {
   _lastApiError = "";
   try {
     const controller = new AbortController();
     // 5 min timeout for long extractions (reasoning model can be slow)
     const timeout = setTimeout(() => controller.abort(), 300000);
 
+    const body = { system, messages };
+    if (maxTokens > 0) body.max_tokens = maxTokens;
+    if (temperature !== undefined) body.temperature = temperature;
+
     const r = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ system, messages, max_tokens: maxTokens > 0 ? maxTokens : undefined }),
+      body: JSON.stringify(body),
       signal: controller.signal
     });
     clearTimeout(timeout);
@@ -1386,7 +1390,9 @@ async function buildPersona() {
   for (let attempt = 0; attempt < 2; attempt++) {
     // MiniMax M2.5 reasoning tokens eat into max_tokens budget unpredictably.
     // 32K gives enough room for ~15K reasoning + ~3K JSON output.
-    t = await callAPI(ENGINE_A_SYS, [{role:"user", content: ENGINE_A_TEMPLATE + transcript}], 32000);
+    // Lower temperature (0.4) for extraction — this is analytical, not creative.
+    // Reduces variance in output completeness between runs.
+    t = await callAPI(ENGINE_A_SYS, [{role:"user", content: ENGINE_A_TEMPLATE + transcript}], 32000, 0.4);
     if (t) break;
     // Only retry on "Load failed" (Safari background suspension)
     if (attempt === 0 && _lastApiError && /Load failed|fetch/i.test(_lastApiError)) {
@@ -1399,8 +1405,10 @@ async function buildPersona() {
   }
   
   console.log("Engine A raw response length:", t ? t.length : "null");
-  console.log("Engine A raw (first 300):", t ? t.substring(0, 300) : "null");
-  
+  console.log("Engine A finish_reason:", _lastFinishReason);
+  console.log("Engine A raw (first 500):", t ? t.substring(0, 500) : "null");
+  if (t) console.log("Engine A raw (last 200):", t.substring(Math.max(0, t.length - 200)));
+
   if(t) {
     try {
       let clean = t;
@@ -1481,7 +1489,12 @@ async function buildPersona() {
       }
       state.persona = parsed;
       const iwFilled = Object.keys(state.persona.inner_world || {}).filter(k => state.persona.inner_world[k]).length;
-      console.log("Persona extracted:", iwFilled, "inner_world fields,", Object.keys(state.persona.relationship_patterns || {}).filter(k => { const v = state.persona.relationship_patterns[k]; return v && (!Array.isArray(v) || v.length > 0); }).length, "relationship fields");
+      const rpFilled = Object.keys(state.persona.relationship_patterns || {}).filter(k => { const v = state.persona.relationship_patterns[k]; return v && (!Array.isArray(v) || v.length > 0); }).length;
+      console.log("Persona extracted:", iwFilled, "inner_world fields,", rpFilled, "relationship fields, finish_reason:", _lastFinishReason);
+      // Warn if extraction was truncated
+      if (_lastFinishReason === "length" && iwFilled < 3) {
+        state.buildError = "模型输出被截断（思考过程太长），画像不完整。可以点重新生成再试一次。";
+      }
     } catch(e) {
       console.error("Parse error:", e.message, "\nRaw length:", (t||"").length, "\nRaw (first 800):", (t||"").substring(0, 800));
       state.buildError = `解析失败 (收到${(t||"").length}字符): ${e.message}\n返回内容前200字: ${(t||"").substring(0, 200)}`;
