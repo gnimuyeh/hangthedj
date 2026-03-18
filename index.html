@@ -483,7 +483,7 @@ const GUIDES = {
 // STATE
 // ═══════════════════════════════════════
 
-let state = { phase:"welcome", guide:null, userName:"", msgs:[], input:"", typing:false, msgCount:0, persona:null, matchReport:null, showBuild:false, apiError:false, pendingMatch:null, scannedPersona:null, soulMsgs:[], soulInput:"", soulMsgCount:0, soulTyping:false, soulError:false, buildError:null, failedCalls:[], extractionProgress:null, matchFailed:false };
+let state = { phase:"welcome", guide:null, userName:"", msgs:[], input:"", typing:false, msgCount:0, persona:null, matchReport:null, showBuild:false, apiError:false, pendingMatch:null, scannedPersona:null, soulMsgs:[], soulInput:"", soulMsgCount:0, soulTyping:false, soulError:false, buildError:null, failedCalls:[], extractionProgress:null, matchFailed:false, reportShared:false };
 
 // ═══════════════════════════════════════
 // API
@@ -1371,6 +1371,28 @@ function renderLoading(app) {
   app.appendChild(h("div",{class:"loading"}, inner));
 }
 
+function showWeChatShareOverlay() {
+  const overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;flex-direction:column;align-items:flex-end;padding:20px 16px;cursor:pointer;";
+  // Arrow pointing to top-right corner (WeChat's "..." menu)
+  const arrow = document.createElement("div");
+  arrow.style.cssText = "width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-bottom:24px solid white;margin-right:24px;margin-top:8px;";
+  overlay.appendChild(arrow);
+  // Guide text
+  const guide = document.createElement("div");
+  guide.style.cssText = "background:white;border-radius:16px;padding:24px 20px;margin-right:8px;margin-top:8px;text-align:center;max-width:240px;";
+  guide.innerHTML = '<div style="font-size:18px;font-weight:700;color:#333;margin-bottom:10px;">点击右上角 ··· </div><div style="font-size:14px;color:#666;line-height:1.6;">选择「发送给朋友」<br>分享后自动解锁完整画像</div>';
+  overlay.appendChild(guide);
+  // Tap anywhere to dismiss and unlock
+  overlay.addEventListener("click", () => {
+    document.body.removeChild(overlay);
+    state.reportShared = true;
+    saveSession();
+    render();
+  });
+  document.body.appendChild(overlay);
+}
+
 function renderReport(app) {
   if(!state.persona) return;
   app.className = "shell";
@@ -1421,6 +1443,50 @@ function renderReport(app) {
     }
     report.appendChild(ssCard);
   }
+
+  // ── Share gate: if not shared, show blurred teaser + share button ──
+  if (!state.reportShared) {
+    // Blurred placeholder to hint at locked content
+    const blurPlaceholder = h("div",{style:{position:"relative",overflow:"hidden",margin:"0 16px 16px",borderRadius:"20px"}},
+      h("div",{style:{filter:"blur(8px)",opacity:"0.6",pointerEvents:"none",padding:"20px"}},
+        h("div",{style:{background:"white",borderRadius:"16px",padding:"16px",marginBottom:"12px"}},
+          h("div",{style:{height:"14px",background:"var(--gradS)",borderRadius:"8px",marginBottom:"10px",width:"60%"}}),
+          h("div",{style:{height:"12px",background:"#f0f0f0",borderRadius:"6px",marginBottom:"8px",width:"90%"}}),
+          h("div",{style:{height:"12px",background:"#f0f0f0",borderRadius:"6px",marginBottom:"8px",width:"75%"}}),
+          h("div",{style:{height:"12px",background:"#f0f0f0",borderRadius:"6px",width:"85%"}})
+        ),
+        h("div",{style:{background:"white",borderRadius:"16px",padding:"16px"}},
+          h("div",{style:{height:"14px",background:"var(--gradS)",borderRadius:"8px",marginBottom:"10px",width:"50%"}}),
+          h("div",{style:{height:"12px",background:"#f0f0f0",borderRadius:"6px",marginBottom:"8px",width:"80%"}}),
+          h("div",{style:{height:"12px",background:"#f0f0f0",borderRadius:"6px",width:"70%"}})
+        )
+      )
+    );
+    report.appendChild(blurPlaceholder);
+
+    // Share CTA card
+    const shareCard = h("div",{class:"rcard",style:{textAlign:"center",border:"2px dashed var(--pri)",background:"#FFFBFC"}},
+      h("div",{style:{fontSize:"36px",marginBottom:"12px"}},"🔒"),
+      h("div",{style:{fontSize:"16px",fontWeight:"700",color:"var(--txt)",marginBottom:"8px"}},"完整画像已生成"),
+      h("div",{style:{fontSize:"13px",color:"var(--txtS)",marginBottom:"20px",lineHeight:"1.6"}},"分享给好友，即可解锁全部内容"),
+      h("button",{style:{
+        background:"var(--gradW)",border:"none",color:"white",borderRadius:"20px",
+        padding:"14px 32px",fontSize:"16px",fontWeight:"700",cursor:"pointer",
+        fontFamily:"inherit",boxShadow:"0 4px 15px rgba(255,138,158,0.4)",
+        width:"100%",maxWidth:"280px"
+      },onClick:showWeChatShareOverlay},"分享给好友，解锁画像"),
+      h("div",{style:{fontSize:"11px",color:"var(--txtM)",marginTop:"12px"}},"分享后即可查看完整灵魂画像")
+    );
+    report.appendChild(shareCard);
+
+    // Brand watermark
+    report.appendChild(h("div",{style:{textAlign:"center",padding:"8px 16px 16px",fontSize:"11px",color:"var(--txtM)",letterSpacing:"0.5px"}},"灵魂画像 · AI恋爱人格测试"));
+
+    app.appendChild(report);
+    return;
+  }
+
+  // ── Full report (shared) ──
 
   // Love warning — 恋爱使用说明
   const lw = p.love_warning || {};
@@ -2064,7 +2130,8 @@ function saveSession() {
       msgCount: state.msgCount,
       guide: state.guide,
       showBuild: state.showBuild,
-      userName: state.userName
+      userName: state.userName,
+      reportShared: state.reportShared
     }));
   } catch(e) {}
 }
@@ -2107,6 +2174,7 @@ if (incoming) {
     state.guide = savedSession.guide || null;
     state.showBuild = savedSession.showBuild || false;
     state.userName = savedSession.userName || "";
+    state.reportShared = savedSession.reportShared || false;
   }
   state.phase = "report";
   render();
