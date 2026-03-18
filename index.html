@@ -2001,16 +2001,28 @@ async function runMatchWith(otherPersona) {
   render();
   const myName = state.userName || "A";
   const otherName = otherPersona?.identity?.name || otherPersona?.identity?.self_label || "B";
-  const t = await callAPI(ENGINE_C_SYS, [{role:"user",content:`${myName}的人格：\n${JSON.stringify(state.persona)}\n\n${otherName}的人格：\n${JSON.stringify(otherPersona)}`}], 4096);
-  if(t) {
-    try {
-      let clean = t.replace(/<think>[\s\S]*?<\/think>/g,"").replace(/```json\s*/g,"").replace(/```/g,"");
-      const s = clean.indexOf("{"), e = clean.lastIndexOf("}");
-      if (s!==-1&&e!==-1) clean = clean.substring(s,e+1);
-      state.matchReport = JSON.parse(clean);
+  const msg = [{role:"user",content:`${myName}的人格：\n${JSON.stringify(state.persona)}\n\n${otherName}的人格：\n${JSON.stringify(otherPersona)}`}];
+
+  // 3 attempts with exponential backoff, using streaming endpoint
+  const delays = [1000, 3000, 9000];
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) {
+      console.log(`Match attempt ${attempt+1}, waiting ${delays[attempt-1]}ms...`);
+      await new Promise(ok => setTimeout(ok, delays[attempt - 1]));
     }
-    catch(e) { console.error("Match parse:",e); state.matchReport=null; }
+    const t = await callAPIStream(ENGINE_C_SYS, msg, 4096, 0.3);
+    if (t) {
+      const parsed = safeParseJSON(t);
+      if (parsed) {
+        state.matchReport = parsed;
+        break;
+      }
+      console.warn(`Match attempt ${attempt+1}: JSON parse failed`);
+    } else {
+      console.warn(`Match attempt ${attempt+1} failed: ${_lastApiError}`);
+    }
   }
+
   if(!state.matchReport) {
     state.matchReport = {match_score:55,vibe_label:"需要更多数据",dimensions:{},sparks:["数据不足"],friction:["数据不足"],first_date_prediction:"未知",conversation_starter:"聊聊你们对爱的理解"};
   }
