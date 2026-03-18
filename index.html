@@ -1073,7 +1073,8 @@ function render() {
       h("div",{style:{fontSize:"36px",marginBottom:"12px"}},"😵"),
       h("div",{style:{fontSize:"15px",fontWeight:"600",marginBottom:"8px"}},"页面渲染出错"),
       h("div",{style:{fontSize:"12px",color:"var(--txtS)",marginBottom:"16px",wordBreak:"break-all"}},String(e.message)),
-      h("button",{class:"btn-main",onClick:resetChat},"重新开始")
+      h("button",{class:"btn-main",onClick:()=>{ state.phase="welcome"; render(); }},"返回首页"),
+      h("button",{style:{display:"block",margin:"12px auto 0",background:"none",border:"none",fontSize:"12px",color:"var(--txtM)",cursor:"pointer",fontFamily:"inherit",textDecoration:"underline"},onClick:resetChat},"清除数据重新开始")
     ));
   }
 }
