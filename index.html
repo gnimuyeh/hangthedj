@@ -1444,23 +1444,61 @@ function renderReport(app) {
     report.appendChild(ssCard);
   }
 
-  // ── Share gate: if not shared, show blurred teaser + share button ──
+  // ── Share gate: if not shared, show fading blur + share button ──
   if (!state.reportShared) {
-    // Blurred placeholder to hint at locked content
-    const blurPlaceholder = h("div",{style:{position:"relative",overflow:"hidden",margin:"0 16px 16px",borderRadius:"20px"}},
-      h("div",{style:{filter:"blur(8px)",opacity:"0.6",pointerEvents:"none",padding:"20px"}},
-        h("div",{style:{background:"white",borderRadius:"16px",padding:"16px",marginBottom:"12px"}},
-          h("div",{style:{height:"14px",background:"var(--gradS)",borderRadius:"8px",marginBottom:"10px",width:"60%"}}),
-          h("div",{style:{height:"12px",background:"#f0f0f0",borderRadius:"6px",marginBottom:"8px",width:"90%"}}),
-          h("div",{style:{height:"12px",background:"#f0f0f0",borderRadius:"6px",marginBottom:"8px",width:"75%"}}),
-          h("div",{style:{height:"12px",background:"#f0f0f0",borderRadius:"6px",width:"85%"}})
+    // Fading gradient overlay on the soul summary card
+    const fadeOverlay = h("div",{style:{
+      position:"relative",marginTop:"-60px",height:"80px",zIndex:"1",
+      background:"linear-gradient(to bottom, transparent 0%, var(--bg) 100%)",
+      pointerEvents:"none"
+    }});
+    report.appendChild(fadeOverlay);
+
+    // Blurred placeholder cards — denser, more colorful, clearly "locked" content
+    const blurPlaceholder = h("div",{style:{position:"relative",overflow:"hidden",margin:"-8px 16px 16px",borderRadius:"20px"}},
+      h("div",{style:{filter:"blur(6px)",pointerEvents:"none"}},
+        // Card 1 — inner world style
+        h("div",{style:{background:"white",borderRadius:"16px",padding:"18px",marginBottom:"12px",boxShadow:"0 2px 8px rgba(0,0,0,0.06)"}},
+          h("div",{style:{fontSize:"15px",fontWeight:"700",marginBottom:"12px"}},"🌊 内在世界"),
+          h("div",{style:{display:"flex",alignItems:"center",gap:"6px",marginBottom:"8px"}},
+            h("span",null,"💎"),
+            h("span",{style:{fontSize:"13px",fontWeight:"600",color:"#555"}},"核心需求")
+          ),
+          h("div",{style:{height:"13px",background:"linear-gradient(90deg,#FFD6DE,#E8D5F5)",borderRadius:"6px",marginBottom:"10px",width:"88%"}}),
+          h("div",{style:{height:"13px",background:"#f0e8f5",borderRadius:"6px",marginBottom:"10px",width:"72%"}}),
+          h("div",{style:{display:"flex",alignItems:"center",gap:"6px",marginBottom:"8px",marginTop:"14px"}},
+            h("span",null,"🔗"),
+            h("span",{style:{fontSize:"13px",fontWeight:"600",color:"#555"}},"依恋信号")
+          ),
+          h("div",{style:{height:"13px",background:"linear-gradient(90deg,#FFD6DE,#C4B5FD)",borderRadius:"6px",marginBottom:"10px",width:"82%"}}),
+          h("div",{style:{height:"13px",background:"#f0e8f5",borderRadius:"6px",width:"65%"}})
         ),
-        h("div",{style:{background:"white",borderRadius:"16px",padding:"16px"}},
-          h("div",{style:{height:"14px",background:"var(--gradS)",borderRadius:"8px",marginBottom:"10px",width:"50%"}}),
-          h("div",{style:{height:"12px",background:"#f0f0f0",borderRadius:"6px",marginBottom:"8px",width:"80%"}}),
-          h("div",{style:{height:"12px",background:"#f0f0f0",borderRadius:"6px",width:"70%"}})
+        // Card 2 — relationship patterns style
+        h("div",{style:{background:"white",borderRadius:"16px",padding:"18px",marginBottom:"12px",boxShadow:"0 2px 8px rgba(0,0,0,0.06)"}},
+          h("div",{style:{fontSize:"15px",fontWeight:"700",marginBottom:"12px"}},"💕 关系模式"),
+          h("div",{style:{height:"13px",background:"linear-gradient(90deg,#C4B5FD,#6EE7B7)",borderRadius:"6px",marginBottom:"10px",width:"78%"}}),
+          h("div",{style:{height:"13px",background:"#e8f5f0",borderRadius:"6px",marginBottom:"10px",width:"90%"}}),
+          h("div",{style:{display:"flex",gap:"6px",marginTop:"10px"}},
+            h("span",{style:{background:"#F3E8FF",padding:"4px 12px",borderRadius:"10px",fontSize:"12px",color:"#7C3AED"}},"底线一"),
+            h("span",{style:{background:"#F3E8FF",padding:"4px 12px",borderRadius:"10px",fontSize:"12px",color:"#7C3AED"}},"底线二")
+          )
+        ),
+        // Card 3 — surface tags
+        h("div",{style:{background:"white",borderRadius:"16px",padding:"18px",boxShadow:"0 2px 8px rgba(0,0,0,0.06)"}},
+          h("div",{style:{fontSize:"15px",fontWeight:"700",marginBottom:"12px"}},"🌍 表层拼图"),
+          h("div",{style:{display:"flex",flexWrap:"wrap",gap:"6px"}},
+            h("span",{style:{background:"#FFE4E8",padding:"4px 14px",borderRadius:"10px",fontSize:"12px",color:"#FF6B81"}},"兴趣标签"),
+            h("span",{style:{background:"#E8D5F5",padding:"4px 14px",borderRadius:"10px",fontSize:"12px",color:"#8B5CF6"}},"生活方式"),
+            h("span",{style:{background:"#D1FAE5",padding:"4px 14px",borderRadius:"10px",fontSize:"12px",color:"#059669"}},"更多标签")
+          )
         )
-      )
+      ),
+      // Fade-out at bottom of blur area
+      h("div",{style:{
+        position:"absolute",bottom:"0",left:"0",right:"0",height:"60px",
+        background:"linear-gradient(to bottom, transparent, var(--bg))",
+        pointerEvents:"none"
+      }})
     );
     report.appendChild(blurPlaceholder);
 
