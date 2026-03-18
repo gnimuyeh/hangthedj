@@ -613,8 +613,18 @@ async function callAPIStream(system, messages, maxTokens, temperature, onProgres
             if (onProgress) onProgress(fullText.length);
           }
           if (evt.done) finishReason = evt.finish_reason || "stop";
+          if (evt.error) { _lastApiError = evt.error; console.error("API stream error event:", evt.error); }
         } catch {}
       }
+    }
+    // Process remaining buffer (final event may not end with \n)
+    if (buf.trim().startsWith("data: ")) {
+      try {
+        const evt = JSON.parse(buf.trim().slice(6));
+        if (evt.delta) fullText += evt.delta;
+        if (evt.done) finishReason = evt.finish_reason || "stop";
+        if (evt.error) _lastApiError = evt.error;
+      } catch {}
     }
 
     // Strip think tags client-side (worker sends raw text for streaming)
@@ -1842,11 +1852,11 @@ function safeParseJSON(raw) {
 
 // Extraction call definitions — used by buildPersona and retryFailedCalls
 const EXTRACTION_CALLS = [
-  { id: "A1", label: "心理分析", sys: () => ENGINE_A1_SYS, tpl: () => ENGINE_A1_TEMPLATE, maxTok: 16000,
+  { id: "A1", label: "心理分析", sys: () => ENGINE_A1_SYS, tpl: () => ENGINE_A1_TEMPLATE, maxTok: 4096,
     merge: (persona, parsed) => { persona.inner_world = parsed.inner_world || {}; persona.relationship_patterns = parsed.relationship_patterns || {}; } },
-  { id: "A2", label: "金句生成", sys: () => ENGINE_A2_SYS, tpl: () => ENGINE_A2_TEMPLATE, maxTok: 8000,
+  { id: "A2", label: "金句生成", sys: () => ENGINE_A2_SYS, tpl: () => ENGINE_A2_TEMPLATE, maxTok: 4096,
     merge: (persona, parsed) => { persona.soul_summary = parsed.soul_summary || {}; persona.love_warning = parsed.love_warning || {}; persona.radar_scores = parsed.radar_scores || {}; } },
-  { id: "A3", label: "风格分析", sys: () => ENGINE_A3_SYS, tpl: () => ENGINE_A3_TEMPLATE, maxTok: 8000,
+  { id: "A3", label: "风格分析", sys: () => ENGINE_A3_SYS, tpl: () => ENGINE_A3_TEMPLATE, maxTok: 4096,
     merge: (persona, parsed) => { persona.identity = parsed.identity || {}; persona.dating_style = parsed.dating_style || { unique_markers: [] }; persona.surface = parsed.surface || { interests: [] }; persona.meta = parsed.meta || { source_message_count: state.msgCount, depth_reached: "未知" }; } },
 ];
 

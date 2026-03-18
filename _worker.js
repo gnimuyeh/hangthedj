@@ -126,6 +126,7 @@ async function handleChatStream(request) {
       const decoder = new TextDecoder();
       let buffer = "";
       let lastSend = Date.now();
+      let sentDone = false;
 
       // Keepalive every 8s to prevent intermediary timeouts
       const keepalive = setInterval(async () => {
@@ -133,6 +134,21 @@ async function handleChatStream(request) {
           try { await writer.write(encoder.encode(": keepalive\n\n")); } catch {}
         }
       }, 8000);
+
+      function parseSSELine(data) {
+        if (!data || data === "[DONE]") return;
+        try {
+          const chunk = JSON.parse(data);
+          // Detect MiniMax error responses in stream
+          if (chunk.error || chunk.base_resp?.status_code) {
+            const errMsg = chunk.error?.message || chunk.base_resp?.status_msg || "MiniMax stream error";
+            return { error: errMsg };
+          }
+          const delta = chunk.choices?.[0]?.delta?.content || "";
+          const finishReason = chunk.choices?.[0]?.finish_reason || null;
+          return { delta, finishReason, usage: chunk.usage };
+        } catch { return null; }
+      }
 
       try {
         while (true) {
@@ -146,42 +162,40 @@ async function handleChatStream(request) {
           for (const line of lines) {
             const trimmed = line.trim();
             if (!trimmed || !trimmed.startsWith("data:")) continue;
-            const data = trimmed.slice(5).trim();
-            if (data === "[DONE]") continue;
+            const parsed = parseSSELine(trimmed.slice(5).trim());
+            if (!parsed) continue;
 
-            try {
-              const chunk = JSON.parse(data);
-              const delta = chunk.choices?.[0]?.delta?.content || "";
-              if (delta) {
-                await writer.write(encoder.encode(`data: ${JSON.stringify({delta})}\n\n`));
-                lastSend = Date.now();
-              }
-              if (chunk.choices?.[0]?.finish_reason) {
-                await writer.write(encoder.encode(`data: ${JSON.stringify({
-                  done: true,
-                  finish_reason: chunk.choices[0].finish_reason,
-                  usage: chunk.usage || {}
-                })}\n\n`));
-                lastSend = Date.now();
-              }
-            } catch {}
+            if (parsed.error) {
+              await writer.write(encoder.encode(`data: ${JSON.stringify({error: parsed.error})}\n\n`));
+              sentDone = true;
+              break;
+            }
+            if (parsed.delta) {
+              await writer.write(encoder.encode(`data: ${JSON.stringify({delta: parsed.delta})}\n\n`));
+              lastSend = Date.now();
+            }
+            if (parsed.finishReason) {
+              await writer.write(encoder.encode(`data: ${JSON.stringify({
+                done: true, finish_reason: parsed.finishReason, usage: parsed.usage || {}
+              })}\n\n`));
+              lastSend = Date.now();
+              sentDone = true;
+            }
           }
         }
         // Process remaining buffer
-        if (buffer.trim().startsWith("data:")) {
-          const data = buffer.trim().slice(5).trim();
-          if (data !== "[DONE]") {
-            try {
-              const chunk = JSON.parse(data);
-              if (chunk.choices?.[0]?.finish_reason) {
-                await writer.write(encoder.encode(`data: ${JSON.stringify({
-                  done: true,
-                  finish_reason: chunk.choices[0].finish_reason,
-                  usage: chunk.usage || {}
-                })}\n\n`));
-              }
-            } catch {}
+        if (!sentDone && buffer.trim().startsWith("data:")) {
+          const parsed = parseSSELine(buffer.trim().slice(5).trim());
+          if (parsed?.finishReason) {
+            await writer.write(encoder.encode(`data: ${JSON.stringify({
+              done: true, finish_reason: parsed.finishReason, usage: parsed.usage || {}
+            })}\n\n`));
+            sentDone = true;
           }
+        }
+        // Always send done so client never hangs
+        if (!sentDone) {
+          await writer.write(encoder.encode(`data: ${JSON.stringify({done: true, finish_reason: "eof", usage: {}})}\n\n`));
         }
       } finally {
         clearInterval(keepalive);
