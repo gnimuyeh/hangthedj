@@ -483,7 +483,7 @@ const GUIDES = {
 // STATE
 // ═══════════════════════════════════════
 
-let state = { phase:"welcome", guide:null, userName:"", msgs:[], input:"", typing:false, msgCount:0, persona:null, matchReport:null, showBuild:false, apiError:false, pendingMatch:null, scannedPersona:null, soulMsgs:[], soulInput:"", soulMsgCount:0, soulTyping:false, soulError:false, buildError:null, failedCalls:[], extractionProgress:null };
+let state = { phase:"welcome", guide:null, userName:"", msgs:[], input:"", typing:false, msgCount:0, persona:null, matchReport:null, showBuild:false, apiError:false, pendingMatch:null, scannedPersona:null, soulMsgs:[], soulInput:"", soulMsgCount:0, soulTyping:false, soulError:false, buildError:null, failedCalls:[], extractionProgress:null, matchFailed:false };
 
 // ═══════════════════════════════════════
 // API
@@ -1634,6 +1634,16 @@ function renderMatchReport(app) {
   );
   report.appendChild(hdr);
 
+  // retry banner if match API failed
+  if (state.matchFailed) {
+    report.appendChild(h("div",{style:{margin:"0 16px 12px",padding:"14px 16px",borderRadius:"16px",background:"#FEF2F2",border:"1px solid #FECACA"}},
+      h("div",{style:{fontSize:"13px",color:"#991B1B",fontWeight:"600",marginBottom:"6px"}},"⚠️ 匹配分析失败"),
+      h("div",{style:{fontSize:"11px",color:"#B91C1C",lineHeight:"1.5",marginBottom:"10px"}},"API请求未成功，点击重试"),
+      h("button",{style:{background:"var(--gradW)",border:"none",color:"white",borderRadius:"12px",padding:"8px 16px",fontSize:"13px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"},
+        onClick:()=>{ runMatchWith(state.scannedPersona); }}, "重新分析 ↻")
+    ));
+  }
+
   // radar chart with match dimensions
   const matchScores = {};
   MATCH_DIMS.forEach(d => { matchScores[d.key] = dims[d.key]?.score || 0; });
@@ -1998,6 +2008,8 @@ async function retryFailedCalls() {
 
 async function runMatchWith(otherPersona) {
   state.phase = "match_building";
+  state.matchFailed = false;
+  state.matchReport = null;
   render();
   const myName = state.userName || "A";
   const otherName = otherPersona?.identity?.name || otherPersona?.identity?.self_label || "B";
@@ -2024,7 +2036,8 @@ async function runMatchWith(otherPersona) {
   }
 
   if(!state.matchReport) {
-    state.matchReport = {match_score:55,vibe_label:"需要更多数据",dimensions:{},sparks:["数据不足"],friction:["数据不足"],first_date_prediction:"未知",conversation_starter:"聊聊你们对爱的理解"};
+    state.matchFailed = true;
+    state.matchReport = {match_score:0,vibe_label:"",dimensions:{},sparks:[],friction:[],first_date_prediction:"",conversation_starter:""};
   }
   state.phase = "match_report";
   render();
