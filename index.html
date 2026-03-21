@@ -776,7 +776,7 @@ function ensureArr(v) { return Array.isArray(v) ? v : (v ? [String(v)] : []); }
 
 const MAX_MSGS = 30;
 const ALL_DIMENSIONS = ["attachment","core_need","emotion","conflict","independence","love_language","insecurity","belief","lifestyle"];
-const MIN_DIMENSIONS_TO_GENERATE = 5;
+const MIN_DIMENSIONS_TO_GENERATE = 9;
 
 // Parse and strip [covered:...] tag from guide response
 function parseCoverageTag(text) {
