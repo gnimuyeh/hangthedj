@@ -34,7 +34,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // API proxy — same logic as the Vercel version that worked
+  // API proxy — forwards to MiniMax
   if (req.url === "/api/chat") {
     if (req.method === "OPTIONS") {
       res.writeHead(204, CORS);
