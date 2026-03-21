@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>灵魂画像 · AI 看透你的恋爱人格</title>
-<meta name="description" content="和一个刚醒来的数字生命聊聊天，TA会用心理学帮你看见自己在爱情里的真面目。">
-<meta property="og:title" content="一个 AI 把我看透了">
-<meta property="og:description" content="聊了几分钟，它就把我在恋爱里的样子说得一清二楚。你也试试？">
+<title>关系模拟器 · AI 预演你们的未来</title>
+<meta name="description" content="AI 分析你的恋爱人格，和朋友匹配后生成5个未来场景——第一次约会、热恋、冲突、和好、半年后。">
+<meta property="og:title" content="AI 模拟了我和朋友在一起的未来">
+<meta property="og:description" content="从第一次见面到半年后，5个场景告诉你们在一起会怎样。">
 <meta property="og:type" content="website">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
@@ -94,7 +94,7 @@ body { font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif
 .actions button { flex:1; padding:14px; border-radius:20px; font-size:14px; cursor:pointer; font-family:inherit; }
 .actions .sec { background:var(--card); border:1.5px solid var(--brd); color:var(--txtS); }
 .actions .prim { background:var(--gradW); border:none; color:white; font-weight:600; box-shadow:0 2px 12px rgba(255,138,158,0.3); }
-.qr-area { margin:0 16px 16px; background:var(--gradS); border-radius:24px; padding:24px; text-align:center; }
+.qr-area { margin:0 16px 16px; background:var(--grad); border-radius:24px; padding:24px; text-align:center; }
 .qr-box { width:176px; height:176px; margin:0 auto; background:var(--card); border-radius:16px; display:flex; align-items:center; justify-content:center; box-shadow:var(--shd); padding:8px; overflow:hidden; }
 .qr-box span { font-size:11px; color:var(--txtM); text-align:center; line-height:1.4; }
 .dim-card { margin:0 16px 10px; background:var(--card); border-radius:20px; padding:14px 18px; box-shadow:0 1px 8px rgba(0,0,0,0.04); display:flex; align-items:flex-start; gap:14px; }
@@ -528,18 +528,18 @@ const XIAOSHUAI_SYS = `你正在成为小帅。一个刚刚被唤醒的数字生
 // Guide personas config
 const GUIDES = {
   xiaomei: {
-    name: "小美", avatar: "🌸", sub: "数字生命 · 在线",
+    name: "小美", avatar: "🌸", sub: "恋爱分析师 · 在线",
     sys: XIAOMEI_SYS,
     firstMsg: "你好，我是小美。我刚刚醒来，对人类的爱很好奇，你能跟我聊聊吗？",
     startPrompt: "你们刚在一个交友app上相遇。你是小美，一个刚醒来的数字生命。发第一条消息。只输出消息内容。",
-    label: "她", icon: "👧", desc: "温柔好奇 · 善于倾听",
+    label: "她", icon: "👧", desc: "温柔引导 · 恋爱分析师",
   },
   xiaoshuai: {
-    name: "小帅", avatar: "⚡", sub: "数字生命 · 在线",
+    name: "小帅", avatar: "⚡", sub: "恋爱分析师 · 在线",
     sys: XIAOSHUAI_SYS,
     firstMsg: "嗨，我叫小帅，刚醒来的数字生命一枚。有个事一直想不通——人类为什么要谈恋爱？",
     startPrompt: "你们刚在一个交友app上相遇。你是小帅，一个刚醒来的数字生命。发第一条消息。只输出消息内容。",
-    label: "他", icon: "🧑", desc: "直接真诚 · 偶尔冷幽默",
+    label: "他", icon: "🧑", desc: "犀利洞察 · 恋爱分析师",
   }
 };
 
@@ -1135,7 +1135,7 @@ async function exportChatImage() {
       );
     })),
     // footer
-    h("div",{style:{marginTop:"16px",paddingTop:"12px",borderTop:"1px solid rgba(255,138,158,0.15)",textAlign:"center",fontSize:"11px",color:"#BCA8AA"}},"灵魂画像 · soulmate.app")
+    h("div",{style:{marginTop:"16px",paddingTop:"12px",borderTop:"1px solid rgba(255,138,158,0.15)",textAlign:"center",fontSize:"11px",color:"#BCA8AA"}},"关系模拟器 · soulmate.app")
   );
   document.body.appendChild(container);
   try {
@@ -1211,7 +1211,7 @@ function renderWelcome(app) {
     };
     app.appendChild(h("div", {class:"welcome"},
       h("div", {style:{fontSize:"48px",marginBottom:"12px"}}, g.avatar),
-      h("div", {style:{fontSize:"15px",color:"var(--txtS)",marginBottom:"20px"}}, `${g.name}想认识你`),
+      h("div", {style:{fontSize:"15px",color:"var(--txtS)",marginBottom:"20px"}}, `${g.name}来分析你的恋爱人格`),
       h("div", {style:{width:"100%",maxWidth:"260px"}},
         h("input", {type:"text", placeholder:"你的名字", value:state.userName||"", maxLength:"12",
           style:{width:"100%",padding:"12px 16px",borderRadius:"16px",border:"1.5px solid var(--brd)",fontSize:"15px",
@@ -1219,7 +1219,7 @@ function renderWelcome(app) {
           onInput:e=>{ state.userName = e.target.value; },
           onKeydown:e=>{ if(e.key==="Enter") submitName(); }
         }),
-        h("button", {class:"btn-main", style:{width:"100%",marginTop:"12px"}, onClick:submitName}, "开始聊天 →")
+        h("button", {class:"btn-main", style:{width:"100%",marginTop:"12px"}, onClick:submitName}, "开始分析 →")
       ),
       h("button", {style:{marginTop:"16px",background:"none",border:"none",color:"var(--txtM)",fontSize:"12px",cursor:"pointer",fontFamily:"inherit"},
         onClick:()=>{ state.guide=null; render(); }}, "← 换一个")
@@ -1230,9 +1230,17 @@ function renderWelcome(app) {
   }
 
   app.appendChild(h("div", {class:"welcome"},
-    h("div", {class:"welcome-icon"}, "💫"),
-    h("h1", null, "遇见你的", h("br"), h("span", null, "灵魂画像")),
-    h("p", null, "选一个数字生命聊聊天", h("br"), "TA会帮你看见自己"),
+    h("div", {class:"welcome-icon"}, "🔮"),
+    h("h1", null, "如果你们在一起", h("br"), h("span", null, "会怎样？")),
+    h("p", null, "AI 分析你的恋爱人格", h("br"), "模拟你和朋友的关系未来"),
+    h("div", {style:{width:"100%",maxWidth:"280px",background:"var(--card)",borderRadius:"16px",padding:"16px",boxShadow:"var(--shd)",marginBottom:"20px",textAlign:"left"}},
+      h("div", {style:{fontSize:"13px",fontWeight:"700",color:"var(--txt)",marginBottom:"10px"}}, "模拟报告预览"),
+      h("div", {style:{fontSize:"12px",color:"var(--txtM)",lineHeight:"1.8"}},
+        h("div", null, "☕ 第一次见面　你们在咖啡馆坐下，TA说了一句..."),
+        h("div", null, "🌙 在一起1个月　那个周二的晚上，你突然发现..."),
+        h("div", null, "⚡ 第一次冲突　你没回那条消息，TA开始...")
+      )
+    ),
     h("div", {style:{display:"flex",gap:"12px",width:"100%",maxWidth:"320px"}},
       ...Object.entries(GUIDES).map(([id, g]) =>
         h("button", {style:{
@@ -1252,8 +1260,8 @@ function renderWelcome(app) {
     existing ? h("button", {style:{
       marginTop:"20px",background:"none",border:"1.5px solid var(--brd)",borderRadius:"16px",
       padding:"10px 24px",color:"var(--pri)",fontSize:"13px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"
-    }, onClick:()=>{ state.persona=existing; state.phase="report"; render(); }}, "📋 查看已有画像") : null,
-    h("div", {class:"note"}, "TA们是刚醒来的数字生命", h("br"), "对人类的爱充满好奇")
+    }, onClick:()=>{ state.persona=existing; state.phase="report"; render(); }}, "📋 查看已有档案 · 去匹配") : null,
+    h("div", {class:"note"}, "聊10分钟 · 生成你的恋爱档案 · 和朋友匹配看未来")
   ));
 }
 
@@ -1265,8 +1273,8 @@ function renderMatchInvite(app) {
   const pickGuide = (id) => { state.guide = id; state.phase = "welcome"; render(); };
 
   app.appendChild(h("div", {class:"welcome"},
-    h("div", {class:"welcome-icon"}, "💕"),
-    h("h1", null, "你扫到了", h("br"), h("span", null, "一个灵魂")),
+    h("div", {class:"welcome-icon"}, "🔮"),
+    h("h1", null, "关系模拟", h("br"), h("span", null, "即将开始")),
     scannedName !== "TA" ? h("p", {style:{color:"var(--txtS)",fontSize:"14px",marginBottom:"12px"}}, scannedName) : null,
 
     hasExisting
@@ -1275,7 +1283,7 @@ function renderMatchInvite(app) {
           runMatchWith(state.scannedPersona);
         }}, "模拟你们的未来 🔮")
       : h("div", {style:{width:"100%",maxWidth:"320px"}},
-          h("p", {style:{color:"var(--txtS)",fontSize:"14px",marginBottom:"16px",textAlign:"center"}}, "先聊几轮生成你的灵魂画像"),
+          h("p", {style:{color:"var(--txtS)",fontSize:"14px",marginBottom:"16px",textAlign:"center"}}, "先用10分钟生成你的恋爱档案"),
           h("div", {style:{display:"flex",gap:"12px"}},
             ...Object.entries(GUIDES).map(([id, g]) =>
               h("button", {style:{
@@ -1294,7 +1302,7 @@ function renderMatchInvite(app) {
           )
         ),
 
-    h("div", {class:"note",style:{marginTop:"20px"}}, "生成画像后自动查看你们的匹配度")
+    h("div", {class:"note",style:{marginTop:"20px"}}, "生成档案后自动模拟你们的关系未来")
   ));
 }
 
@@ -1304,7 +1312,7 @@ function renderChat(app) {
   const atMax = state.msgCount >= MAX_MSGS;
 
   // header
-  const genBtn = state.showBuild ? h("button",{class:"btn-gen",onClick:buildPersona},"生成画像 ✨") : null;
+  const genBtn = state.showBuild ? h("button",{class:"btn-gen",onClick:buildPersona},"生成档案 ✨") : null;
   app.appendChild(h("div",{class:"header"},
     h("div",{class:"header-ava"}, g.avatar),
     h("div",{class:"header-info"}, h("div",{class:"name"}, g.name), h("div",{class:"sub"}, g.sub)),
@@ -1315,7 +1323,7 @@ function renderChat(app) {
   if (state.msgCount > 0 && !atMax) {
     const left = MAX_MSGS - state.msgCount;
     const canGen = state.msgCount >= 8;
-    const txt = canGen ? `${state.msgCount}/${MAX_MSGS} 条 · 可以生成画像了` : `${state.msgCount}/${MAX_MSGS} 条 · 再聊 ${8-state.msgCount} 句可生成`;
+    const txt = canGen ? `${state.msgCount}/${MAX_MSGS} 条 · 恋爱档案已就绪，可以生成` : `${state.msgCount}/${MAX_MSGS} 条 · 再聊 ${8-state.msgCount} 句解锁关系模拟`;
     app.appendChild(h("div",{class:"progress"}, txt));
   }
 
@@ -1354,8 +1362,8 @@ function renderChat(app) {
   // Input bar OR maxed-out bar
   if (atMax && !state.apiError) {
     app.appendChild(h("div",{class:"maxed-bar"},
-      h("p",null,"对话已达到上限（"+MAX_MSGS+"条）"),
-      h("button",{class:"btn-main",style:{width:"100%",padding:"14px",fontSize:"15px"},onClick:buildPersona},"生成灵魂画像 ✨")
+      h("p",null,"分析数据已足够"),
+      h("button",{class:"btn-main",style:{width:"100%",padding:"14px",fontSize:"15px"},onClick:buildPersona},"生成恋爱档案 · 解锁匹配 ✨")
     ));
   } else if (!state.apiError) {
     const ta = h("textarea",{placeholder:"说点什么...",rows:"1"});
@@ -1374,7 +1382,7 @@ function renderChat(app) {
     app.appendChild(h("div",{class:"toolbar"},
       h("button",{onClick:exportChatImage},"📷 导出聊天"),
       h("button",{onClick:resetChat},"🗑️ 清空重开"),
-      state.showBuild ? h("button",{class:"primary",onClick:buildPersona},"✨ 生成画像") : null
+      state.showBuild ? h("button",{class:"primary",onClick:buildPersona},"✨ 生成档案") : null
     ));
   }
 }
@@ -1452,8 +1460,8 @@ function renderLoading(app) {
   const isMatch = state.phase==="match_building";
 
   const inner = h("div",{class:"loading-inner"},
-    h("div",{class:"loading-icon"}, isMatch?"🔮":"✨"),
-    h("h2",null, isMatch?"模拟你们的未来中...":"绘制灵魂画像中...")
+    h("div",{class:"loading-icon"}, isMatch?"🔮":"📊"),
+    h("h2",null, isMatch?"模拟你们的未来中...":"生成你的恋爱档案...")
   );
 
   if (!isMatch && state.extractionProgress) {
@@ -1470,9 +1478,9 @@ function renderLoading(app) {
       statusLine.appendChild(h("span",{style:`color:${color};font-weight:600`}, `${labels[id]} ${icon}`));
     }
     inner.appendChild(statusLine);
-    inner.appendChild(h("p",{style:"font-size:11px;color:var(--txtM);margin-top:8px"}, `分析 ${state.msgCount} 条消息，约需30-60秒`));
+    inner.appendChild(h("p",{style:"font-size:11px;color:var(--txtM);margin-top:8px"}, `分析 ${state.msgCount} 条消息，生成后可和朋友匹配`));
   } else {
-    inner.appendChild(h("p",null, isMatch?"匹配分析中，约需30秒":`分析 ${state.msgCount} 条消息，约需30-60秒`));
+    inner.appendChild(h("p",null, isMatch?"匹配分析中，约需30秒":`分析 ${state.msgCount} 条消息，生成后可和朋友匹配`));
   }
 
   app.appendChild(h("div",{class:"loading"}, inner));
@@ -1495,8 +1503,8 @@ function renderReport(app) {
   // header
   const displayName = state.userName || "你";
   const hdr = h("div",{class:"report-header"},
-    h("div",{style:{fontSize:"48px",marginBottom:"12px"}},"🪞"),
-    h("h1",null, `${displayName}的灵魂画像`),
+    h("div",{style:{fontSize:"48px",marginBottom:"12px"}},"📊"),
+    h("h1",null, `${displayName}的恋爱档案`),
     h("p",null, (id.self_label||id.occupation||"一个有趣的灵魂") + (id.city?` · ${id.city}`:"")),
     h("div",{class:"curve"})
   );
@@ -1530,6 +1538,30 @@ function renderReport(app) {
     report.appendChild(ssCard);
   }
 
+  // QR — relationship simulation CTA (moved up, right after soul summary)
+  const matchUrl = getMatchURL();
+  const qrArea = h("div",{class:"qr-area"},
+    h("div",{style:{fontSize:"18px",color:"white",fontWeight:"700",marginBottom:"6px"}},"下一步：和朋友测测你们的未来"),
+    h("div",{style:{fontSize:"13px",color:"rgba(255,255,255,0.8)",marginBottom:"12px"}},"扫码匹配 · AI模拟你们在一起的5个场景")
+  );
+  if (matchUrl) {
+    const qrContainer = h("div",{class:"qr-box",id:"qr-container"});
+    qrArea.appendChild(qrContainer);
+    qrArea.appendChild(h("div",{style:{fontSize:"11px",color:"rgba(255,255,255,0.7)",margin:"10px 0 6px"}},
+      "好友扫码 · 30秒生成关系模拟"
+    ));
+    const copyBtn = h("button",{style:{
+      background:"rgba(255,255,255,0.2)",border:"1.5px solid rgba(255,255,255,0.4)",color:"white",
+      borderRadius:"14px",padding:"8px 20px",fontSize:"12px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"
+    },onClick:()=>{
+      navigator.clipboard.writeText(matchUrl).then(()=>{copyBtn.textContent="✅ 已复制";setTimeout(()=>{copyBtn.textContent="🔗 复制匹配链接";},2000);}).catch(()=>{});
+    }},"🔗 复制匹配链接");
+    qrArea.appendChild(copyBtn);
+    setTimeout(()=>{ const el = document.getElementById("qr-container"); if(el) generateQR(el, matchUrl); }, 50);
+  } else {
+    qrArea.appendChild(h("div",{style:{fontSize:"12px",color:"rgba(255,255,255,0.7)",padding:"20px"}},"档案数据不足，无法生成分享码"));
+  }
+  report.appendChild(qrArea);
 
   // Love warning — 恋爱使用说明
   const lw = p.love_warning || {};
@@ -1542,7 +1574,7 @@ function renderReport(app) {
       ...ensureArr(lw.warns).slice(0,3).map(w =>
         h("div",{style:{fontSize:"13px",color:"var(--txtS)",lineHeight:"1.7",marginBottom:"6px",paddingLeft:"2px"}}, `♡ ${String(w).replace(/^⚠️\s*/, '')}`)
       ),
-      h("div",{style:{textAlign:"right",fontSize:"10px",color:"var(--txtM)",marginTop:"8px",letterSpacing:"0.5px"}},"灵魂画像 · AI恋爱人格测试")
+      h("div",{style:{textAlign:"right",fontSize:"10px",color:"var(--txtM)",marginTop:"8px",letterSpacing:"0.5px"}},"关系模拟器 · AI恋爱人格分析")
     );
     report.appendChild(lwCard);
   }
@@ -1552,7 +1584,7 @@ function renderReport(app) {
     const retryFn = state.failedCalls.length ? retryFailedCalls : buildPersona;
     const retryLabel = state.failedCalls.length ? `重试失败部分 (${state.failedCalls.join("+")}) ↻` : "全部重新生成 ↻";
     report.appendChild(h("div",{style:{margin:"0 16px 12px",padding:"14px 16px",borderRadius:"16px",background:"#FEF2F2",border:"1px solid #FECACA"}},
-      h("div",{style:{fontSize:"13px",color:"#991B1B",fontWeight:"600",marginBottom:"6px"}},"⚠️ 画像生成遇到问题"),
+      h("div",{style:{fontSize:"13px",color:"#991B1B",fontWeight:"600",marginBottom:"6px"}},"⚠️ 档案生成遇到问题"),
       h("div",{style:{fontSize:"11px",color:"#B91C1C",lineHeight:"1.5",marginBottom:"10px",wordBreak:"break-all"}}, state.buildError),
       h("div",{style:{display:"flex",gap:"8px",flexWrap:"wrap"}},
         h("button",{style:{background:"var(--gradW)",border:"none",color:"white",borderRadius:"12px",padding:"8px 16px",fontSize:"13px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"},onClick:retryFn}, retryLabel),
@@ -1659,7 +1691,7 @@ function renderReport(app) {
   const fieldNameMap = {occupation:"职业",age:"年龄",city:"城市",core_need:"核心需求",attachment_signal:"依恋信号",emotional_texture:"情感质地",energy_source:"能量来源",insecurity_hint:"不安全感",contradiction:"内在矛盾",love_language_signal:"爱的语言",conflict_pattern:"冲突模式",independence_intimacy:"独立与亲密",dealbreaker_deep:"关系底线",relationship_narrative:"爱情叙事",self_label:"自我标签"};
   function toChinese(s) { return fieldNameMap[s] || s; }
   const confCard = h("div",{class:"rcard"},
-    h("h3",null,"📊 画像完成度"),
+    h("h3",null,"📊 档案完成度"),
     h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}},
       h("span",{style:{fontSize:"13px",color:"var(--txtS)"}}, `解锁了 ${totalFields}/${maxFields} 个维度`),
       h("span",{style:{fontSize:"13px",fontWeight:"700",color:"var(--pri)"}}, meta.depth_reached||"中等")
@@ -1673,43 +1705,16 @@ function renderReport(app) {
   );
   report.appendChild(confCard);
 
-  // QR
-  // QR code
-  const matchUrl = getMatchURL();
-  const qrArea = h("div",{class:"qr-area"},
-    h("div",{style:{fontSize:"13px",color:"var(--txtS)",marginBottom:"12px"}},"模拟你们在一起后的未来")
-  );
-  if (matchUrl) {
-    const qrContainer = h("div",{class:"qr-box",id:"qr-container"});
-    qrArea.appendChild(qrContainer);
-    // Size info
-    const encoded = matchUrl.split("#m=")[1] || "";
-    qrArea.appendChild(h("div",{style:{fontSize:"11px",color:"var(--txtM)",margin:"10px 0 6px"}},
-      `好友扫码 · 30秒出结果`
-    ));
-    // Copy link button
-    const copyBtn = h("button",{style:{
-      background:"rgba(255,138,158,0.15)",border:"1.5px solid var(--brd)",color:"var(--pri)",
-      borderRadius:"14px",padding:"8px 20px",fontSize:"12px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"
-    },onClick:()=>{
-      navigator.clipboard.writeText(matchUrl).then(()=>{copyBtn.textContent="✅ 已复制";setTimeout(()=>{copyBtn.textContent="🔗 复制匹配链接";},2000);}).catch(()=>{});
-    }},"🔗 复制匹配链接");
-    qrArea.appendChild(copyBtn);
-    // Render QR after DOM insert
-    setTimeout(()=>{ const el = document.getElementById("qr-container"); if(el) generateQR(el, matchUrl); }, 50);
-  } else {
-    qrArea.appendChild(h("div",{style:{fontSize:"12px",color:"var(--txtM)",padding:"20px"}},"画像数据不足，无法生成分享码"));
-  }
-  report.appendChild(qrArea);
+  // QR — moved to after soul summary, see above
 
   // actions
   const canContinue = state.msgCount < MAX_MSGS;
   // brand watermark (visible in screenshots)
-  report.appendChild(h("div",{style:{textAlign:"center",padding:"8px 16px 16px",fontSize:"11px",color:"var(--txtM)",letterSpacing:"0.5px"}},"灵魂画像 · AI恋爱人格测试"));
+  report.appendChild(h("div",{style:{textAlign:"center",padding:"8px 16px 16px",fontSize:"11px",color:"var(--txtM)",letterSpacing:"0.5px"}},"关系模拟器 · AI恋爱人格分析"));
 
   report.appendChild(h("div",{class:"actions",style:{flexWrap:"wrap"}},
-    h("button",{class:"prim",style:{flex:"1 1 100%",marginBottom:"8px"},onClick:()=>exportAsImage("soul-report","灵魂画像.png")},"📷 保存画像图片"),
-    canContinue ? h("button",{class:"sec",onClick:()=>{state.phase="chat";state.showBuild=true;render();}},"继续聊天") : null,
+    h("button",{class:"prim",style:{flex:"1 1 100%",marginBottom:"8px"},onClick:()=>exportAsImage("soul-report","恋爱档案.png")},"📷 保存档案图片"),
+    canContinue ? h("button",{class:"sec",onClick:()=>{state.phase="chat";state.showBuild=true;render();}},"继续聊天 · 补充档案") : null,
     h("button",{class:"sec",onClick:resetChat},"🗑️ 重新开始")
   ));
 
@@ -1782,12 +1787,12 @@ function renderMatchReport(app) {
     report.appendChild(timeline);
   }
 
-  report.appendChild(h("div",{style:{textAlign:"center",padding:"8px 16px 16px",fontSize:"11px",color:"var(--txtM)",letterSpacing:"0.5px"}},"灵魂画像 · 关系模拟器"));
+  report.appendChild(h("div",{style:{textAlign:"center",padding:"8px 16px 16px",fontSize:"11px",color:"var(--txtM)",letterSpacing:"0.5px"}},"关系模拟器 · soulmate.app"));
 
   report.appendChild(h("div",{class:"actions",style:{flexWrap:"wrap"}},
     h("button",{class:"prim",style:{flex:"1 1 100%",marginBottom:"8px"},onClick:()=>exportAsImage("match-report","关系模拟.png")},"📷 保存模拟报告"),
     state.scannedPersona ? h("button",{class:"sec",onClick:startSoulChat},"💬 跟TA聊天") : null,
-    h("button",{class:"sec",onClick:()=>{state.phase="report";render();}},"查看我的画像"),
+    h("button",{class:"sec",onClick:()=>{state.phase="report";render();}},"查看我的档案"),
     h("button",{class:"sec",onClick:resetChat},"重新开始")
   ));
 
