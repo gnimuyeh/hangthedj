@@ -781,8 +781,9 @@ const MIN_DIMENSIONS_TO_GENERATE = 5;
 // Parse and strip [covered:...] tag from guide response
 function parseCoverageTag(text) {
   const allDims = [];
-  const clean = text.replace(/\[covered:([\w,]*)\]/g, (_, captured) => {
-    if (captured) captured.split(",").forEach(d => { if (ALL_DIMENSIONS.includes(d)) allDims.push(d); });
+  // Match [covered:...] with regular or full-width brackets, optional spaces
+  const clean = text.replace(/[\[［]\s*covered\s*[:：]\s*([^\]］]*)[\]］]/g, (_, captured) => {
+    if (captured) captured.split(/[,，]/).map(s=>s.trim()).forEach(d => { if (ALL_DIMENSIONS.includes(d)) allDims.push(d); });
     return "";
   }).trim();
   return { clean, dimensions: [...new Set(allDims)] };
