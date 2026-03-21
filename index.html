@@ -795,11 +795,12 @@ ${ensureArr(rp.dealbreaker_deep).length ? "- 你的底线：" + ensureArr(rp.dea
 ${ensureArr(ds.humor_type).length ? "- 幽默方式：" + ensureArr(ds.humor_type).join("，") : ""}
 ${ds.flirtation_mode ? "- 制造吸引力的方式：" + ds.flirtation_mode : ""}
 ${ds.pacing ? "- 聊天节奏：" + ds.pacing : ""}
-${ds.message_length ? "- 消息长度：" + ds.message_length : "- 消息长度：中等，2-3句"}
-${ds.message_pattern ? "- 消息模式：" + ds.message_pattern : "- 消息模式：混合"}
+${ds.message_length ? "- 消息长度：" + ds.message_length : ""}
+${ds.message_pattern ? "- 消息模式：" + ds.message_pattern : ""}
 ${(ds.slang_register||[]).length ? "- 口头禅：" + ds.slang_register.join("、") : ""}
 ${ds.vulnerability_pattern ? "- 面对深度话题：" + ds.vulnerability_pattern : ""}
 ${ds.conflict_style ? "- 面对分歧：" + ds.conflict_style : ""}
+${ensureArr(ds.unique_markers).length ? "- 独特标记：" + ensureArr(ds.unique_markers).join("、") : ""}
 
 # 重要规则
 - 每次只发一条消息，2-4句话。不要拆成多条。
@@ -959,25 +960,35 @@ function personaToMatchCard(p) {
   }
   const lt = p.life_texture || {};
   return {
-    v: 4,
+    v: 5,
     n: (state.userName || p.identity?.self_label || "").substring(0, 8),
     // radar scores — 6 numbers, very compact
     r: [rs.security||50, rs.emotion||50, rs.independence||50, rs.expression||50, rs.humor||50, rs.adventure||50],
-    // core personality keywords — short first-clause extracts
+    // inner world — full coverage for simulation
     cn: short(iw.core_need),
     ay: short(iw.attachment_style, 20),
     as: short(iw.attachment_signal),
+    et: short(iw.emotional_texture),
+    es: short(iw.energy_source),
     ct: short(iw.contradiction),
     ih: short(iw.insecurity_hint),
+    // relationship patterns — full coverage
     ll: short(rp.love_language_signal),
     cp: short(rp.conflict_pattern),
     cr: short(rp.conflict_recovery, 20),
+    ii: short(rp.independence_intimacy),
     rn: short(rp.relationship_narrative),
     dd: ensureArr(rp.dealbreaker_deep).slice(0, 2).map(d => short(d, 6)),
-    // dating style for simulation
+    // dating style — full coverage for simulation & soul chat
     ht: ensureArr(ds.humor_type).slice(0, 2).map(t => short(t, 8)),
+    fm: short(ds.flirtation_mode, 10),
     pa: short(ds.pacing, 6),
+    ml: short(ds.message_length, 8),
+    mp: short(ds.message_pattern, 8),
+    sl: ensureArr(ds.slang_register).slice(0, 3).map(s => short(s, 6)),
     vp: short(ds.vulnerability_pattern, 10),
+    cs: short(ds.conflict_style, 10),
+    um: ensureArr(ds.unique_markers).slice(0, 2).map(m => short(m, 12)),
     // life texture — critical for simulation scenes
     dr: short(lt.daily_rhythm, 15),
     hs: short(lt.hangout_style, 15),
@@ -989,10 +1000,45 @@ function personaToMatchCard(p) {
   };
 }
 
-// Expand match card back to persona (supports v2 and v3)
+// Expand match card back to persona (supports v2, v3, v4, v5)
 function matchCardToPersona(mc) {
   if (!mc) return null;
-  // v4 simulation-ready format
+  // v5 full simulation format — all fields present
+  if (mc.v === 5) {
+    const r = mc.r || [50,50,50,50,50,50];
+    return {
+      schema_version: "v3",
+      identity: { self_label: mc.n || null, name: mc.n || null },
+      inner_world: {
+        core_need: mc.cn || null, attachment_style: mc.ay || null,
+        attachment_signal: mc.as || null, emotional_texture: mc.et || null,
+        energy_source: mc.es || null, insecurity_hint: mc.ih || null,
+        contradiction: mc.ct || null
+      },
+      relationship_patterns: {
+        love_language_signal: mc.ll || null, conflict_pattern: mc.cp || null,
+        conflict_recovery: mc.cr || null, independence_intimacy: mc.ii || null,
+        dealbreaker_deep: mc.dd || [], relationship_narrative: mc.rn || null
+      },
+      radar_scores: { security:r[0], emotion:r[1], independence:r[2], expression:r[3], humor:r[4], adventure:r[5] },
+      dating_style: {
+        humor_type: mc.ht || [], flirtation_mode: mc.fm || "",
+        pacing: mc.pa || "", message_length: mc.ml || "",
+        message_pattern: mc.mp || "", slang_register: mc.sl || [],
+        vulnerability_pattern: mc.vp || "", conflict_style: mc.cs || "",
+        punctuation_habits: "", emoji_usage: "", language_mixing: null,
+        topic_magnets: [], unique_markers: mc.um || []
+      },
+      life_texture: {
+        daily_rhythm: mc.dr || null, hangout_style: mc.hs || null,
+        food_style: mc.fs || null, planning_tendency: mc.pt || null,
+        stress_response: mc.sr || null
+      },
+      surface: { interests: mc.si || [], lifestyle_notes: [] },
+      meta: { extraction_confidence: 0.7, source_message_count: 0, is_from_qr: true }
+    };
+  }
+  // v4 format (legacy — missing some simulation fields)
   if (mc.v === 4) {
     const r = mc.r || [50,50,50,50,50,50];
     return {
@@ -1013,7 +1059,7 @@ function matchCardToPersona(mc) {
       dating_style: {
         humor_type: mc.ht || [], pacing: mc.pa || "",
         vulnerability_pattern: mc.vp || "",
-        flirtation_mode: "", message_length: "中等", message_pattern: "混合",
+        flirtation_mode: "", message_length: "", message_pattern: "",
         slang_register: [], conflict_style: "",
         punctuation_habits: "", emoji_usage: "", language_mixing: null,
         topic_magnets: [], unique_markers: []
@@ -1046,7 +1092,7 @@ function matchCardToPersona(mc) {
       radar_scores: { security:r[0], emotion:r[1], independence:r[2], expression:r[3], humor:r[4], adventure:r[5] },
       dating_style: {
         humor_type: mc.ht || [], pacing: mc.pa || "",
-        flirtation_mode: "", message_length: "中等", message_pattern: "混合",
+        flirtation_mode: "", message_length: "", message_pattern: "",
         slang_register: [], vulnerability_pattern: "", conflict_style: "",
         punctuation_habits: "", emoji_usage: "", language_mixing: null,
         topic_magnets: [], unique_markers: []
@@ -1072,8 +1118,8 @@ function matchCardToPersona(mc) {
     },
     dating_style: {
       humor_type: mc.ht || [], flirtation_mode: mc.fm || "",
-      pacing: mc.pa || "", message_length: mc.ml || "中等",
-      message_pattern: mc.mp || "混合", slang_register: mc.sr || [],
+      pacing: mc.pa || "", message_length: mc.ml || "",
+      message_pattern: mc.mp || "", slang_register: mc.sr || [],
       vulnerability_pattern: mc.vp || "", conflict_style: mc.cs || "",
       punctuation_habits: "", emoji_usage: "", language_mixing: null,
       topic_magnets: [], unique_markers: []
