@@ -751,6 +751,18 @@ async function chatAPI(allMsgs) {
     for (const m of allMsgs) {
       apiMsgs.push(m.role==="match" ? {role:"assistant",content:m.rawText||m.text} : {role:"user",content:m.text});
     }
+    // Remind model of steering + coverage tracking each turn
+    const covered = state.coveredDimensions;
+    const remaining = ALL_DIMENSIONS.filter(d => !covered.includes(d));
+    const turnNum = allMsgs.filter(m => m.role === "user").length;
+    const reminder = `[系统提示，用户看不到] 第${turnNum}轮。已覆盖维度：${covered.length > 0 ? covered.join(",") : "无"}。未覆盖：${remaining.join(",")}。记住：表面话题最多2轮就要桥接到关系/情感维度。回复最后一行附上[covered:已有信号的维度]。`;
+    // Append as last user message so model sees it right before responding
+    const lastMsg = apiMsgs[apiMsgs.length - 1];
+    if (lastMsg && lastMsg.role === "user") {
+      lastMsg.content += "\n\n" + reminder;
+    } else {
+      apiMsgs.push({role:"user", content:reminder});
+    }
   }
   return callAPI(g.sys, apiMsgs, 1500);
 }
