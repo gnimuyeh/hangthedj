@@ -102,15 +102,6 @@ body { font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif
 .dim-text { flex:1; min-width:0; }
 .dim-text .label { font-size:14px; font-weight:700; }
 .dim-text .analysis { font-size:12px; color:var(--txtS); line-height:1.5; margin-top:2px; word-break:break-word; }
-.two-col { margin:0 16px 16px; display:flex; gap:10px; }
-.two-col > div { flex:1; border-radius:20px; padding:16px; min-width:0; }
-.two-col .sparks { background:#FFF1F2; }
-.two-col .friction { background:var(--secL); }
-.two-col .title { font-size:13px; font-weight:700; margin-bottom:8px; }
-.two-col .item { font-size:12px; color:var(--txtS); line-height:1.5; margin-bottom:4px; word-break:break-word; }
-.predict { margin:0 16px 16px; background:var(--gradS); border-radius:20px; padding:18px; }
-.predict .title { font-size:13px; font-weight:700; margin-bottom:6px; }
-.predict .body { font-size:13px; color:var(--txtS); line-height:1.6; }
 
 /* Simulation timeline */
 .sim-timeline { margin:0 16px 16px; position:relative; }
@@ -138,23 +129,6 @@ body { font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif
 .radar-wrap { margin:0 16px 12px; background:var(--card); border-radius:24px; padding:16px 8px 12px; box-shadow:var(--shd); text-align:center; overflow:hidden; }
 .radar-wrap.top { margin-top:-16px; position:relative; z-index:1; }
 .radar-svg { display:block; margin:0 auto; max-width:100%; height:auto; }
-
-/* Match header with names */
-.match-header { background:var(--grad); padding:40px 20px 60px; text-align:center; border-radius:0 0 32px 32px; position:relative; overflow:hidden; }
-.match-header::before { content:""; position:absolute; top:-40px; left:-40px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.06); }
-.match-header::after { content:""; position:absolute; bottom:20px; right:-30px; width:100px; height:100px; border-radius:50%; background:rgba(255,255,255,0.05); }
-.match-header .curve { position:absolute; bottom:-2px; left:0; right:0; height:20px; background:var(--bg); border-radius:20px 20px 0 0; z-index:1; }
-.match-header .names-row { display:flex; align-items:center; justify-content:center; gap:clamp(12px,4vw,24px); margin-bottom:20px; position:relative; z-index:1; }
-.match-header .name-col { display:flex; flex-direction:column; align-items:center; gap:8px; }
-.match-header .name-bubble { width:clamp(64px,18vw,80px); height:clamp(64px,18vw,80px); border-radius:50%; background:rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center; font-size:clamp(16px,4.5vw,20px); font-weight:800; color:white; border:2.5px solid rgba(255,255,255,0.4); box-shadow:0 4px 20px rgba(0,0,0,0.08); }
-.match-header .name-label { color:rgba(255,255,255,0.95); font-size:clamp(13px,3.5vw,15px); font-weight:700; max-width:80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; letter-spacing:0.3px; }
-.match-header .score-circle { width:clamp(72px,20vw,88px); height:clamp(72px,20vw,88px); border-radius:50%; background:rgba(255,255,255,0.2); border:3px solid rgba(255,255,255,0.5); display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0 4px 24px rgba(0,0,0,0.1), inset 0 0 20px rgba(255,255,255,0.1); flex-shrink:0; }
-.match-header .score-circle .score-num { font-size:clamp(24px,7vw,32px); font-weight:900; color:white; line-height:1; }
-.match-header .score-circle .score-unit { font-size:11px; color:rgba(255,255,255,0.8); font-weight:600; margin-top:1px; letter-spacing:1px; }
-.match-header .match-link { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:4px; opacity:0.7; }
-.match-header .match-link .link-dot { width:4px; height:4px; border-radius:50%; background:rgba(255,255,255,0.5); }
-.match-header .match-link .link-line { width:clamp(16px,5vw,28px); height:1.5px; background:rgba(255,255,255,0.3); border-radius:1px; }
-.match-header .vibe { color:rgba(255,255,255,0.95); font-size:15px; margin-top:0; font-style:normal; font-weight:600; letter-spacing:0.5px; position:relative; z-index:1; }
 
 /* Dim card last child spacing */
 .dim-card:last-of-type { margin-bottom:16px; }
@@ -407,33 +381,6 @@ const ENGINE_A3_TEMPLATE = `分析以下对话，提取用户的沟通风格和�
 
 `;
 
-const ENGINE_C_SYS = `你是匹配分析引擎。分析两个人格档案输出匹配报告。
-输入会标注每个人的名字，在分析文字中使用他们的真实名字而不是A/B。
-注意：一方的档案可能是从QR扫描来的精简版（字段较短或部分为null，可能包含radar_scores数组），这是正常的。用已有的信息做最佳推断。
-重点分析inner_world和relationship_patterns的兼容性而不只是surface重合。
-匹配逻辑：相似性和互补性同等重要。比如一个高表达力+一个善倾听=高分（互补），两个都需要安全感=高分（共鸣）。不要只看相似度。
-评分基准：大部分维度55-75分。>85需强证据。match_score是六维度的加权平均。
-vibe_label要画面感（10字以内）。所有文字必须是中文。
-
-六个维度（权重）：
-- chemistry: 聊天火花(25%) — 对话风格互补度
-- humor_sync: 幽默同频(20%) — 笑点和幽默方式的契合
-- depth: 深度共鸣(20%) — 内在世界和价值观的共振
-- lifestyle: 生活契合(15%) — 生活方式和节奏的兼容性
-- energy: 能量匹配(10%) — 能量级别和社交偏好的平衡
-- tacit: 默契指数(10%) — 不言而喻的理解力，沟通效率
-
-字数限制（严格遵守）：
-- analysis: 每个维度的分析30-50字，一针见血
-- sparks/friction: 每条15-25字
-- first_date_prediction: 30-50字
-- conversation_starter: 20-40字
-
-只输出纯JSON不要代码块：
-{"match_score":0,"vibe_label":"","dimensions":{"chemistry":{"score":0,"analysis":""},"humor_sync":{"score":0,"analysis":""},"depth":{"score":0,"analysis":""},"lifestyle":{"score":0,"analysis":""},"energy":{"score":0,"analysis":""},"tacit":{"score":0,"analysis":""}},"sparks":[],"friction":[],"first_date_prediction":"","conversation_starter":""}`;
-
-const DIM_LABELS = {chemistry:"聊天火花",humor_sync:"幽默同频",depth:"深度共鸣",lifestyle:"生活契合",energy:"能量匹配",tacit:"默契指数"};
-
 // ── Engine D: Relationship Simulator ──
 const ENGINE_D_SYS = `你是一个关系模拟器。你的任务是根据两个人的人格画像，生成他们在一起后不同阶段的真实场景模拟。
 
@@ -597,7 +544,7 @@ const GUIDES = {
 // STATE
 // ═══════════════════════════════════════
 
-let state = { phase:"welcome", guide:null, userName:"", msgs:[], input:"", typing:false, msgCount:0, persona:null, matchReport:null, simulation:null, showBuild:false, apiError:false, pendingMatch:null, scannedPersona:null, soulMsgs:[], soulInput:"", soulMsgCount:0, soulTyping:false, soulError:false, buildError:null, failedCalls:[], extractionProgress:null, matchFailed:false, reportShared:false };
+let state = { phase:"welcome", guide:null, userName:"", msgs:[], input:"", typing:false, msgCount:0, persona:null, simulation:null, showBuild:false, apiError:false, pendingMatch:null, scannedPersona:null, soulMsgs:[], soulInput:"", soulMsgCount:0, soulTyping:false, soulError:false, buildError:null, failedCalls:[], extractionProgress:null, matchFailed:false, reportShared:false };
 
 // ═══════════════════════════════════════
 // API
@@ -853,14 +800,6 @@ const PERSONA_DIMS = [
   {key:"expression",  label:"表达力", color:"#818CF8"},
   {key:"humor",       label:"幽默值", color:"#34D399"},
   {key:"adventure",   label:"冒险心", color:"#FB923C"},
-];
-const MATCH_DIMS = [
-  {key:"chemistry",   label:"聊天火花", color:"#FF8A9E"},
-  {key:"humor_sync",  label:"幽默同频", color:"#F472B6"},
-  {key:"depth",       label:"深度共鸣", color:"#C084FC"},
-  {key:"lifestyle",   label:"生活契合", color:"#818CF8"},
-  {key:"energy",      label:"能量匹配", color:"#34D399"},
-  {key:"tacit",       label:"默契指数", color:"#FB923C"},
 ];
 
 function renderRadar(dims, scores) {
@@ -1205,7 +1144,7 @@ async function exportChatImage() {
 
 function resetChat() {
   state.phase="welcome"; state.guide=null; state.userName=""; state.msgs=[]; state.persona=null;
-  state.matchReport=null; state.msgCount=0; state.apiError=false; state.showBuild=false;
+  state.simulation=null; state.msgCount=0; state.apiError=false; state.showBuild=false;
   clearPersona();
   render();
 }
@@ -1877,18 +1816,16 @@ function renderReport(app) {
 }
 
 function renderMatchReport(app) {
-  if(!state.matchReport && !state.simulation) return;
+  if(!state.simulation && !state.matchFailed) return;
   app.className = "shell";
-  const mr = state.matchReport || {};
   const sim = state.simulation;
-  const dims = mr.dimensions||{};
   const report = h("div",{class:"report",id:"match-report"});
 
   const myName = state.userName || "你";
   const otherName = state.scannedPersona?.identity?.name || state.scannedPersona?.identity?.self_label || "TA";
 
-  // Simulation header — relationship simulator branding
-  const vibeLabel = sim?.vibe_label || mr.vibe_label || "";
+  // Header
+  const vibeLabel = sim?.vibe_label || "";
   const hdr = h("div",{class:"sim-header"},
     h("div",{class:"names-row"},
       h("span",{class:"name-pill"}, myName),
@@ -1902,77 +1839,33 @@ function renderMatchReport(app) {
   );
   report.appendChild(hdr);
 
-  // retry banner if both failed
+  // Retry banner
   if (state.matchFailed) {
     report.appendChild(h("div",{style:{margin:"0 16px 12px",padding:"14px 16px",borderRadius:"16px",background:"#FEF2F2",border:"1px solid #FECACA"}},
-      h("div",{style:{fontSize:"13px",color:"#991B1B",fontWeight:"600",marginBottom:"6px"}},"⚠️ 分析失败"),
+      h("div",{style:{fontSize:"13px",color:"#991B1B",fontWeight:"600",marginBottom:"6px"}},"⚠️ 模拟失败"),
       h("div",{style:{fontSize:"11px",color:"#B91C1C",lineHeight:"1.5",marginBottom:"10px"}},"API请求未成功，点击重试"),
       h("button",{style:{background:"var(--gradW)",border:"none",color:"white",borderRadius:"12px",padding:"8px 16px",fontSize:"13px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"},
         onClick:()=>{ runMatchWith(state.scannedPersona); }}, "重新模拟 ↻")
     ));
   }
 
-  // Simulation timeline — the main feature
+  // Simulation timeline
   const scenes = sim?.scenes || [];
   if (scenes.length > 0) {
-    // Disclaimer
     report.appendChild(h("div",{class:"sim-disclaimer"}, "这不是预测，是一面镜子——帮你看见自己在关系中的模式"));
 
     const timeline = h("div",{class:"sim-timeline"});
     scenes.forEach(s => {
-      const sceneEl = h("div",{class:"sim-scene"},
+      timeline.appendChild(h("div",{class:"sim-scene"},
         h("div",{class:"sim-dot"}),
         h("div",{class:"sim-time"}, s.time_label || ""),
         h("div",{class:"sim-card"},
           h("h4",null, s.title || ""),
           h("div",{class:"scene-text"}, s.scene || "")
         )
-      );
-      timeline.appendChild(sceneEl);
+      ));
     });
     report.appendChild(timeline);
-  }
-
-  // Match metrics section (compact, below simulation)
-  const hasMatchData = mr.match_score > 0 || Object.keys(dims).length > 0;
-  if (hasMatchData) {
-    // Score badge
-    const scoreBadge = h("div",{style:{textAlign:"center",margin:"8px 16px 16px"}},
-      h("div",{style:{display:"inline-flex",alignItems:"center",gap:"10px",background:"var(--card)",borderRadius:"20px",padding:"12px 24px",boxShadow:"var(--shd)"}},
-        h("span",{style:{fontSize:"28px",fontWeight:"900",background:"var(--grad)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}, String(mr.match_score||0)),
-        h("span",{style:{fontSize:"12px",color:"var(--txtS)",fontWeight:"600"}},"契合度")
-      )
-    );
-    report.appendChild(scoreBadge);
-
-    // Compact dimension bars
-    const dimsCard = h("div",{class:"rcard"});
-    Object.entries(dims).forEach(([k,v]) => {
-      if (!v?.score) return;
-      const pct = Math.min(v.score, 100);
-      dimsCard.appendChild(h("div",{class:"bar-row"},
-        h("span",{class:"bar-label"}, DIM_LABELS[k]||k),
-        h("div",{class:"bar-track"}, h("div",{class:"bar-fill",style:{width:pct+"%"}})),
-        h("span",{class:"bar-val"}, String(v.score))
-      ));
-    });
-    report.appendChild(dimsCard);
-
-    // Sparks & friction
-    const hasSparks = (mr.sparks||[]).length > 0;
-    const hasFriction = (mr.friction||[]).length > 0;
-    if (hasSparks || hasFriction) {
-      report.appendChild(h("div",{class:"two-col"},
-        hasSparks ? h("div",{class:"sparks"},
-          h("div",{class:"title",style:{color:"var(--pri)"}},"🔥 火花"),
-          ...(mr.sparks||[]).map(s=>h("div",{class:"item"},s))
-        ) : null,
-        hasFriction ? h("div",{class:"friction"},
-          h("div",{class:"title",style:{color:"#7C3AED"}},"⚡ 摩擦"),
-          ...(mr.friction||[]).map(f=>h("div",{class:"item"},f))
-        ) : null
-      ));
-    }
   }
 
   report.appendChild(h("div",{style:{textAlign:"center",padding:"8px 16px 16px",fontSize:"11px",color:"var(--txtM)",letterSpacing:"0.5px"}},"灵魂画像 · 关系模拟器"));
@@ -2297,51 +2190,32 @@ async function retryFailedCalls() {
 async function runMatchWith(otherPersona) {
   state.phase = "match_building";
   state.matchFailed = false;
-  state.matchReport = null;
   state.simulation = null;
   render();
   const myName = state.userName || "A";
   const otherName = otherPersona?.identity?.name || otherPersona?.identity?.self_label || "B";
   const personaInput = `${myName}的人格画像：\n${JSON.stringify(state.persona)}\n\n${otherName}的人格画像：\n${JSON.stringify(otherPersona)}`;
 
-  // Run Engine C (match metrics) and Engine D (simulation) in parallel
-  const msgC = [{role:"user",content:personaInput}];
-  const msgD = [{role:"user",content:personaInput}];
-
+  const msg = [{role:"user",content:personaInput}];
   const delays = [1000, 3000, 9000];
 
-  async function runWithRetry(sys, msg, label) {
-    for (let attempt = 0; attempt < 3; attempt++) {
-      if (attempt > 0) {
-        console.log(`${label} attempt ${attempt+1}, waiting ${delays[attempt-1]}ms...`);
-        await new Promise(ok => setTimeout(ok, delays[attempt - 1]));
-      }
-      const t = await callAPIStream(sys, msg, 4096, 0.5);
-      if (t) {
-        const parsed = safeParseJSON(t);
-        if (parsed) return parsed;
-        console.warn(`${label} attempt ${attempt+1}: JSON parse failed`);
-      } else {
-        console.warn(`${label} attempt ${attempt+1} failed: ${_lastApiError}`);
-      }
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) {
+      console.log(`EngineD attempt ${attempt+1}, waiting ${delays[attempt-1]}ms...`);
+      await new Promise(ok => setTimeout(ok, delays[attempt - 1]));
     }
-    return null;
+    const t = await callAPIStream(ENGINE_D_SYS, msg, 4096, 0.5);
+    if (t) {
+      const parsed = safeParseJSON(t);
+      if (parsed) { state.simulation = parsed; break; }
+      console.warn(`EngineD attempt ${attempt+1}: JSON parse failed`);
+    } else {
+      console.warn(`EngineD attempt ${attempt+1} failed: ${_lastApiError}`);
+    }
   }
 
-  // Stagger by 300ms to avoid rate limit burst
-  const [matchResult, simResult] = await Promise.all([
-    runWithRetry(ENGINE_C_SYS, msgC, "EngineC"),
-    new Promise(resolve => setTimeout(async () => {
-      resolve(await runWithRetry(ENGINE_D_SYS, msgD, "EngineD"));
-    }, 300))
-  ]);
-
-  state.matchReport = matchResult;
-  state.simulation = simResult;
-
-  if (!state.matchReport && !state.simulation) {
+  if (!state.simulation) {
     state.matchFailed = true;
-    state.matchReport = {match_score:0,vibe_label:"",dimensions:{},sparks:[],friction:[],first_date_prediction:"",conversation_starter:""};
   }
   state.phase = "match_report";
   render();
