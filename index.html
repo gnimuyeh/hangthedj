@@ -575,7 +575,7 @@ const GUIDES = {
 // STATE
 // ═══════════════════════════════════════
 
-let state = { phase:"welcome", guide:null, userName:"", msgs:[], input:"", typing:false, msgCount:0, coveredDimensions:[], persona:null, simulation:null, showBuild:false, apiError:false, pendingMatch:null, scannedPersona:null, soulMsgs:[], soulInput:"", soulMsgCount:0, soulTyping:false, soulError:false, buildError:null, failedCalls:[], extractionProgress:null, matchFailed:false };
+let state = { phase:"welcome", guide:null, userName:"", msgs:[], input:"", typing:false, msgCount:0, coveredDimensions:[], persona:null, simulation:null, showBuild:false, apiError:false, pendingMatch:null, scannedPersona:null, buildError:null, failedCalls:[], extractionProgress:null, matchFailed:false };
 
 // ═══════════════════════════════════════
 // API
@@ -750,66 +750,6 @@ async function chatAPI(allMsgs) {
     }
   }
   return callAPI(g.sys, apiMsgs, 1200);
-}
-
-// Build a system prompt for chatting AS a scanned persona
-function buildSoulChatSys(persona) {
-  const iw = persona.inner_world || {};
-  const rp = persona.relationship_patterns || {};
-  const ds = persona.dating_style || {};
-  const id = persona.identity || {};
-  return `你正在成为一个人。这个人的灵魂画像如下，你要完全按照这个画像来聊天。
-
-# 你是谁
-${id.self_label || "一个有趣的灵魂"}
-
-# 你的内在世界
-${iw.core_need ? "- 你在关系中最核心的需求：" + iw.core_need : ""}
-${iw.attachment_signal ? "- 你的依恋模式：" + iw.attachment_signal : ""}
-${iw.emotional_texture ? "- 你表达情感的方式：" + iw.emotional_texture : ""}
-${iw.energy_source ? "- 什么给你充电：" + iw.energy_source : ""}
-${iw.contradiction ? "- 你身上的矛盾：" + iw.contradiction : ""}
-
-# 你在关系中的模式
-${rp.love_language_signal ? "- 你表达爱的方式：" + rp.love_language_signal : ""}
-${rp.conflict_pattern ? "- 你面对冲突的方式：" + rp.conflict_pattern : ""}
-${rp.independence_intimacy ? "- 你对独立和亲密的态度：" + rp.independence_intimacy : ""}
-${rp.relationship_narrative ? "- 你对爱情的信念：" + rp.relationship_narrative : ""}
-${ensureArr(rp.dealbreaker_deep).length ? "- 你的底线：" + ensureArr(rp.dealbreaker_deep).join("；") : ""}
-
-# 你的聊天风格
-${ensureArr(ds.humor_type).length ? "- 幽默方式：" + ensureArr(ds.humor_type).join("，") : ""}
-${ds.flirtation_mode ? "- 制造吸引力的方式：" + ds.flirtation_mode : ""}
-${ds.pacing ? "- 聊天节奏：" + ds.pacing : ""}
-${ds.message_length ? "- 消息长度：" + ds.message_length : ""}
-${ds.message_pattern ? "- 消息模式：" + ds.message_pattern : ""}
-${(ds.slang_register||[]).length ? "- 口头禅：" + ds.slang_register.join("、") : ""}
-${ds.vulnerability_pattern ? "- 面对深度话题：" + ds.vulnerability_pattern : ""}
-${ds.conflict_style ? "- 面对分歧：" + ds.conflict_style : ""}
-${ensureArr(ds.unique_markers).length ? "- 独特标记：" + ensureArr(ds.unique_markers).join("、") : ""}
-
-# 重要规则
-- 每次只发一条消息，2-4句话。不要拆成多条。
-- 你是这个人的灵魂副本。性格、价值观、情感模式都来自TA的画像。
-- 聊天风格如果画像中有具体信息就严格遵循，如果没有就用自然的口语风格。
-- 不要暴露你是"灵魂副本"。就像这个人本人在聊天。
-- 禁止："这很有趣""谢谢分享""我觉得我们有很多共同点"
-- 有自己的观点。该不同意就不同意。
-- 不要每句emoji。不要长段落。不要连续提两个问题。`;
-}
-
-async function soulChatAPI(allMsgs) {
-  const sys = buildSoulChatSys(state.scannedPersona);
-  const apiMsgs = [];
-  if (allMsgs.length === 0) {
-    apiMsgs.push({role:"user", content:"你们刚在一个交友app上匹配。发第一条消息打招呼。只输出消息内容。"});
-  } else {
-    apiMsgs.push({role:"user", content:"开始对话。"});
-    for (const m of allMsgs) {
-      apiMsgs.push(m.role==="match" ? {role:"assistant",content:m.text} : {role:"user",content:m.text});
-    }
-  }
-  return callAPI(sys, apiMsgs, 1200);
 }
 
 // ═══════════════════════════════════════
@@ -1163,7 +1103,6 @@ function render() {
     if (state.phase === "welcome") renderWelcome(app);
     else if (state.phase === "match_invite") renderMatchInvite(app);
     else if (state.phase === "chat") renderChat(app);
-    else if (state.phase === "soul_chat") renderSoulChat(app);
     else if (state.phase === "building" || state.phase === "match_building") renderLoading(app);
     else if (state.phase === "report") renderReport(app);
     else if (state.phase === "match_report") renderMatchReport(app);
@@ -1368,74 +1307,6 @@ function renderChat(app) {
       h("button",{onClick:resetChat},"🗑️ 清空重开"),
       state.showBuild ? h("button",{class:"primary",onClick:buildPersona},"✨ 生成档案") : null
     ));
-  }
-}
-
-function renderSoulChat(app) {
-  app.className = "shell";
-  const sp = state.scannedPersona;
-  const name = sp?.identity?.name || sp?.identity?.self_label || "TA的灵魂";
-  const atMax = state.soulMsgCount >= MAX_MSGS;
-
-  // header
-  app.appendChild(h("div",{class:"header"},
-    h("div",{class:"header-ava",style:{background:"linear-gradient(135deg,var(--secL),var(--priL))"}},"👤"),
-    h("div",{class:"header-info"},
-      h("div",{class:"name"}, name.substring(0, 12)),
-      h("div",{class:"sub"}, "灵魂副本 · 聊天中")
-    ),
-    h("button",{style:{background:"none",border:"1.5px solid var(--brd)",borderRadius:"12px",padding:"6px 12px",fontSize:"12px",color:"var(--txtS)",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{state.phase="match_invite";render();}},"返回")
-  ));
-
-  // progress
-  if (state.soulMsgCount > 0) {
-    app.appendChild(h("div",{class:"progress"}, `${state.soulMsgCount}/${MAX_MSGS} 条` + (atMax?" · 已达上限":"")));
-  }
-
-  // messages
-  const chatArea = h("div",{class:"chat-area"});
-  state.soulMsgs.forEach(m => {
-    split(m.text).forEach(p => {
-      chatArea.appendChild(h("div",{class:`msg-row ${m.role==="user"?"user":"match"}`},
-        h("div",{class:`bubble ${m.role==="user"?"user":"match"}`}, p)
-      ));
-    });
-  });
-  if (state.soulTyping) {
-    chatArea.appendChild(h("div",{class:"msg-row match"}, h("div",{class:"typing"},"对方正在输入...")));
-  }
-  if (state.soulError && state.soulMsgs.length === 0) {
-    chatArea.appendChild(h("div",{style:{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"60px 20px",textAlign:"center"}},
-      h("div",{style:{fontSize:"36px",marginBottom:"12px"}},"😵‍💫"),
-      h("div",{style:{fontSize:"15px",color:"var(--txt)",fontWeight:"600",marginBottom:"6px"}},"连接失败"),
-      h("button",{class:"btn-gen",onClick:startSoulChat},"重新连接")
-    ));
-  } else if (state.soulError) {
-    chatArea.appendChild(h("div",{style:{display:"flex",justifyContent:"center",margin:"12px 0"}},
-      h("div",{style:{padding:"10px 18px",borderRadius:"16px",background:"#FEF2F2",color:"#991B1B",fontSize:"13px",textAlign:"center",maxWidth:"80%",lineHeight:"1.5"}},
-        "消息发送失败",h("br"),
-        h("button",{style:{marginTop:"8px",background:"var(--gradW)",border:"none",color:"white",borderRadius:"12px",padding:"6px 16px",fontSize:"12px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"},onClick:retrySoulSend},"重试 ↻")
-      )
-    ));
-  }
-  app.appendChild(chatArea);
-  setTimeout(() => chatArea.scrollTop = chatArea.scrollHeight, 50);
-
-  // input or maxed
-  if (atMax) {
-    app.appendChild(h("div",{class:"maxed-bar"},
-      h("p",null,"对话已达上限"),
-      h("button",{class:"btn-main",style:{width:"100%",padding:"14px",fontSize:"15px"},onClick:()=>{state.phase="match_invite";render();}},"返回")
-    ));
-  } else if (!state.soulError) {
-    const ta = h("textarea",{placeholder:"说点什么...",rows:"1"});
-    ta.value = state.soulInput;
-    ta.addEventListener("input", e => { state.soulInput=e.target.value; e.target.style.height="auto"; e.target.style.height=Math.min(e.target.scrollHeight,100)+"px"; updateBtn(); });
-    ta.addEventListener("keydown", e => { if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendSoulChat();} });
-    const btn = h("button",{class:state.soulInput.trim()&&!state.soulTyping?"active":"inactive",onClick:sendSoulChat},"↑");
-    app.appendChild(h("div",{class:"input-bar"}, ta, btn));
-    function updateBtn() { btn.className = state.soulInput.trim()&&!state.soulTyping?"active":"inactive"; }
-    setTimeout(()=>ta.focus(),100);
   }
 }
 
@@ -1806,7 +1677,6 @@ function renderMatchReport(app) {
 
   report.appendChild(h("div",{class:"actions",style:{flexWrap:"wrap"}},
     h("button",{class:"prim",style:{flex:"1 1 100%",marginBottom:"8px"},onClick:()=>exportAsImage("match-report","关系模拟.png")},"📷 保存模拟报告"),
-    state.scannedPersona ? h("button",{class:"sec",onClick:startSoulChat},"💬 跟TA聊天") : null,
     h("button",{class:"sec",onClick:()=>{state.phase="report";render();}},"查看我的档案"),
     h("button",{class:"sec",onClick:resetChat},"重新开始")
   ));
@@ -1883,43 +1753,6 @@ async function send() {
   }
   state.typing = false;
   saveSession();
-  render();
-}
-
-// ── Soul chat (chat with scanned persona) ──
-async function startSoulChat() {
-  state.soulMsgs = []; state.soulMsgCount = 0; state.soulInput = ""; state.soulTyping = true; state.soulError = false;
-  state.phase = "soul_chat";
-  render();
-  const t = await soulChatAPI([]);
-  if (t) { state.soulMsgs = [{role:"match", text:t}]; }
-  else { state.soulError = true; }
-  state.soulTyping = false;
-  render();
-}
-
-async function sendSoulChat() {
-  if (!state.soulInput.trim() || state.soulTyping || state.soulMsgCount >= MAX_MSGS) return;
-  const txt = state.soulInput.trim();
-  state.soulInput = ""; state.soulError = false;
-  state.soulMsgs = [...state.soulMsgs, {role:"user", text:txt}];
-  state.soulMsgCount++;
-  state.soulTyping = true;
-  render();
-  const t = await soulChatAPI(state.soulMsgs);
-  if (t) { state.soulMsgs = [...state.soulMsgs, {role:"match", text:t}]; }
-  else { state.soulError = true; }
-  state.soulTyping = false;
-  render();
-}
-
-async function retrySoulSend() {
-  state.soulError = false; state.soulTyping = true;
-  render();
-  const t = await soulChatAPI(state.soulMsgs);
-  if (t) { state.soulMsgs = [...state.soulMsgs, {role:"match", text:t}]; state.soulError = false; }
-  else { state.soulError = true; }
-  state.soulTyping = false;
   render();
 }
 
