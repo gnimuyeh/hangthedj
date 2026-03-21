@@ -749,10 +749,10 @@ async function chatAPI(allMsgs) {
   } else {
     apiMsgs.push({role:"user", content:"开始对话。"});
     for (const m of allMsgs) {
-      apiMsgs.push(m.role==="match" ? {role:"assistant",content:m.text} : {role:"user",content:m.text});
+      apiMsgs.push(m.role==="match" ? {role:"assistant",content:m.rawText||m.text} : {role:"user",content:m.text});
     }
   }
-  return callAPI(g.sys, apiMsgs, 300);
+  return callAPI(g.sys, apiMsgs, 1500);
 }
 
 // ═══════════════════════════════════════
@@ -1714,7 +1714,7 @@ async function startChat() {
   const t = await chatAPI([]);
   if (t) {
     const clean = processGuideResponse(t);
-    state.msgs = [{role:"match", text:clean}];
+    state.msgs = [{role:"match", text:clean, rawText:t}];
   } else {
     state.apiError = true;
   }
@@ -1730,7 +1730,7 @@ async function retrySend() {
   const t = await chatAPI(state.msgs);
   if (t) {
     const clean = processGuideResponse(t);
-    state.msgs = [...state.msgs, {role:"match",text:clean}];
+    state.msgs = [...state.msgs, {role:"match",text:clean,rawText:t}];
     state.apiError = false;
   } else {
     state.apiError = true;
@@ -1753,7 +1753,7 @@ async function send() {
   const t = await chatAPI(state.msgs);
   if(t) {
     const clean = processGuideResponse(t);
-    state.msgs = [...state.msgs, {role:"match",text:clean}];
+    state.msgs = [...state.msgs, {role:"match",text:clean,rawText:t}];
   } else {
     state.apiError = true;
   }
