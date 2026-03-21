@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>关系模拟器 · AI 预演你们的未来</title>
-<meta name="description" content="AI 分析你的恋爱人格，和朋友匹配后生成5个未来场景——第一次约会、热恋、冲突、和好、半年后。">
-<meta property="og:title" content="AI 模拟了我和朋友在一起的未来">
-<meta property="og:description" content="从第一次见面到半年后，5个场景告诉你们在一起会怎样。">
+<meta name="description" content="AI 读懂你的恋爱人格，为你和心动的人写一段爱情剧本——初遇、心动、争吵、和解、未来。">
+<meta property="og:title" content="AI 写了一段属于我们的爱情故事">
+<meta property="og:description" content="从初次心动到未来想象，AI 用你们的性格写出只属于你们的剧本。">
 <meta property="og:type" content="website">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
@@ -1155,7 +1155,7 @@ function renderWelcome(app) {
   app.appendChild(h("div", {class:"welcome"},
     h("div", {class:"welcome-icon"}, "🔮"),
     h("h1", null, "如果你们在一起", h("br"), h("span", null, "会怎样？")),
-    h("p", null, "AI 分析你的恋爱人格", h("br"), "模拟你和朋友的关系未来"),
+    h("p", null, "AI 读懂你的恋爱人格", h("br"), "为你和心动的人写一段爱情剧本"),
     h("div", {style:{width:"100%",maxWidth:"280px",background:"var(--card)",borderRadius:"16px",padding:"16px",boxShadow:"var(--shd)",marginBottom:"20px",textAlign:"left"}},
       h("div", {style:{fontSize:"13px",fontWeight:"700",color:"var(--txt)",marginBottom:"10px"}}, "模拟报告预览"),
       h("div", {style:{fontSize:"12px",color:"var(--txtM)",lineHeight:"1.8"}},
@@ -1184,7 +1184,7 @@ function renderWelcome(app) {
       marginTop:"20px",background:"none",border:"1.5px solid var(--brd)",borderRadius:"16px",
       padding:"10px 24px",color:"var(--pri)",fontSize:"13px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"
     }, onClick:()=>{ state.persona=existing; state.phase="report"; render(); }}, "📋 查看已有档案 · 去匹配") : null,
-    h("div", {class:"note"}, "聊10分钟 · 生成你的恋爱档案 · 和朋友匹配看未来")
+    h("div", {class:"note"}, "聊10分钟 · 生成你的恋爱档案 · 匹配心动的人看未来")
   ));
 }
 
