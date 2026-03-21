@@ -1387,14 +1387,14 @@ function renderReport(app) {
   // QR — relationship simulation CTA (moved up, right after soul summary)
   const matchUrl = getMatchURL();
   const qrArea = h("div",{class:"qr-area"},
-    h("div",{style:{fontSize:"18px",color:"white",fontWeight:"700",marginBottom:"6px"}},"下一步：和朋友测测你们的未来"),
-    h("div",{style:{fontSize:"13px",color:"rgba(255,255,255,0.8)",marginBottom:"12px"}},"扫码匹配 · AI模拟你们在一起的5个场景")
+    h("div",{style:{fontSize:"18px",color:"white",fontWeight:"700",marginBottom:"6px"}},"让AI揭晓你和TA的故事"),
+    h("div",{style:{fontSize:"13px",color:"rgba(255,255,255,0.8)",marginBottom:"12px"}},"分享给心动的人 · 看看命运会怎么写你们的剧本")
   );
   if (matchUrl) {
     const qrContainer = h("div",{class:"qr-box",id:"qr-container"});
     qrArea.appendChild(qrContainer);
     qrArea.appendChild(h("div",{style:{fontSize:"11px",color:"rgba(255,255,255,0.7)",margin:"10px 0 6px"}},
-      "好友扫码 · 30秒生成关系模拟"
+      "对方扫码 · 解锁你们的爱情剧本"
     ));
     const copyBtn = h("button",{style:{
       background:"rgba(255,255,255,0.2)",border:"1.5px solid rgba(255,255,255,0.4)",color:"white",
