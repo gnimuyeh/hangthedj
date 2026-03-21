@@ -1,13 +1,9 @@
 sandbox/
-netlify/
-netlify.toml
 functions/
 *.zip
 *.py
 CLAUDE.md
 api/
-vercel.json
-.vercelignore
 node_modules/
 server.js
 package.json

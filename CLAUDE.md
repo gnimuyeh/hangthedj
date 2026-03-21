@@ -4,17 +4,16 @@
 
 An AI-powered dating app where users chat with a "digital being" (小美 or 小帅) who extracts their deep relationship personality through natural conversation, generates a shareable "灵魂画像" (soul portrait), and enables QR-based matching with friends.
 
-**Live deployment:** Netlify static site + serverless function
+**Live deployment:** Cloudflare Pages + Workers
 **API:** MiniMax M2.5-highspeed (Chinese LLM, OpenAI-compatible endpoint)
-**Stack:** Single `index.html` (vanilla JS, ~1440 lines) + Netlify Function proxy
+**Stack:** Single `index.html` (vanilla JS, ~1440 lines) + Cloudflare Pages Worker proxy
 
 ## Project Structure
 
 ```
 soulmate-app/
 ├── index.html                      # Full app — UI + prompts + state + rendering
-├── netlify.toml                    # Netlify config with redirects
-├── netlify/functions/api.js        # Serverless proxy → MiniMax API
+├── _worker.js                      # Cloudflare Pages Worker — API proxy
 ├── sandbox/                        # Engine development files (not deployed)
 │   ├── persona_schema_v2.json      # Schema definition
 │   ├── engine_a_v2.py              # Extraction engine prompt
@@ -83,24 +82,18 @@ welcome → chat → report
 ### MiniMax (Chinese platform)
 - **Endpoint:** `https://api.minimaxi.com/v1/chat/completions` (note the `i` in minimaxi)
 - **Model:** `MiniMax-M2.5-highspeed`
-- **Key:** In `netlify/functions/api.js`
+- **Key:** In `_worker.js`
 - **Important:** M2.5 is a reasoning model — uses `<think>` tags that eat token budget. Proxy strips them.
 - **Max tokens:** Omitted for extraction (let API decide), 300 for chat
 
-### Proxy (Netlify Function)
-- Path: `/api/chat` → `/.netlify/functions/api`
+### Proxy (Cloudflare Pages Worker)
+- Path: `/api/chat` → `_worker.js` handleChat()
+- Path: `/api/chat/stream` → `_worker.js` handleChatStream() (SSE for extraction)
+- Path: `/api/image` → `_worker.js` handleImage() (MiniMax Image-01)
 - Handles CORS (MiniMax blocks direct browser requests)
 - Strips `<think>` tags from responses
 - Returns: `{ text, finish_reason, usage }`
-
-### ⚠️ CRITICAL ISSUE: Netlify 26s Timeout
-Netlify free tier hard-caps serverless functions at 26 seconds. MiniMax M2.5 extraction (persona building) regularly exceeds this. The `highspeed` variant helps but may still timeout.
-
-**Options to fix:**
-1. **Vercel** — 60s free tier (recommended next step)
-2. **Netlify streaming** — Functions v2 with streaming response (attempted, path routing had issues)
-3. **Cloudflare Workers** — no timeout for streaming
-4. **Reduce extraction complexity** — shorter prompts, fewer fields
+- No timeout issues — Cloudflare Workers stream keeps connection alive
 
 ## localStorage Persistence
 
@@ -160,7 +153,7 @@ Dreamy peach-lavender palette:
 ## Known Issues & TODOs
 
 ### Blocking
-- [ ] **Extraction timeout** — Netlify 26s limit kills persona generation. Switch to Vercel or implement proper streaming.
+- [x] **Extraction timeout** — Resolved by using Cloudflare Pages Worker with streaming.
 - [ ] **Report empty on extraction failure** — shows "提取失败" fallback. Need working extraction.
 
 ### Important
@@ -208,12 +201,11 @@ Dreamy peach-lavender palette:
 3. Chat as user, use `/generate`, `/match`, `/show`, `/reset` commands
 
 ### Deploying
-1. `zip -r soulmate.zip index.html netlify.toml netlify/`
-2. Drag to [app.netlify.com](https://app.netlify.com)
+Deploy via Cloudflare Pages (connected to git repo, or `wrangler pages deploy`).
 
 ### Key Files to Edit
 - **Chat personality** → `XIAOMEI_SYS` / `XIAOSHUAI_SYS` in `index.html` (~line 137/269)
 - **Extraction logic** → `ENGINE_A_SYS` + `ENGINE_A_TEMPLATE` in `index.html` (~line 188/222)
 - **Matching logic** → `ENGINE_C_SYS` in `index.html` (~line 260)
-- **API proxy** → `netlify/functions/api.js`
-- **Model selection** → `model: "MiniMax-M2.5-highspeed"` in `api.js`
+- **API proxy** → `_worker.js`
+- **Model selection** → `model: "MiniMax-M2.5-highspeed"` in `_worker.js`
