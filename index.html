@@ -126,9 +126,6 @@ body { font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif
 .sim-disclaimer { margin:0 16px 16px; padding:12px 16px; background:var(--secL); border-radius:16px; font-size:11px; color:#7C3AED; line-height:1.5; text-align:center; }
 
 /* Radar chart */
-.radar-wrap { margin:0 16px 12px; background:var(--card); border-radius:24px; padding:16px 8px 12px; box-shadow:var(--shd); text-align:center; overflow:hidden; }
-.radar-wrap.top { margin-top:-16px; position:relative; z-index:1; }
-.radar-svg { display:block; margin:0 auto; max-width:100%; height:auto; }
 
 /* Dim card last child spacing */
 .dim-card:last-of-type { margin-bottom:16px; }
@@ -321,11 +318,11 @@ const ENGINE_A1_TEMPLATE = `深度分析以下对话，提取用户的内在世�
 
 `;
 
-// ── Call A2: Shareable Content (soul_summary + love_warning + radar_scores) ──
+// ── Call A2: Shareable Content (soul_summary + love_warning) ──
 const ENGINE_A2_SYS = ENGINE_A_METHOD + `
 
 ## 你的任务
-提取3个传播性模块：soul_summary（金句）、love_warning（恋爱使用说明）、radar_scores（六维雷达图）。
+提取2个传播性模块：soul_summary（金句）、love_warning（恋爱使用说明）。
 
 ### soul_summary — 灵魂金句
 - self: 一句话概括此人在亲密关系中的核心特质。前半句通用共鸣，后半句转折揭示独特深层特征。20-35字，像朋友的精准吐槽。
@@ -335,11 +332,7 @@ const ENGINE_A2_SYS = ENGINE_A_METHOD + `
 
 ### love_warning — 恋爱使用说明
 - label: 4-6字"型号名"，有画面感。如"慢热型选手""嘴硬心软体质"
-- warns: 3条使用说明，每条10-18字，像产品说明书口吻，好笑但精准，覆盖初期相处+日常模式+地雷区
-
-### radar_scores — 六维人格雷达图（0-120整数，大部分50-85，>100表示极端突出可超出图表边界）
-- security: 安全感 / emotion: 情感浓度 / independence: 独立性
-- expression: 表达力 / humor: 幽默值 / adventure: 冒险心`;
+- warns: 3条使用说明，每条10-18字，像产品说明书口吻，好笑但精准，覆盖初期相处+日常模式+地雷区`;
 
 const ENGINE_A2_TEMPLATE = `深度分析以下对话，提取传播性内容。所有描述必须是分析结论，禁止引用对话原文。
 
@@ -353,10 +346,6 @@ const ENGINE_A2_TEMPLATE = `深度分析以下对话，提取传播性内容。�
   "love_warning": {
     "label": "必填-4到6字型号名",
     "warns": ["必填-10到18字", "必填-10到18字", "必填-10到18字"]
-  },
-  "radar_scores": {
-    "security": 50, "emotion": 50, "independence": 50,
-    "expression": 50, "humor": 50, "adventure": 50
   }
 }
 
@@ -368,22 +357,20 @@ const ENGINE_A2_TEMPLATE = `深度分析以下对话，提取传播性内容。�
 const ENGINE_A3_SYS = ENGINE_A_METHOD + `
 
 ## 你的任务
-提取用户的身份信息、沟通风格、兴趣、生活质感和元数据。从消息行为模式（用词、长度、emoji、节奏）中提取dating_style。从对话内容中推断life_texture（日常节奏、具体兴趣、饮食习惯等）——即使用户没有直接说，也要从对话线索大胆推断。life_texture的每个字段都要尽可能具体，比如"周末常去livehouse看独立乐队"比"喜欢音乐"好100倍。`;
+提取用户的沟通风格、兴趣、生活质感和元数据。从消息行为模式（用词、长度、emoji、节奏）中提取dating_style。从对话内容中推断life_texture（日常节奏、具体兴趣、饮食习惯等）——即使用户没有直接说，也要从对话线索大胆推断。life_texture的每个字段都要尽可能具体，比如"周末常去livehouse看独立乐队"比"喜欢音乐"好100倍。`;
 
 const ENGINE_A3_TEMPLATE = `分析以下对话，提取用户的沟通风格和表面信息。所有描述必须是分析结论，禁止引用对话原文。
 
 输出以下JSON格式（直接以{开头）：
 
 {
-  "identity": {"occupation": null, "age": null, "city": null, "self_label": "必填-用4-8字概括此人"},
+  "identity": {"city": null, "self_label": "必填-用4-8字概括此人"},
   "dating_style": {
     "message_length": "必填", "message_pattern": "必填",
-    "punctuation_habits": "必填", "emoji_usage": "必填",
-    "slang_register": ["至少1个"], "language_mixing": "必填",
+    "emoji_usage": "必填", "slang_register": ["至少1个"],
     "flirtation_mode": "必填", "humor_type": ["至少1个"],
     "vulnerability_pattern": "必填", "conflict_style": "必填",
-    "pacing": "必填", "topic_magnets": ["至少1个"],
-    "unique_markers": ["至少1个"]
+    "pacing": "必填", "unique_markers": ["至少1个"]
   },
   "life_texture": {
     "daily_rhythm": "必填-早鸟/夜猫/混合+典型一天怎么过",
@@ -392,11 +379,11 @@ const ENGINE_A3_TEMPLATE = `分析以下对话，提取用户的沟通风格和�
     "planning_tendency": "必填-即兴型/计划型/看情况",
     "stress_response": "必填-压力大时的具体行为模式"
   },
-  "surface": {"interests": ["至少2个-要具体"], "lifestyle_notes": [], "food_personality": null},
+  "surface": {"interests": ["至少2个-要具体"], "lifestyle_notes": []},
   "meta": {"extraction_confidence": 0.0, "unknown_fields": [], "source_message_count": 0, "notable_gaps": [], "depth_reached": "必填"}
 }
 
-注意：identity字段如对话未提及可以填null（self_label除外）。unknown_fields/notable_gaps/depth_reached用中文。所有值必须是中文。
+注意：identity.city如对话未提及可以填null（self_label除外）。unknown_fields/notable_gaps/depth_reached用中文。所有值必须是中文。
 
 对话记录：
 
@@ -419,7 +406,6 @@ const ENGINE_D_SYS = `你是一个关系模拟器。你的任务是根据两个�
 - dating_style: 幽默类型、节奏、脆弱模式
 - life_texture: 作息、常去场所、饮食习惯、计划倾向、压力反应
 - surface: 具体兴趣
-- radar_scores: 六维人格数据
 
 ## 场景设计原则
 
@@ -850,95 +836,6 @@ function parseCoverageTag(text) {
 // RADAR CHART — hexagonal SVG
 // ═══════════════════════════════════════
 
-const PERSONA_DIMS = [
-  {key:"security",    label:"安全感", color:"#FF8A9E"},
-  {key:"emotion",     label:"情感浓度", color:"#F472B6"},
-  {key:"independence",label:"独立性", color:"#C084FC"},
-  {key:"expression",  label:"表达力", color:"#818CF8"},
-  {key:"humor",       label:"幽默值", color:"#34D399"},
-  {key:"adventure",   label:"冒险心", color:"#FB923C"},
-];
-
-function renderRadar(dims, scores) {
-  const R = 100;
-  const pad = 52;
-  const vw = (R + pad) * 2, vh = (R + pad) * 2;
-  const cx = vw / 2, cy = vh / 2;
-  const levels = 4;
-  const n = dims.length;
-  const angleStep = (Math.PI * 2) / n;
-  const startAngle = -Math.PI / 2;
-  const ff = "'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif";
-
-  function polar(angle, r) {
-    return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
-  }
-  function hexPoints(r) {
-    return dims.map((_, i) => polar(startAngle + i * angleStep, r)).map(p => p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
-  }
-
-  let svg = `<svg class="radar-svg" viewBox="0 0 ${vw} ${vh}" xmlns="http://www.w3.org/2000/svg">`;
-
-  // defs: gradient fill for data area
-  svg += `<defs>`;
-  svg += `<linearGradient id="radarFill" x1="0%" y1="0%" x2="100%" y2="100%">`;
-  svg += `<stop offset="0%" stop-color="#FF8A9E" stop-opacity="0.25"/>`;
-  svg += `<stop offset="50%" stop-color="#C4B5FD" stop-opacity="0.2"/>`;
-  svg += `<stop offset="100%" stop-color="#6EE7B7" stop-opacity="0.15"/>`;
-  svg += `</linearGradient>`;
-  svg += `<linearGradient id="radarStroke" x1="0%" y1="0%" x2="100%" y2="100%">`;
-  svg += `<stop offset="0%" stop-color="#FF8A9E"/>`;
-  svg += `<stop offset="100%" stop-color="#C4B5FD"/>`;
-  svg += `</linearGradient>`;
-  svg += `</defs>`;
-
-  // background fill for outermost hex
-  svg += `<polygon points="${hexPoints(R)}" fill="rgba(255,138,158,0.03)" stroke="none"/>`;
-
-  // grid polygons — soft dotted lines
-  for (let l = 1; l <= levels; l++) {
-    const r = (R / levels) * l;
-    svg += `<polygon points="${hexPoints(r)}" fill="none" stroke="rgba(196,181,253,0.25)" stroke-width="0.8" stroke-dasharray="${l<levels?'3,3':'none'}"/>`;
-  }
-  // axis lines — very subtle
-  for (let i = 0; i < n; i++) {
-    const [x, y] = polar(startAngle + i * angleStep, R);
-    svg += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(196,181,253,0.15)" stroke-width="0.8"/>`;
-  }
-
-  // data polygon with gradient
-  const dataPoints = dims.map((d, i) => {
-    const val = Math.max(0, scores[d.key] || 0);
-    const r = (Math.min(val, 120) / 100) * R;
-    return polar(startAngle + i * angleStep, r);
-  });
-  const dataPoly = dataPoints.map(p => p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
-  svg += `<polygon points="${dataPoly}" fill="url(#radarFill)" stroke="url(#radarStroke)" stroke-width="2"/>`;
-
-  // data dots — each dimension gets its own color
-  dataPoints.forEach(([x, y], i) => {
-    const c = dims[i].color;
-    svg += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.5" fill="${c}" stroke="white" stroke-width="2" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.1))"/>`;
-  });
-
-  // labels: colored score + name
-  dims.forEach((d, i) => {
-    const angle = startAngle + i * angleStep;
-    const labelR = R + 24;
-    const [x, y] = polar(angle, labelR);
-    const val = scores[d.key] || 0;
-    const anchor = x < cx - 5 ? "end" : x > cx + 5 ? "start" : "middle";
-    const isTop = angle > -Math.PI * 0.75 && angle < -Math.PI * 0.25;
-    const isBottom = angle > Math.PI * 0.25 && angle < Math.PI * 0.75;
-    const yOff = isTop ? -4 : isBottom ? 8 : 0;
-    svg += `<text x="${x.toFixed(1)}" y="${(y + yOff - 5).toFixed(1)}" text-anchor="${anchor}" font-size="13" font-weight="900" fill="${d.color}" font-family="${ff}">${val}</text>`;
-    svg += `<text x="${x.toFixed(1)}" y="${(y + yOff + 9).toFixed(1)}" text-anchor="${anchor}" font-size="9.5" font-weight="600" fill="#8B7577" font-family="${ff}">${d.label}</text>`;
-  });
-
-  svg += `</svg>`;
-  return svg;
-}
-
 // ═══════════════════════════════════════
 // MATCH CARD — compact persona for QR encoding
 // ═══════════════════════════════════════
@@ -949,7 +846,6 @@ function personaToMatchCard(p) {
   if (!p) return null;
   const iw = p.inner_world || {};
   const rp = p.relationship_patterns || {};
-  const rs = p.radar_scores || {};
   const ds = p.dating_style || {};
   // Truncate to first clause (before first ，。；) or max chars
   function short(s, max) {
@@ -962,8 +858,6 @@ function personaToMatchCard(p) {
   return {
     v: 5,
     n: (state.userName || p.identity?.self_label || "").substring(0, 8),
-    // radar scores — 6 numbers, very compact
-    r: [rs.security||50, rs.emotion||50, rs.independence||50, rs.expression||50, rs.humor||50, rs.adventure||50],
     // inner world — full coverage for simulation
     cn: short(iw.core_need),
     ay: short(iw.attachment_style, 20),
@@ -1020,14 +914,12 @@ function matchCardToPersona(mc) {
         conflict_recovery: mc.cr || null, independence_intimacy: mc.ii || null,
         dealbreaker_deep: mc.dd || [], relationship_narrative: mc.rn || null
       },
-      radar_scores: { security:r[0], emotion:r[1], independence:r[2], expression:r[3], humor:r[4], adventure:r[5] },
       dating_style: {
         humor_type: mc.ht || [], flirtation_mode: mc.fm || "",
         pacing: mc.pa || "", message_length: mc.ml || "",
         message_pattern: mc.mp || "", slang_register: mc.sl || [],
         vulnerability_pattern: mc.vp || "", conflict_style: mc.cs || "",
-        punctuation_habits: "", emoji_usage: "", language_mixing: null,
-        topic_magnets: [], unique_markers: mc.um || []
+        emoji_usage: "", unique_markers: mc.um || []
       },
       life_texture: {
         daily_rhythm: mc.dr || null, hangout_style: mc.hs || null,
@@ -1040,7 +932,6 @@ function matchCardToPersona(mc) {
   }
   // v4 format (legacy — missing some simulation fields)
   if (mc.v === 4) {
-    const r = mc.r || [50,50,50,50,50,50];
     return {
       schema_version: "v3",
       identity: { self_label: mc.n || null, name: mc.n || null },
@@ -1055,14 +946,12 @@ function matchCardToPersona(mc) {
         conflict_recovery: mc.cr || null, independence_intimacy: null,
         dealbreaker_deep: mc.dd || [], relationship_narrative: mc.rn || null
       },
-      radar_scores: { security:r[0], emotion:r[1], independence:r[2], expression:r[3], humor:r[4], adventure:r[5] },
       dating_style: {
         humor_type: mc.ht || [], pacing: mc.pa || "",
         vulnerability_pattern: mc.vp || "",
         flirtation_mode: "", message_length: "", message_pattern: "",
         slang_register: [], conflict_style: "",
-        punctuation_habits: "", emoji_usage: "", language_mixing: null,
-        topic_magnets: [], unique_markers: []
+        emoji_usage: "", unique_markers: []
       },
       life_texture: {
         daily_rhythm: mc.dr || null, hangout_style: mc.hs || null,
@@ -1075,7 +964,6 @@ function matchCardToPersona(mc) {
   }
   // v3 compact format (legacy)
   if (mc.v === 3) {
-    const r = mc.r || [50,50,50,50,50,50];
     return {
       schema_version: "v2",
       identity: { self_label: mc.n || null, name: mc.n || null },
@@ -1089,13 +977,11 @@ function matchCardToPersona(mc) {
         conflict_recovery: null, independence_intimacy: null,
         dealbreaker_deep: mc.dd || [], relationship_narrative: mc.rn || null
       },
-      radar_scores: { security:r[0], emotion:r[1], independence:r[2], expression:r[3], humor:r[4], adventure:r[5] },
       dating_style: {
         humor_type: mc.ht || [], pacing: mc.pa || "",
         flirtation_mode: "", message_length: "", message_pattern: "",
         slang_register: [], vulnerability_pattern: "", conflict_style: "",
-        punctuation_habits: "", emoji_usage: "", language_mixing: null,
-        topic_magnets: [], unique_markers: []
+        emoji_usage: "", unique_markers: []
       },
       life_texture: {},
       surface: { interests: [], lifestyle_notes: [] },
@@ -1105,7 +991,7 @@ function matchCardToPersona(mc) {
   // v2 legacy format
   return {
     schema_version: "v2",
-    identity: { self_label: mc.n, name: mc.n, occupation: null, age: null, city: null },
+    identity: { self_label: mc.n, name: mc.n },
     inner_world: {
       core_need: mc.cn, attachment_style: null,
       attachment_signal: mc.as, emotional_texture: mc.et,
@@ -1121,11 +1007,10 @@ function matchCardToPersona(mc) {
       pacing: mc.pa || "", message_length: mc.ml || "",
       message_pattern: mc.mp || "", slang_register: mc.sr || [],
       vulnerability_pattern: mc.vp || "", conflict_style: mc.cs || "",
-      punctuation_habits: "", emoji_usage: "", language_mixing: null,
-      topic_magnets: [], unique_markers: []
+      emoji_usage: "", unique_markers: []
     },
     life_texture: {},
-    surface: { interests: [], lifestyle_notes: [], food_personality: null },
+    surface: { interests: [], lifestyle_notes: [] },
     meta: { extraction_confidence: 0.5, source_message_count: 0, is_from_qr: true }
   };
 }
@@ -1604,19 +1489,10 @@ function renderReport(app) {
   const hdr = h("div",{class:"report-header"},
     h("div",{style:{fontSize:"48px",marginBottom:"12px"}},"📊"),
     h("h1",null, `${displayName}的恋爱档案`),
-    h("p",null, (id.self_label||id.occupation||"一个有趣的灵魂") + (id.city?` · ${id.city}`:"")),
+    h("p",null, (id.self_label||"一个有趣的灵魂") + (id.city?` · ${id.city}`:"")),
     h("div",{class:"curve"})
   );
   report.appendChild(hdr);
-
-  // Radar chart (top card, overlapping header)
-  const radar = p.radar_scores || {};
-  const hasRadar = Object.values(radar).some(v => v > 0);
-  if (hasRadar) {
-    const radarCard = h("div",{class:"radar-wrap top"});
-    radarCard.innerHTML = renderRadar(PERSONA_DIMS, radar);
-    report.appendChild(radarCard);
-  }
 
   // Soul summary — 金句卡片
   const ss = p.soul_summary || {};
@@ -1708,7 +1584,7 @@ function renderReport(app) {
     {l:"内在矛盾", k:"contradiction", icon:"🎭"},
     {l:"不安全感", k:"insecurity_hint", icon:"🛡️"},
   ];
-  const iwCard = h("div",{class:hasRadar || (ss.self || ss.ideal) || (lw.label && ensureArr(lw.warns).length) ? "rcard" : "rcard top"}, h("h3",null,"🌊 内在世界"));
+  const iwCard = h("div",{class:(ss.self || ss.ideal) || (lw.label && ensureArr(lw.warns).length) ? "rcard" : "rcard top"}, h("h3",null,"🌊 内在世界"));
   let iwFilled = 0;
   iwData.forEach(d => {
     const val = iw[d.k];
@@ -1769,7 +1645,71 @@ function renderReport(app) {
   }
   report.appendChild(rpCard);
 
-  // dating style section removed — inaccurate for now
+  // life texture — simulation-driving fields
+  const lt = p.life_texture || {};
+  const ltFields = [
+    {l:"日常节奏", k:"daily_rhythm", icon:"🌅"},
+    {l:"约会场所", k:"hangout_style", icon:"📍"},
+    {l:"饮食偏好", k:"food_style", icon:"🍜"},
+    {l:"计划倾向", k:"planning_tendency", icon:"📋"},
+    {l:"压力反应", k:"stress_response", icon:"💨"}
+  ];
+  const ltVals = ltFields.filter(f => lt[f.k]);
+  if (ltVals.length) {
+    const ltCard = h("div",{class:"rcard"}, h("h3",null,"🏠 生活质感"));
+    ltVals.forEach(f => {
+      const desc = h("div",{style:{fontSize:"13px",color:"var(--txtS)",lineHeight:"1.6"}});
+      desc.innerHTML = boldFirst(lt[f.k]);
+      ltCard.appendChild(h("div",{style:{marginBottom:"12px"}},
+        h("div",{style:{display:"flex",alignItems:"center",gap:"6px",marginBottom:"3px"}},
+          h("span",{style:{fontSize:"13px"}},f.icon),
+          h("span",{style:{fontSize:"12px",color:"var(--pri)",fontWeight:"600"}},f.l)
+        ),
+        desc
+      ));
+    });
+    report.appendChild(ltCard);
+  }
+
+  // dating style — how they'll show up in simulation
+  const dsFields = [
+    {l:"幽默类型", k:"humor_type", isArr:true, icon:"😄"},
+    {l:"暧昧风格", k:"flirtation_mode", icon:"💫"},
+    {l:"节奏偏好", k:"pacing", icon:"⏱️"},
+    {l:"脆弱表达", k:"vulnerability_pattern", icon:"🥀"},
+    {l:"冲突风格", k:"conflict_style", icon:"🔥"},
+    {l:"消息风格", k:"message_pattern", icon:"💬"},
+    {l:"口头禅/语言标记", k:"unique_markers", isArr:true, icon:"✨"}
+  ];
+  const dsVals = dsFields.filter(f => {
+    const v = ds[f.k];
+    return f.isArr ? ensureArr(v).length > 0 : !!v;
+  });
+  if (dsVals.length) {
+    const dsCard = h("div",{class:"rcard"}, h("h3",null,"💬 恋爱沟通风格"));
+    dsVals.forEach(f => {
+      if (f.isArr) {
+        const wrap = h("div",{style:{display:"flex",flexWrap:"wrap",gap:"6px",marginBottom:"12px"}});
+        const arrLabel = h("div",{style:{display:"flex",alignItems:"center",gap:"6px",marginBottom:"4px"}},
+          h("span",{style:{fontSize:"13px"}},f.icon),
+          h("span",{style:{fontSize:"12px",color:"var(--pri)",fontWeight:"600"}},f.l)
+        );
+        ensureArr(ds[f.k]).forEach(t => wrap.appendChild(h("span",{class:"tag pink"},String(t))));
+        dsCard.appendChild(h("div",null, arrLabel, wrap));
+      } else {
+        const desc = h("div",{style:{fontSize:"13px",color:"var(--txtS)",lineHeight:"1.6"}});
+        desc.innerHTML = boldFirst(ds[f.k]);
+        dsCard.appendChild(h("div",{style:{marginBottom:"12px"}},
+          h("div",{style:{display:"flex",alignItems:"center",gap:"6px",marginBottom:"3px"}},
+            h("span",{style:{fontSize:"13px"}},f.icon),
+            h("span",{style:{fontSize:"12px",color:"var(--pri)",fontWeight:"600"}},f.l)
+          ),
+          desc
+        ));
+      }
+    });
+    report.appendChild(dsCard);
+  }
 
   // surface
   const allInt = [...ensureArr(sf.interests),...ensureArr(sf.lifestyle_notes)];
@@ -1781,30 +1721,6 @@ function renderReport(app) {
     sfCard.appendChild(wrap);
     report.appendChild(sfCard);
   }
-
-  // confidence & depth summary
-  const conf = meta.extraction_confidence||0.5;
-  const totalFields = iwFilled + rpFilled;
-  const maxFields = iwData.length + rpFields.length;
-  // Translate common English field names the LLM might output
-  const fieldNameMap = {occupation:"职业",age:"年龄",city:"城市",core_need:"核心需求",attachment_signal:"依恋信号",emotional_texture:"情感质地",energy_source:"能量来源",insecurity_hint:"不安全感",contradiction:"内在矛盾",love_language_signal:"爱的语言",conflict_pattern:"冲突模式",independence_intimacy:"独立与亲密",dealbreaker_deep:"关系底线",relationship_narrative:"爱情叙事",self_label:"自我标签"};
-  function toChinese(s) { return fieldNameMap[s] || s; }
-  const confCard = h("div",{class:"rcard"},
-    h("h3",null,"📊 档案完成度"),
-    h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}},
-      h("span",{style:{fontSize:"13px",color:"var(--txtS)"}}, `解锁了 ${totalFields}/${maxFields} 个维度`),
-      h("span",{style:{fontSize:"13px",fontWeight:"700",color:"var(--pri)"}}, meta.depth_reached||"中等")
-    ),
-    h("div",{class:"bar-track",style:{marginBottom:"8px"}}, h("div",{class:"bar-fill",style:{width:Math.max(conf*100, totalFields/maxFields*100)+"%"}})),
-    h("div",{style:{fontSize:"12px",color:"var(--txtM)",lineHeight:"1.5"}},
-      ensureArr(meta.unknown_fields).length > 0 ? `还可以深入聊的方向：${ensureArr(meta.unknown_fields).slice(0,4).map(toChinese).join("、")}` :
-      ensureArr(meta.notable_gaps).length > 0 ? `有线索但不确定：${ensureArr(meta.notable_gaps).slice(0,3).map(toChinese).join("、")}` :
-      `基于 ${meta.source_message_count||state.msgCount} 条消息分析`
-    )
-  );
-  report.appendChild(confCard);
-
-  // QR — moved to after soul summary, see above
 
   // actions
   const canContinue = state.msgCount < MAX_MSGS;
@@ -2058,7 +1974,7 @@ const EXTRACTION_CALLS = [
   { id: "A1", label: "心理分析", sys: () => ENGINE_A1_SYS, tpl: () => ENGINE_A1_TEMPLATE, maxTok: 4096,
     merge: (persona, parsed) => { persona.inner_world = parsed.inner_world || {}; persona.relationship_patterns = parsed.relationship_patterns || {}; } },
   { id: "A2", label: "金句生成", sys: () => ENGINE_A2_SYS, tpl: () => ENGINE_A2_TEMPLATE, maxTok: 4096,
-    merge: (persona, parsed) => { persona.soul_summary = parsed.soul_summary || {}; persona.love_warning = parsed.love_warning || {}; persona.radar_scores = parsed.radar_scores || {}; } },
+    merge: (persona, parsed) => { persona.soul_summary = parsed.soul_summary || {}; persona.love_warning = parsed.love_warning || {}; } },
   { id: "A3", label: "风格分析", sys: () => ENGINE_A3_SYS, tpl: () => ENGINE_A3_TEMPLATE, maxTok: 4096,
     merge: (persona, parsed) => { persona.identity = parsed.identity || {}; persona.dating_style = parsed.dating_style || { unique_markers: [] }; persona.life_texture = parsed.life_texture || {}; persona.surface = parsed.surface || { interests: [] }; persona.meta = parsed.meta || { source_message_count: state.msgCount, depth_reached: "未知" }; } },
 ];
@@ -2127,7 +2043,7 @@ async function buildPersona() {
   const results = await Promise.all(promises);
 
   // Merge results
-  state.persona = { schema_version: "v3", identity: {}, inner_world: {}, relationship_patterns: {}, soul_summary: {}, love_warning: {}, radar_scores: {}, dating_style: { unique_markers: [] }, life_texture: {}, surface: { interests: [] }, meta: { source_message_count: state.msgCount, depth_reached: "未知" } };
+  state.persona = { schema_version: "v3", identity: {}, inner_world: {}, relationship_patterns: {}, soul_summary: {}, love_warning: {}, dating_style: { unique_markers: [] }, life_texture: {}, surface: { interests: [] }, meta: { source_message_count: state.msgCount } };
 
   const failures = [];
   EXTRACTION_CALLS.forEach((call, i) => {
