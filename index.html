@@ -547,7 +547,7 @@ const GUIDES = {
 // STATE
 // ═══════════════════════════════════════
 
-let state = { phase:"welcome", guide:null, userName:"", msgs:[], input:"", typing:false, msgCount:0, persona:null, simulation:null, showBuild:false, apiError:false, pendingMatch:null, scannedPersona:null, soulMsgs:[], soulInput:"", soulMsgCount:0, soulTyping:false, soulError:false, buildError:null, failedCalls:[], extractionProgress:null, matchFailed:false, reportShared:false };
+let state = { phase:"welcome", guide:null, userName:"", msgs:[], input:"", typing:false, msgCount:0, persona:null, simulation:null, showBuild:false, apiError:false, pendingMatch:null, scannedPersona:null, soulMsgs:[], soulInput:"", soulMsgCount:0, soulTyping:false, soulError:false, buildError:null, failedCalls:[], extractionProgress:null, matchFailed:false };
 
 // ═══════════════════════════════════════
 // API
@@ -1478,27 +1478,6 @@ function renderLoading(app) {
   app.appendChild(h("div",{class:"loading"}, inner));
 }
 
-function showWeChatShareOverlay() {
-  const overlay = document.createElement("div");
-  overlay.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;flex-direction:column;align-items:flex-end;padding:20px 16px;cursor:pointer;";
-  // Arrow pointing to top-right corner (WeChat's "..." menu)
-  const arrow = document.createElement("div");
-  arrow.style.cssText = "width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-bottom:24px solid white;margin-right:24px;margin-top:8px;";
-  overlay.appendChild(arrow);
-  // Guide text
-  const guide = document.createElement("div");
-  guide.style.cssText = "background:white;border-radius:16px;padding:24px 20px;margin-right:8px;margin-top:8px;text-align:center;max-width:240px;";
-  guide.innerHTML = '<div style="font-size:18px;font-weight:700;color:#333;margin-bottom:10px;">点击右上角 ··· </div><div style="font-size:14px;color:#666;line-height:1.6;">选择「发送给朋友」<br>分享后自动解锁完整画像</div>';
-  overlay.appendChild(guide);
-  // Tap anywhere to dismiss and unlock
-  overlay.addEventListener("click", () => {
-    document.body.removeChild(overlay);
-    state.reportShared = true;
-    saveSession();
-    render();
-  });
-  document.body.appendChild(overlay);
-}
 
 function renderReport(app) {
   if(!state.persona) return;
@@ -1551,87 +1530,6 @@ function renderReport(app) {
     report.appendChild(ssCard);
   }
 
-  // ── Share gate: if not shared, show fading blur + share button ──
-  if (!state.reportShared) {
-    // Fading gradient overlay on the soul summary card
-    const fadeOverlay = h("div",{style:{
-      position:"relative",marginTop:"-60px",height:"80px",zIndex:"1",
-      background:"linear-gradient(to bottom, transparent 0%, var(--bg) 100%)",
-      pointerEvents:"none"
-    }});
-    report.appendChild(fadeOverlay);
-
-    // Blurred placeholder cards — denser, more colorful, clearly "locked" content
-    const blurPlaceholder = h("div",{style:{position:"relative",overflow:"hidden",margin:"-8px 16px 16px",borderRadius:"20px"}},
-      h("div",{style:{filter:"blur(6px)",pointerEvents:"none"}},
-        // Card 1 — inner world style
-        h("div",{style:{background:"white",borderRadius:"16px",padding:"18px",marginBottom:"12px",boxShadow:"0 2px 8px rgba(0,0,0,0.06)"}},
-          h("div",{style:{fontSize:"15px",fontWeight:"700",marginBottom:"12px"}},"🌊 内在世界"),
-          h("div",{style:{display:"flex",alignItems:"center",gap:"6px",marginBottom:"8px"}},
-            h("span",null,"💎"),
-            h("span",{style:{fontSize:"13px",fontWeight:"600",color:"#555"}},"核心需求")
-          ),
-          h("div",{style:{height:"13px",background:"linear-gradient(90deg,#FFD6DE,#E8D5F5)",borderRadius:"6px",marginBottom:"10px",width:"88%"}}),
-          h("div",{style:{height:"13px",background:"#f0e8f5",borderRadius:"6px",marginBottom:"10px",width:"72%"}}),
-          h("div",{style:{display:"flex",alignItems:"center",gap:"6px",marginBottom:"8px",marginTop:"14px"}},
-            h("span",null,"🔗"),
-            h("span",{style:{fontSize:"13px",fontWeight:"600",color:"#555"}},"依恋信号")
-          ),
-          h("div",{style:{height:"13px",background:"linear-gradient(90deg,#FFD6DE,#C4B5FD)",borderRadius:"6px",marginBottom:"10px",width:"82%"}}),
-          h("div",{style:{height:"13px",background:"#f0e8f5",borderRadius:"6px",width:"65%"}})
-        ),
-        // Card 2 — relationship patterns style
-        h("div",{style:{background:"white",borderRadius:"16px",padding:"18px",marginBottom:"12px",boxShadow:"0 2px 8px rgba(0,0,0,0.06)"}},
-          h("div",{style:{fontSize:"15px",fontWeight:"700",marginBottom:"12px"}},"💕 关系模式"),
-          h("div",{style:{height:"13px",background:"linear-gradient(90deg,#C4B5FD,#6EE7B7)",borderRadius:"6px",marginBottom:"10px",width:"78%"}}),
-          h("div",{style:{height:"13px",background:"#e8f5f0",borderRadius:"6px",marginBottom:"10px",width:"90%"}}),
-          h("div",{style:{display:"flex",gap:"6px",marginTop:"10px"}},
-            h("span",{style:{background:"#F3E8FF",padding:"4px 12px",borderRadius:"10px",fontSize:"12px",color:"#7C3AED"}},"底线一"),
-            h("span",{style:{background:"#F3E8FF",padding:"4px 12px",borderRadius:"10px",fontSize:"12px",color:"#7C3AED"}},"底线二")
-          )
-        ),
-        // Card 3 — surface tags
-        h("div",{style:{background:"white",borderRadius:"16px",padding:"18px",boxShadow:"0 2px 8px rgba(0,0,0,0.06)"}},
-          h("div",{style:{fontSize:"15px",fontWeight:"700",marginBottom:"12px"}},"🌍 表层拼图"),
-          h("div",{style:{display:"flex",flexWrap:"wrap",gap:"6px"}},
-            h("span",{style:{background:"#FFE4E8",padding:"4px 14px",borderRadius:"10px",fontSize:"12px",color:"#FF6B81"}},"兴趣标签"),
-            h("span",{style:{background:"#E8D5F5",padding:"4px 14px",borderRadius:"10px",fontSize:"12px",color:"#8B5CF6"}},"生活方式"),
-            h("span",{style:{background:"#D1FAE5",padding:"4px 14px",borderRadius:"10px",fontSize:"12px",color:"#059669"}},"更多标签")
-          )
-        )
-      ),
-      // Fade-out at bottom of blur area
-      h("div",{style:{
-        position:"absolute",bottom:"0",left:"0",right:"0",height:"60px",
-        background:"linear-gradient(to bottom, transparent, var(--bg))",
-        pointerEvents:"none"
-      }})
-    );
-    report.appendChild(blurPlaceholder);
-
-    // Share CTA card
-    const shareCard = h("div",{class:"rcard",style:{textAlign:"center",border:"2px dashed var(--pri)",background:"#FFFBFC"}},
-      h("div",{style:{fontSize:"36px",marginBottom:"12px"}},"🔒"),
-      h("div",{style:{fontSize:"16px",fontWeight:"700",color:"var(--txt)",marginBottom:"8px"}},"完整画像已生成"),
-      h("div",{style:{fontSize:"13px",color:"var(--txtS)",marginBottom:"20px",lineHeight:"1.6"}},"分享给好友，即可解锁全部内容"),
-      h("button",{style:{
-        background:"var(--gradW)",border:"none",color:"white",borderRadius:"20px",
-        padding:"14px 32px",fontSize:"16px",fontWeight:"700",cursor:"pointer",
-        fontFamily:"inherit",boxShadow:"0 4px 15px rgba(255,138,158,0.4)",
-        width:"100%",maxWidth:"280px"
-      },onClick:showWeChatShareOverlay},"分享给好友，解锁画像"),
-      h("div",{style:{fontSize:"11px",color:"var(--txtM)",marginTop:"12px"}},"分享后即可查看完整灵魂画像")
-    );
-    report.appendChild(shareCard);
-
-    // Brand watermark
-    report.appendChild(h("div",{style:{textAlign:"center",padding:"8px 16px 16px",fontSize:"11px",color:"var(--txtM)",letterSpacing:"0.5px"}},"灵魂画像 · AI恋爱人格测试"));
-
-    app.appendChild(report);
-    return;
-  }
-
-  // ── Full report (shared) ──
 
   // Love warning — 恋爱使用说明
   const lw = p.love_warning || {};
@@ -2248,8 +2146,7 @@ function saveSession() {
       msgCount: state.msgCount,
       guide: state.guide,
       showBuild: state.showBuild,
-      userName: state.userName,
-      reportShared: state.reportShared
+      userName: state.userName
     }));
   } catch(e) {}
 }
@@ -2292,7 +2189,6 @@ if (incoming) {
     state.guide = savedSession.guide || null;
     state.showBuild = savedSession.showBuild || false;
     state.userName = savedSession.userName || "";
-    state.reportShared = savedSession.reportShared || false;
   }
   state.phase = "report";
   render();
