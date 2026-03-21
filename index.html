@@ -657,7 +657,7 @@ async function chatAPI(allMsgs) {
       apiMsgs.push(m.role==="match" ? {role:"assistant",content:m.text} : {role:"user",content:m.text});
     }
   }
-  return callAPI(g.sys, apiMsgs, 300);
+  return callAPI(g.sys, apiMsgs, 150);
 }
 
 // ═══════════════════════════════════════
@@ -673,11 +673,12 @@ const MIN_DIMENSIONS_TO_GENERATE = 5;
 
 // Parse and strip [covered:...] tag from guide response
 function parseCoverageTag(text) {
-  const match = text.match(/\[covered:([\w,]*)\]\s*$/);
-  if (!match) return { clean: text, dimensions: [] };
-  const clean = text.slice(0, match.index).trimEnd();
-  const dims = match[1] ? match[1].split(",").filter(d => ALL_DIMENSIONS.includes(d)) : [];
-  return { clean, dimensions: dims };
+  const allDims = [];
+  const clean = text.replace(/\[covered:([\w,]*)\]/g, (_, captured) => {
+    if (captured) captured.split(",").forEach(d => { if (ALL_DIMENSIONS.includes(d)) allDims.push(d); });
+    return "";
+  }).trim();
+  return { clean, dimensions: [...new Set(allDims)] };
 }
 
 // ═══════════════════════════════════════
