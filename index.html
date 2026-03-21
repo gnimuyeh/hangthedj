@@ -1177,14 +1177,6 @@ function renderWelcome(app) {
     h("div", {class:"welcome-icon"}, "🔮"),
     h("h1", null, "如果你们在一起", h("br"), h("span", null, "会怎样？")),
     h("p", null, "AI 读懂你的恋爱人格", h("br"), "为你和心动的人写一段爱情剧本"),
-    h("div", {style:{width:"100%",maxWidth:"280px",background:"var(--card)",borderRadius:"16px",padding:"16px",boxShadow:"var(--shd)",marginBottom:"20px",textAlign:"left"}},
-      h("div", {style:{fontSize:"13px",fontWeight:"700",color:"var(--txt)",marginBottom:"10px"}}, "模拟报告预览"),
-      h("div", {style:{fontSize:"12px",color:"var(--txtM)",lineHeight:"1.8"}},
-        h("div", null, "☕ 第一次见面　你们在咖啡馆坐下，TA说了一句..."),
-        h("div", null, "🌙 在一起1个月　那个周二的晚上，你突然发现..."),
-        h("div", null, "⚡ 第一次冲突　你没回那条消息，TA开始...")
-      )
-    ),
     h("div", {style:{display:"flex",gap:"12px",width:"100%",maxWidth:"320px"}},
       ...Object.entries(GUIDES).map(([id, g]) =>
         h("button", {style:{
