@@ -1045,7 +1045,19 @@ async function exportAsImage(elementId, filename) {
   const el = document.getElementById(elementId);
   if (!el || typeof html2canvas === "undefined") return;
   try {
-    const canvas = await html2canvas(el, { backgroundColor:"#FFF7F0", scale:2, useCORS:true, logging:false });
+    // Clone into an off-screen container without overflow/flex constraints
+    // so html2canvas captures the full scrollable content
+    const clone = el.cloneNode(true);
+    clone.id = elementId + "-export-clone";
+    Object.assign(clone.style, {
+      position:"fixed", left:"-9999px", top:"0",
+      width: el.offsetWidth + "px",
+      height:"auto", overflow:"visible", flex:"none",
+      maxHeight:"none"
+    });
+    document.body.appendChild(clone);
+    const canvas = await html2canvas(clone, { backgroundColor:"#FFF7F0", scale:2, useCORS:true, logging:false });
+    clone.remove();
     showImageOverlay(canvas.toDataURL("image/png"), filename);
   } catch(e) { console.error("Export error:", e); }
 }
