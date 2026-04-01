@@ -1994,6 +1994,7 @@ function getTranscript() {
 }
 
 async function buildPersona() {
+  if (!confirm("确定要生成灵魂画像吗？生成后聊天记录将无法继续。")) return;
   state.phase = "building";
   state.buildError = null;
   state.failedCalls = [];
