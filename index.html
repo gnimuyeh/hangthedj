@@ -844,45 +844,38 @@ function personaToMatchCard(p) {
     if (!s) return "";
     s = String(s);
     const m = s.match(/^(.+?)[，。；—]/);
-    return (m ? m[1] : s).substring(0, max || 15);
+    return (m ? m[1] : s).substring(0, max || 12);
   }
   const lt = p.life_texture || {};
   return {
     v: 5,
-    n: (state.userName || p.identity?.self_label || "").substring(0, 8),
-    // inner world — full coverage for simulation
-    cn: short(iw.core_need),
-    ay: short(iw.attachment_style, 20),
-    as: short(iw.attachment_signal),
-    et: short(iw.emotional_texture),
-    es: short(iw.energy_source),
-    ct: short(iw.contradiction),
-    ih: short(iw.insecurity_hint),
-    // relationship patterns — full coverage
-    ll: short(rp.love_language_signal),
-    cp: short(rp.conflict_pattern),
-    cr: short(rp.conflict_recovery, 20),
-    ii: short(rp.independence_intimacy),
-    rn: short(rp.relationship_narrative),
-    dd: ensureArr(rp.dealbreaker_deep).slice(0, 2).map(d => short(d, 6)),
-    // dating style — full coverage for simulation & soul chat
-    ht: ensureArr(ds.humor_type).slice(0, 2).map(t => short(t, 8)),
-    fm: short(ds.flirtation_mode, 10),
+    n: (state.userName || p.identity?.self_label || "").substring(0, 6),
+    // inner world — core for matching
+    cn: short(iw.core_need, 10),
+    ay: short(iw.attachment_style, 12),
+    as: short(iw.attachment_signal, 10),
+    et: short(iw.emotional_texture, 10),
+    es: short(iw.energy_source, 10),
+    ct: short(iw.contradiction, 12),
+    ih: short(iw.insecurity_hint, 10),
+    // relationship patterns
+    ll: short(rp.love_language_signal, 10),
+    cp: short(rp.conflict_pattern, 10),
+    cr: short(rp.conflict_recovery, 12),
+    ii: short(rp.independence_intimacy, 10),
+    rn: short(rp.relationship_narrative, 10),
+    dd: ensureArr(rp.dealbreaker_deep).slice(0, 1).map(d => short(d, 6)),
+    // dating style — trimmed to essentials
+    ht: ensureArr(ds.humor_type).slice(0, 1).map(t => short(t, 6)),
+    fm: short(ds.flirtation_mode, 8),
     pa: short(ds.pacing, 6),
-    ml: short(ds.message_length, 8),
-    mp: short(ds.message_pattern, 8),
-    sl: ensureArr(ds.slang_register).slice(0, 3).map(s => short(s, 6)),
-    vp: short(ds.vulnerability_pattern, 10),
-    cs: short(ds.conflict_style, 10),
-    um: ensureArr(ds.unique_markers).slice(0, 2).map(m => short(m, 12)),
-    // life texture — critical for simulation scenes
-    dr: short(lt.daily_rhythm, 15),
-    hs: short(lt.hangout_style, 15),
-    fs: short(lt.food_style, 15),
-    pt: short(lt.planning_tendency, 10),
-    sr: short(lt.stress_response, 15),
-    // surface interests for scene flavor
-    si: ensureArr(p.surface?.interests).slice(0, 3).map(i => short(i, 8)),
+    sl: ensureArr(ds.slang_register).slice(0, 2).map(s => short(s, 5)),
+    vp: short(ds.vulnerability_pattern, 8),
+    cs: short(ds.conflict_style, 8),
+    // life texture — keep only most scene-critical
+    hs: short(lt.hangout_style, 10),
+    fs: short(lt.food_style, 10),
+    sr: short(lt.stress_response, 10),
   };
 }
 
@@ -919,7 +912,7 @@ function matchCardToPersona(mc) {
         stress_response: mc.sr || null
       },
       surface: { interests: mc.si || [], lifestyle_notes: [] },
-      meta: { extraction_confidence: 0.7, source_message_count: 0, is_from_qr: true }
+      meta: { extraction_confidence: 0.6, source_message_count: 0, is_from_qr: true }
     };
   }
   // v4 format (legacy — missing some simulation fields)
