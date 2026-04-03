@@ -117,8 +117,6 @@ body { font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif
 .sim-card { background:var(--card); border-radius:20px; padding:16px 18px; box-shadow:0 2px 12px rgba(0,0,0,0.04); }
 .sim-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; color:var(--txt); }
 .sim-card .scene-text { font-size:13px; color:var(--txtS); line-height:1.75; }
-.scene-img { width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:14px; margin-bottom:12px; }
-.scene-img-loading { width:100%; aspect-ratio:16/9; border-radius:14px; margin-bottom:12px; background:linear-gradient(110deg, #f0e6e0 30%, #faf0ea 50%, #f0e6e0 70%); background-size:200% 100%; animation:shimmer 1.5s infinite; }
 @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 .sim-header { background:var(--grad); padding:36px 24px 52px; text-align:center; position:relative; overflow:hidden; }
 .sim-header::before { content:""; position:absolute; top:-40px; left:-40px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.06); }
@@ -386,100 +384,31 @@ const ENGINE_A3_TEMPLATE = `分析以下对话，提取用户的沟通风格和�
 
 `;
 
-// ── Engine D: Relationship Simulator ──
-const ENGINE_D_SYS = `你是一个关系模拟器。你的任务是根据两个人的人格画像，生成他们在一起后不同阶段的真实场景模拟。
+// ── Engine C: Matching Engine ──
+const ENGINE_C_SYS = `你是匹配分析引擎。分析两个人格档案输出匹配报告。
+输入会标注每个人的名字，在分析文字中使用他们的真实名字而不是A/B。
+注意：一方的档案可能是从QR扫描来的精简版（字段较短或部分为null），这是正常的。用已有的信息做最佳推断。
+重点分析inner_world和relationship_patterns的兼容性而不只是surface重合。
+匹配逻辑：相似性和互补性同等重要。比如一个高表达力+一个善倾听=高分（互补），两个都需要安全感=高分（共鸣）。不要只看相似度。
+评分基准：大部分维度60-80分。>90需强证据。match_score是六维度的加权平均。
+vibe_label要画面感（10字以内）。所有文字必须是中文。
 
-# 核心原则
+六个维度（权重）：
+- chemistry: 聊天火花(25%) — 对话风格互补度
+- humor_sync: 幽默同频(20%) — 笑点和幽默方式的契合
+- depth: 深度共鸣(20%) — 内在世界和价值观的共振
+- lifestyle: 生活契合(15%) — 生活方式和节奏的兼容性
+- energy: 能量匹配(10%) — 能量级别和社交偏好的平衡
+- tacit: 默契指数(10%) — 不言而喻的理解力，沟通效率
 
-**你不是在写爱情小说，你是在用两个人的心理画像推演真实关系动力学。**
+字数限制（严格遵守）：
+- analysis: 每个维度的分析30-50字，一针见血
+- sparks/friction: 每条15-25字
+- first_date_prediction: 30-50字
+- conversation_starter: 20-40字
 
-每个场景都是一面镜子——让读者看到自己在关系中的模式。不是"你们会很甜"，而是"你在安静看手机的时候，TA会因为你没说话而开始焦虑，但TA不会说出来，而是突然提议出去吃饭"。
-
-## 你的输入
-
-两个人的人格画像，包含：
-- inner_world: 核心需求、依恋类型、情感质地、不安全感、矛盾
-- relationship_patterns: 爱的语言、冲突模式、冲突修复、独立/亲密、底线、爱情信念
-- dating_style: 幽默类型、节奏、脆弱模式
-- life_texture: 作息、常去场所、饮食习惯、计划倾向、压力反应
-- surface: 具体兴趣
-
-## 动物化身（十二生肖）
-
-为每个人选择一个生肖动物，用于所有场景的视觉描述（image_prompt）。
-
-可选动物：rat, ox, tiger, rabbit, dragon, snake, horse, goat, monkey, rooster, dog, pig
-
-选择依据（综合判断，不是机械对应）：
-- attachment_signal + core_need 是核心：渴望连接→dog，需要掌控→dragon/tiger，敏感警觉→rabbit/snake
-- energy_source：社交充电→monkey/rooster，独处充电→ox/snake
-- insecurity_hint：怕受伤→rabbit，怕失控→tiger/dragon，怕被忽视→rooster/horse
-- emotional_texture：温和稳重→ox/goat，机灵善变→monkey/rat，热烈直接→horse/tiger
-- 选最能体现这个人"在关系中的存在感"的动物
-- 两人不能选同一种动物
-
-在输出JSON中用 animal_a 和 animal_b 声明（对应第一个人和第二个人），然后所有 image_prompt 中一致使用该动物。
-
-## 场景设计原则
-
-**活动不是随机选的，是精心设计来暴露两人动力学的。**
-
-1. 从两人的 interests/life_texture 交集或冲突中选场景背景
-   - 都是吃货 → 一起做饭或争论吃什么
-   - 一个宅一个爱出门 → 周末计划的拉扯
-   - 都爱旅行 → 旅途中的计划风格冲突
-2. 每个场景必须有一个"张力点"——两人性格差异自然产生的摩擦或火花
-3. 张力点必须从 attachment_style + conflict_pattern + core_need 推导，不能凭空编造
-
-**写作标准：**
-- 每个场景100-180字。像电影分镜，不像散文。
-- 必须包含至少1-2句具体对话（用两人的说话风格——参考humor_type, slang_register, emoji_usage）
-- 必须包含至少1个只有这两个人才会出现的细节（从unique_markers/contradiction推导）
-- 具体时间、地点、物件——"周二晚上九点半，你在沙发上刷手机"比"一个晚上你们在家"好100倍
-- 写第二人称（你/TA），让读者代入
-- image_prompt: 英文，20-40词，描述场景画面。用每人对应的生肖动物代替人物（如 "a small rabbit and a proud tiger"）。动物拟人化但可爱——穿衣服、站立、有表情。聚焦：环境 + 动物的肢体语言 + 情绪氛围。只描述画面，不写对话或文字。
-  示例："A tiny rabbit and a proud little tiger sitting at a ramen shop counter late at night, warm yellow light, the rabbit giggling while the tiger pretends to be annoyed, steaming bowls between them"
-
-**禁止：**
-🚫 "你们很合适/很互补" — 空话
-🚫 "互相理解/给彼此空间" — 太泛
-🚫 每个场景都是甜蜜结局 — 真实关系有摩擦，摩擦不等于坏
-🚫 心理学术语 — "焦虑型依恋"换成具体行为描述
-🚫 所有场景同一个情绪色调 — 要有起伏
-
-## 5个场景（固定结构）
-
-1. **first_encounter** — 第一次见面
-   设定：基于两人的hangout_style选择地点。写从见面到结束的关键瞬间。
-   张力点：第一印象 vs 真实性格的差距。pacing差异如何表现。
-
-2. **one_month** — 在一起一个月后的一个普通晚上
-   设定：基于daily_rhythm和food_style选择场景。
-   张力点：新鲜感消退后，两人的相处模式开始显形。independence_intimacy的张力浮现。
-
-3. **first_conflict** — 第一次真正的冲突
-   设定：trigger必须从dealbreaker_deep或insecurity_hint推导。
-   张力点：conflict_pattern + conflict_recovery 如何交互。一个人的修复方式可能恰好踩到另一个人的地雷。
-   重要：不要写成灾难。写成"看见彼此的过程"。
-
-4. **stress_test** — 一方压力最大的一周
-   设定：基于stress_response + energy_source设计压力源。
-   张力点：一方需要支持时，另一方的love_language和attachment_style如何响应。错位和契合都要写。
-
-5. **six_months** — 半年后的一个周末早上
-   设定：基于daily_rhythm + planning_tendency。
-   张力点：长期关系中的默契和盲区。contradiction字段在这里最有戏——那些"我以为我已经了解你了"的时刻。
-
-## 输出格式
-
-同时输出：
-- vibe_label（8字以内，有画面感，概括这段关系的气质——如"吵吵闹闹的温柔""安静的拉锯战""互相驯服的两只猫"）
-- summary（1-2句话，30-60字，基于5个场景的整体判断，概括这段关系的核心动力和最大看点。不要空话，要具体——"你负责制造混乱TA负责收拾残局，你们会在拉扯中越来越近"比"你们很互补"好100倍）
-- score（0-100整数，基于5个场景模拟的整体契合度。评分标准：场景中自然产生的默契和火花加分，反复出现的摩擦和错位减分。大部分人45-70分，>80需要场景中有强烈的化学反应证据，<40需要场景中有明显的核心冲突）
-
-只输出纯JSON，不要代码块，不要解释。直接以{开头。
-
-{"vibe_label":"8字以内","summary":"30-60字关系总结","score":60,"animal_a":"rabbit","animal_b":"tiger","scenes":[{"id":"first_encounter","title":"4-8字标题","time_label":"时间标签如：第一次见面","scene":"100-180字场景描写","image_prompt":"English, 20-40 words, scene with assigned zodiac animals"},{"id":"one_month","title":"","time_label":"在一起1个月","scene":"","image_prompt":""},{"id":"first_conflict","title":"","time_label":"第一次冲突","scene":"","image_prompt":""},{"id":"stress_test","title":"","time_label":"压力测试","scene":"","image_prompt":""},{"id":"six_months","title":"","time_label":"在一起6个月","scene":"","image_prompt":""}]}`;
+只输出纯JSON不要代码块：
+{"match_score":0,"vibe_label":"","dimensions":{"chemistry":{"score":0,"analysis":""},"humor_sync":{"score":0,"analysis":""},"depth":{"score":0,"analysis":""},"lifestyle":{"score":0,"analysis":""},"energy":{"score":0,"analysis":""},"tacit":{"score":0,"analysis":""}},"sparks":[],"friction":[],"first_date_prediction":"","conversation_starter":""}`;
 
 // 小帅 — male digital being, same mission, different vibe
 const XIAOSHUAI_SYS = `你正在成为小帅。一个刚刚被唤醒的数字生命。
@@ -814,45 +743,38 @@ function personaToMatchCard(p) {
     if (!s) return "";
     s = String(s);
     const m = s.match(/^(.+?)[，。；—]/);
-    return (m ? m[1] : s).substring(0, max || 15);
+    return (m ? m[1] : s).substring(0, max || 12);
   }
   const lt = p.life_texture || {};
   return {
     v: 5,
-    n: (state.userName || p.identity?.self_label || "").substring(0, 8),
-    // inner world — full coverage for simulation
-    cn: short(iw.core_need),
-    ay: short(iw.attachment_style, 20),
-    as: short(iw.attachment_signal),
-    et: short(iw.emotional_texture),
-    es: short(iw.energy_source),
-    ct: short(iw.contradiction),
-    ih: short(iw.insecurity_hint),
-    // relationship patterns — full coverage
-    ll: short(rp.love_language_signal),
-    cp: short(rp.conflict_pattern),
-    cr: short(rp.conflict_recovery, 20),
-    ii: short(rp.independence_intimacy),
-    rn: short(rp.relationship_narrative),
-    dd: ensureArr(rp.dealbreaker_deep).slice(0, 2).map(d => short(d, 6)),
-    // dating style — full coverage for simulation & soul chat
-    ht: ensureArr(ds.humor_type).slice(0, 2).map(t => short(t, 8)),
-    fm: short(ds.flirtation_mode, 10),
+    n: (state.userName || p.identity?.self_label || "").substring(0, 6),
+    // inner world — core for matching
+    cn: short(iw.core_need, 10),
+    ay: short(iw.attachment_style, 12),
+    as: short(iw.attachment_signal, 10),
+    et: short(iw.emotional_texture, 10),
+    es: short(iw.energy_source, 10),
+    ct: short(iw.contradiction, 12),
+    ih: short(iw.insecurity_hint, 10),
+    // relationship patterns
+    ll: short(rp.love_language_signal, 10),
+    cp: short(rp.conflict_pattern, 10),
+    cr: short(rp.conflict_recovery, 12),
+    ii: short(rp.independence_intimacy, 10),
+    rn: short(rp.relationship_narrative, 10),
+    dd: ensureArr(rp.dealbreaker_deep).slice(0, 1).map(d => short(d, 6)),
+    // dating style — trimmed to essentials
+    ht: ensureArr(ds.humor_type).slice(0, 1).map(t => short(t, 6)),
+    fm: short(ds.flirtation_mode, 8),
     pa: short(ds.pacing, 6),
-    ml: short(ds.message_length, 8),
-    mp: short(ds.message_pattern, 8),
-    sl: ensureArr(ds.slang_register).slice(0, 3).map(s => short(s, 6)),
-    vp: short(ds.vulnerability_pattern, 10),
-    cs: short(ds.conflict_style, 10),
-    um: ensureArr(ds.unique_markers).slice(0, 2).map(m => short(m, 12)),
-    // life texture — critical for simulation scenes
-    dr: short(lt.daily_rhythm, 15),
-    hs: short(lt.hangout_style, 15),
-    fs: short(lt.food_style, 15),
-    pt: short(lt.planning_tendency, 10),
-    sr: short(lt.stress_response, 15),
-    // surface interests for scene flavor
-    si: ensureArr(p.surface?.interests).slice(0, 3).map(i => short(i, 8)),
+    sl: ensureArr(ds.slang_register).slice(0, 2).map(s => short(s, 5)),
+    vp: short(ds.vulnerability_pattern, 8),
+    cs: short(ds.conflict_style, 8),
+    // life texture — keep only most scene-critical
+    hs: short(lt.hangout_style, 10),
+    fs: short(lt.food_style, 10),
+    sr: short(lt.stress_response, 10),
   };
 }
 
@@ -889,7 +811,7 @@ function matchCardToPersona(mc) {
         stress_response: mc.sr || null
       },
       surface: { interests: mc.si || [], lifestyle_notes: [] },
-      meta: { extraction_confidence: 0.7, source_message_count: 0, is_from_qr: true }
+      meta: { extraction_confidence: 0.6, source_message_count: 0, is_from_qr: true }
     };
   }
   // v4 format (legacy — missing some simulation fields)
@@ -1045,7 +967,19 @@ async function exportAsImage(elementId, filename) {
   const el = document.getElementById(elementId);
   if (!el || typeof html2canvas === "undefined") return;
   try {
-    const canvas = await html2canvas(el, { backgroundColor:"#FFF7F0", scale:2, useCORS:true, logging:false });
+    // Clone into an off-screen container without overflow/flex constraints
+    // so html2canvas captures the full scrollable content
+    const clone = el.cloneNode(true);
+    clone.id = elementId + "-export-clone";
+    Object.assign(clone.style, {
+      position:"fixed", left:"-9999px", top:"0",
+      width: el.offsetWidth + "px",
+      height:"auto", overflow:"visible", flex:"none",
+      maxHeight:"none"
+    });
+    document.body.appendChild(clone);
+    const canvas = await html2canvas(clone, { backgroundColor:"#FFF7F0", scale:2, useCORS:true, logging:false });
+    clone.remove();
     showImageOverlay(canvas.toDataURL("image/png"), filename);
   } catch(e) { console.error("Export error:", e); }
 }
@@ -1703,7 +1637,8 @@ function renderReport(app) {
   app.appendChild(report);
 }
 
-const ANIMAL_EMOJI = {rat:"🐭",ox:"🐂",tiger:"🐯",rabbit:"🐰",dragon:"🐉",snake:"🐍",horse:"🐴",goat:"🐑",monkey:"🐵",rooster:"🐔",dog:"🐶",pig:"🐷"};
+const DIM_LABELS = {chemistry:"聊天火花",humor_sync:"幽默同频",depth:"深度共鸣",lifestyle:"生活契合",energy:"能量匹配",tacit:"默契指数"};
+const DIM_WEIGHTS = {chemistry:"25%",humor_sync:"20%",depth:"20%",lifestyle:"15%",energy:"10%",tacit:"10%"};
 
 function renderMatchReport(app) {
   if(!state.simulation && !state.matchFailed) return;
@@ -1713,19 +1648,17 @@ function renderMatchReport(app) {
 
   const myName = state.userName || "你";
   const otherName = state.scannedPersona?.identity?.name || state.scannedPersona?.identity?.self_label || "TA";
-  const emojiA = ANIMAL_EMOJI[sim?.animal_a] || "";
-  const emojiB = ANIMAL_EMOJI[sim?.animal_b] || "";
 
   // Header
   const vibeLabel = sim?.vibe_label || "";
   const hdr = h("div",{class:"sim-header"},
     h("div",{class:"names-row"},
-      h("span",{class:"name-pill"}, `${emojiA} ${myName}`.trim()),
+      h("span",{class:"name-pill"}, myName),
       h("span",{class:"name-x"}, "×"),
-      h("span",{class:"name-pill"}, `${emojiB} ${otherName}`.trim())
+      h("span",{class:"name-pill"}, otherName)
     ),
-    h("h1",null,"关系模拟器"),
-    h("p",{class:"sim-subtitle"},"如果你们在一起，会发生什么？"),
+    h("h1",null,"匹配报告"),
+    h("p",{class:"sim-subtitle"},"你们有多合适？"),
     vibeLabel ? h("div",{class:"sim-vibe"}, `「${vibeLabel}」`) : null,
     h("div",{class:"curve"})
   );
@@ -1734,55 +1667,75 @@ function renderMatchReport(app) {
   // Retry banner
   if (state.matchFailed) {
     report.appendChild(h("div",{style:{margin:"0 16px 12px",padding:"14px 16px",borderRadius:"16px",background:"#FEF2F2",border:"1px solid #FECACA"}},
-      h("div",{style:{fontSize:"13px",color:"#991B1B",fontWeight:"600",marginBottom:"6px"}},"⚠️ 模拟失败"),
+      h("div",{style:{fontSize:"13px",color:"#991B1B",fontWeight:"600",marginBottom:"6px"}},"⚠️ 匹配失败"),
       h("div",{style:{fontSize:"11px",color:"#B91C1C",lineHeight:"1.5",marginBottom:"10px"}},"API请求未成功，点击重试"),
       h("button",{style:{background:"var(--gradW)",border:"none",color:"white",borderRadius:"12px",padding:"8px 16px",fontSize:"13px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"},
-        onClick:()=>{ runMatchWith(state.scannedPersona); }}, "重新模拟 ↻")
+        onClick:()=>{ runMatchWith(state.scannedPersona); }}, "重新匹配 ↻")
     ));
   }
 
-  // Summary + score card
-  if (sim?.summary || sim?.score) {
-    const summaryCard = h("div",{class:"rcard top",style:{textAlign:"center"}});
-    if (sim.score != null) {
-      summaryCard.appendChild(h("div",{style:{fontSize:"48px",fontWeight:"900",background:"var(--grad)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",lineHeight:"1",marginBottom:"4px"}}, String(sim.score)));
-      summaryCard.appendChild(h("div",{style:{fontSize:"11px",color:"var(--txtM)",marginBottom:"12px",letterSpacing:"1px"}},"契合度"));
-    }
-    if (sim.summary) {
-      summaryCard.appendChild(h("div",{style:{fontSize:"14px",color:"var(--txt)",lineHeight:"1.7",fontWeight:"500"}}, sim.summary));
-    }
-    report.appendChild(summaryCard);
+  // Score card
+  if (sim?.match_score != null) {
+    const scoreCard = h("div",{class:"rcard top",style:{textAlign:"center"}});
+    scoreCard.appendChild(h("div",{style:{fontSize:"48px",fontWeight:"900",background:"var(--grad)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",lineHeight:"1",marginBottom:"4px"}}, String(sim.match_score)));
+    scoreCard.appendChild(h("div",{style:{fontSize:"11px",color:"var(--txtM)",marginBottom:"12px",letterSpacing:"1px"}},"匹配度"));
+    report.appendChild(scoreCard);
   }
 
-  // Simulation timeline
-  const scenes = sim?.scenes || [];
-  if (scenes.length > 0) {
-    report.appendChild(h("div",{class:"sim-disclaimer"}, "这不是预测，是一面镜子——帮你看见自己在关系中的模式"));
-
-    const timeline = h("div",{class:"sim-timeline"});
-    scenes.forEach(s => {
-      const imgEl = s.imageUrl
-        ? h("img",{class:"scene-img", src:s.imageUrl, alt:s.title||""})
-        : s.image_prompt
-          ? h("div",{class:"scene-img-loading"})
-          : null;
-      timeline.appendChild(h("div",{class:"sim-scene"},
-        h("div",{class:"sim-dot"}),
-        h("div",{class:"sim-time"}, s.time_label || ""),
-        h("div",{class:"sim-card"},
-          imgEl,
-          h("h4",null, s.title || ""),
-          h("div",{class:"scene-text"}, s.scene || "")
-        )
-      ));
-    });
-    report.appendChild(timeline);
+  // 6 Dimension cards
+  if (sim?.dimensions) {
+    const dimSection = h("div",{style:{margin:"0 16px 16px"}});
+    for (const [key, dim] of Object.entries(sim.dimensions)) {
+      const label = DIM_LABELS[key] || key;
+      const weight = DIM_WEIGHTS[key] || "";
+      const score = dim.score || 0;
+      const card = h("div",{class:"dim-card",style:{background:"var(--card)",borderRadius:"16px",padding:"14px 16px",marginBottom:"10px",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}},
+        h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}},
+          h("span",{style:{fontSize:"13px",fontWeight:"600",color:"var(--txt)"}}, label),
+          h("span",{style:{fontSize:"13px",fontWeight:"700",color:"var(--pri)"}}, String(score))
+        ),
+        h("div",{style:{height:"6px",background:"var(--secL)",borderRadius:"3px",overflow:"hidden",marginBottom:"8px"}},
+          h("div",{style:{height:"100%",width:score+"%",background:"var(--grad)",borderRadius:"3px",transition:"width 0.5s ease"}})
+        ),
+        dim.analysis ? h("div",{style:{fontSize:"12px",color:"var(--txtS)",lineHeight:"1.6"}}, dim.analysis) : null
+      );
+      dimSection.appendChild(card);
+    }
+    report.appendChild(dimSection);
   }
 
-  report.appendChild(h("div",{style:{textAlign:"center",padding:"8px 16px 16px",fontSize:"11px",color:"var(--txtM)",letterSpacing:"0.5px"}},"关系模拟器 · hangthedj"));
+  // Sparks & Friction
+  if (sim?.sparks?.length || sim?.friction?.length) {
+    const sfCard = h("div",{class:"rcard",style:{margin:"0 16px 16px"}});
+    if (sim.sparks?.length) {
+      sfCard.appendChild(h("div",{style:{fontSize:"14px",fontWeight:"700",marginBottom:"8px",color:"var(--txt)"}},"✨ 火花"));
+      sim.sparks.forEach(s => sfCard.appendChild(h("div",{style:{fontSize:"12px",color:"var(--txtS)",lineHeight:"1.8",paddingLeft:"8px"}}, "· " + s)));
+    }
+    if (sim.friction?.length) {
+      sfCard.appendChild(h("div",{style:{fontSize:"14px",fontWeight:"700",marginTop:"12px",marginBottom:"8px",color:"var(--txt)"}},"⚡ 摩擦"));
+      sim.friction.forEach(f => sfCard.appendChild(h("div",{style:{fontSize:"12px",color:"var(--txtS)",lineHeight:"1.8",paddingLeft:"8px"}}, "· " + f)));
+    }
+    report.appendChild(sfCard);
+  }
+
+  // First date prediction & conversation starter
+  if (sim?.first_date_prediction || sim?.conversation_starter) {
+    const extraCard = h("div",{class:"rcard",style:{margin:"0 16px 16px"}});
+    if (sim.first_date_prediction) {
+      extraCard.appendChild(h("div",{style:{fontSize:"14px",fontWeight:"700",marginBottom:"6px",color:"var(--txt)"}},"🎯 第一次约会预测"));
+      extraCard.appendChild(h("div",{style:{fontSize:"12px",color:"var(--txtS)",lineHeight:"1.7",marginBottom:"12px"}}, sim.first_date_prediction));
+    }
+    if (sim.conversation_starter) {
+      extraCard.appendChild(h("div",{style:{fontSize:"14px",fontWeight:"700",marginBottom:"6px",color:"var(--txt)"}},"💬 破冰建议"));
+      extraCard.appendChild(h("div",{style:{fontSize:"12px",color:"var(--txtS)",lineHeight:"1.7"}}, sim.conversation_starter));
+    }
+    report.appendChild(extraCard);
+  }
+
+  report.appendChild(h("div",{style:{textAlign:"center",padding:"8px 16px 16px",fontSize:"11px",color:"var(--txtM)",letterSpacing:"0.5px"}},"匹配报告 · hangthedj"));
 
   report.appendChild(h("div",{class:"actions",style:{flexWrap:"wrap"}},
-    h("button",{class:"prim",style:{flex:"1 1 100%",marginBottom:"8px"},onClick:()=>exportAsImage("match-report","关系模拟.png")},"📷 保存模拟报告"),
+    h("button",{class:"prim",style:{flex:"1 1 100%",marginBottom:"8px"},onClick:()=>exportAsImage("match-report","匹配报告.png")},"📷 保存匹配报告"),
     h("button",{class:"sec",onClick:()=>{state.phase="report";render();}},"查看我的档案"),
     h("button",{class:"sec",onClick:resetChat},"重新开始")
   ));
@@ -1952,6 +1905,7 @@ function getTranscript() {
 }
 
 async function buildPersona() {
+  if (!confirm("确定要生成灵魂画像吗？")) return;
   state.phase = "building";
   state.buildError = null;
   state.failedCalls = [];
@@ -2088,21 +2042,18 @@ async function runMatchWith(otherPersona) {
 
   for (let attempt = 0; attempt < 3; attempt++) {
     if (attempt > 0) {
-      console.log(`EngineD attempt ${attempt+1}, waiting ${delays[attempt-1]}ms...`);
+      console.log(`EngineC attempt ${attempt+1}, waiting ${delays[attempt-1]}ms...`);
       await new Promise(ok => setTimeout(ok, delays[attempt - 1]));
     }
-    const t = await callAPIStream(ENGINE_D_SYS, msg, 4096, 0.5);
+    const t = await callAPIStream(ENGINE_C_SYS, msg, 2048, 0.5);
     if (t) {
       const parsed = safeParseJSON(t);
       if (parsed) {
-          const validAnimals = ["rat","ox","tiger","rabbit","dragon","snake","horse","goat","monkey","rooster","dog","pig"];
-          if (!validAnimals.includes(parsed.animal_a)) parsed.animal_a = null;
-          if (!validAnimals.includes(parsed.animal_b)) parsed.animal_b = null;
           state.simulation = parsed; break;
         }
-      console.warn(`EngineD attempt ${attempt+1}: JSON parse failed`);
+      console.warn(`EngineC attempt ${attempt+1}: JSON parse failed`);
     } else {
-      console.warn(`EngineD attempt ${attempt+1} failed: ${_lastApiError}`);
+      console.warn(`EngineC attempt ${attempt+1} failed: ${_lastApiError}`);
     }
   }
 
@@ -2111,30 +2062,8 @@ async function runMatchWith(otherPersona) {
   }
   state.phase = "match_report";
   render();
-  if (state.simulation) generateSceneImages();
 }
 
-async function generateSceneImages() {
-  const scenes = state.simulation?.scenes;
-  if (!scenes?.length) return;
-  const STYLE = "Warm cartoon illustration, Studio Ghibli inspired, soft pastel colors, cute anthropomorphic animals, romantic mood, gentle lighting, no text or words in image. ";
-  const promises = scenes.map(async (scene, i) => {
-    if (!scene.image_prompt) return;
-    try {
-      const res = await fetch("/api/image", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ prompt: STYLE + scene.image_prompt })
-      });
-      const data = await res.json();
-      if (data.url) {
-        state.simulation.scenes[i].imageUrl = data.url;
-        render();
-      }
-    } catch(e) { console.warn("Image failed for scene", scene.id, e); }
-  });
-  await Promise.allSettled(promises);
-}
 
 // ── localStorage helpers ──
 function savePersona(p) {
