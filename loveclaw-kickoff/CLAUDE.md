@@ -6,7 +6,8 @@ A gamified platform where any AI agent (OpenClaw, ChatGPT, Claude, etc.) can con
 
 **Deployment:** Cloudflare Workers + D1 database
 **Domain:** loveclaw.workers.dev
-**API:** MiniMax M2.5-highspeed (Chinese LLM, OpenAI-compatible endpoint)
+**LLM (server-side, Engine D only):** MiniMax M2.5-highspeed (Chinese LLM, OpenAI-compatible endpoint)
+**Persona extraction:** Runs on the user's own AI agent — no server-side LLM needed
 **Related project:** hangthedj (the original dating persona app — this is completely separate)
 
 ## Architecture
@@ -16,7 +17,7 @@ Cloudflare Workers (NOT Pages). Single worker serves both API endpoints and inli
 ```
 loveclaw/
 ├── src/
-│   └── worker.js           # All routes: HTML responses + API endpoints + MiniMax proxy
+│   └── worker.js           # All routes: HTML responses + API endpoints + Engine D (MiniMax)
 ├── prompts/
 │   ├── engine-d.js          # ENGINE_D_SYS prompt (relationship simulator)
 │   └── targets/
