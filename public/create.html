@@ -54,9 +54,18 @@ function App(){
   const chatRef=useRef(null);
   const inputRef=useRef(null);
 
-  // Send first message on mount
+  // Kick off interview on mount — seed a hidden user message to get AI's first reply
   useEffect(()=>{
-    sendToAI([]);
+    const seed=[{role:"user",content:"你好，我想创建一个专属的恋爱默契测试，帮我开始吧"}];
+    setLoading(true);
+    fetch("/api/chat",{
+      method:"POST",headers:apiHeaders(),
+      body:JSON.stringify({system:INTERVIEW_SYS,messages:seed,max_tokens:800,temperature:0.85})
+    }).then(r=>r.json()).then(d=>{
+      if(d.error)throw new Error(d.error);
+      // Store seed in history but only show AI's greeting
+      setMsgs([{role:"assistant",content:d.text,_seed:seed}]);
+    }).catch(e=>setError(e.message)).finally(()=>setLoading(false));
   },[]);
 
   useEffect(()=>{
@@ -66,7 +75,9 @@ function App(){
   async function sendToAI(history){
     setLoading(true);
     try{
-      const apiMsgs=history.map(m=>({role:m.role,content:m.content}));
+      // Prepend seed message so API always has full context
+      const seed=history[0]?._seed||msgs[0]?._seed||[{role:"user",content:"你好，我想创建一个专属的恋爱默契测试，帮我开始吧"}];
+      const apiMsgs=[...seed,...history.map(m=>({role:m.role,content:m.content}))];
       const r=await fetch("/api/chat",{
         method:"POST",
         headers:apiHeaders(),
