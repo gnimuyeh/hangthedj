@@ -513,7 +513,7 @@ const GUIDES = {
 // STATE
 // ═══════════════════════════════════════
 
-let state = { phase:"welcome", guide:null, userName:"", msgs:[], input:"", typing:false, msgCount:0, coveredDimensions:[], persona:null, simulation:null, showBuild:false, apiError:false, pendingMatch:null, scannedPersona:null, buildError:null, failedCalls:[], extractionProgress:null, matchFailed:false };
+let state = { phase:"welcome", guide:null, userName:localStorage.getItem('lovetype_user_name')||"", msgs:[], input:"", typing:false, msgCount:0, coveredDimensions:[], persona:null, simulation:null, showBuild:false, apiError:false, pendingMatch:null, scannedPersona:null, buildError:null, failedCalls:[], extractionProgress:null, matchFailed:false };
 
 // ═══════════════════════════════════════
 // API
@@ -1163,9 +1163,14 @@ function renderWelcome(app) {
   const pickGuide = (id) => { state.guide = id; render(); };
   const existing = loadPersona();
 
-  // If guide already picked, show name input
+  // If guide already picked, check if we already have a name
   if (state.guide) {
     const g = GUIDES[state.guide];
+    // If name already set from landing page, skip name input and start chat
+    if (state.userName && state.userName.trim()) {
+      startChat();
+      return;
+    }
     const submitName = () => {
       const name = (state.userName || "").trim();
       if (!name) return;
