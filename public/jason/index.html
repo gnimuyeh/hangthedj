@@ -382,7 +382,8 @@ function App(){
 
   // ═══ INTRO ═══
   if(ph==="intro")return(
-    <div style={S.pg}><div style={{...S.wr,opacity:fade?1:0,transition:"opacity 0.5s",paddingTop:80,textAlign:"center"}}>
+    <div style={S.pg}><div style={{...S.wr,opacity:fade?1:0,transition:"opacity 0.5s",paddingTop:40,textAlign:"center"}}>
+      <div style={{textAlign:"left",marginBottom:24}}><span style={{fontSize:11,color:C.accent,cursor:"pointer",letterSpacing:2,fontWeight:600}} onClick={()=>window.location.href='/'}>← LOVETYPE</span></div>
       <div style={{width:64,height:64,borderRadius:32,background:"linear-gradient(135deg,#C76D2E,#E8A86B)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 24px",fontSize:26}}>&#x2728;</div>
       <h1 style={{fontSize:26,fontWeight:300,color:C.text,margin:"0 0 6px",letterSpacing:3}}>默契测试</h1>
       <p style={{fontSize:12,color:C.sub,letterSpacing:3,margin:"0 0 32px",fontFamily:"'DM Sans',sans-serif"}}>COMPATIBILITY CHECK</p>

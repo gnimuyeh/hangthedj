@@ -389,7 +389,7 @@ function App(){
 
   const Nav=()=>(
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0 6px",maxWidth:540,width:"100%"}}>
-      <span style={{fontSize:13,fontWeight:700,color:P.accent,letterSpacing:3,cursor:"pointer"}} onClick={()=>go(()=>setPh("intro"))}>LOVETYPE</span>
+      <span style={{fontSize:13,fontWeight:700,color:P.accent,letterSpacing:3,cursor:"pointer"}} onClick={()=>window.location.href='/'}>LOVETYPE</span>
       <div style={{display:"flex",gap:12}}>
         {res&&<span style={S.nav} onClick={()=>go(()=>{setVt(null);setVl(null);setPh("result");})}>我的报告</span>}
         <span style={S.nav} onClick={()=>go(()=>{setVt(null);setVl(null);setPh("types");})}>16型总览</span>

@@ -202,8 +202,8 @@ function App(){
   // ─── Intro ───
   if(ph==="intro")return(
     <div style={S.pg}><div style={{...S.wr,opacity:fade?1:0,transition:"opacity 0.4s"}}>
-      <div style={{textAlign:"center",padding:"40px 0 24px"}}>
-        <div style={{fontSize:11,letterSpacing:6,color:C.accent,fontWeight:600,marginBottom:16}}>LOVETYPE</div>
+      <div style={{textAlign:"center",padding:"24px 0 24px"}}>
+        <div style={{fontSize:11,letterSpacing:6,color:C.accent,fontWeight:600,marginBottom:16,cursor:"pointer"}} onClick={()=>window.location.href='/'}>← LOVETYPE</div>
         <h1 style={{fontSize:22,fontWeight:300,color:C.text,letterSpacing:2,marginBottom:8}}>{quiz.title}</h1>
         {quiz.description&&<p style={{fontSize:12,color:C.sub,lineHeight:1.7,margin:"0 0 20px"}}>{quiz.description}</p>}
         <div style={{width:28,height:1,background:C.accent,margin:"0 auto 24px",opacity:.4}}/>
