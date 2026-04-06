@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'PingFang SC','Noto Sans SC','DM Sans',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;background:#0F0F0F;color:#fff;}
+body{font-family:'PingFang SC','Noto Sans SC','DM Sans',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;background:#FAFAF7;color:#111;}
 button{font-family:inherit;-webkit-tap-highlight-color:transparent;cursor:pointer;}
 button:active{transform:scale(0.98);}
 ::-webkit-scrollbar{display:none;}
@@ -295,15 +295,15 @@ function calcResult(answers){
 }
 
 function getLabel(s){
-  if(s>=95)return{t:"天作之合",c:"#00E59B",bg:"linear-gradient(135deg,#00E59B,#00B4D8)",d:"你们在几乎所有维度上都高度一致，这种默契极其难得。"};
-  if(s>=85)return{t:"超级合拍",c:"#00E59B",bg:"linear-gradient(135deg,#00E59B,#00D4AA)",d:"你们在核心价值观和生活方式上高度契合，很好的基础。"};
-  if(s>=75)return{t:"很有默契",c:"#00B4D8",bg:"linear-gradient(135deg,#00B4D8,#7B68EE)",d:"你们在大部分维度上很契合，一些小差异反而增添吸引力。"};
+  if(s>=95)return{t:"天作之合",c:"#C76D2E",bg:"linear-gradient(135deg,#C76D2E,#E8A86B)",d:"你们在几乎所有维度上都高度一致，这种默契极其难得。"};
+  if(s>=85)return{t:"超级合拍",c:"#C76D2E",bg:"linear-gradient(135deg,#C76D2E,#E8A86B)",d:"你们在核心价值观和生活方式上高度契合，很好的基础。"};
+  if(s>=75)return{t:"很有默契",c:"#E8A86B",bg:"linear-gradient(135deg,#E8A86B,#7B68EE)",d:"你们在大部分维度上很契合，一些小差异反而增添吸引力。"};
   if(s>=65)return{t:"值得深入",c:"#FF9F43",bg:"linear-gradient(135deg,#FF9F43,#FFCC5C)",d:"你们有不错的基础，值得花更多时间去了解和磨合。"};
   if(s>=50)return{t:"有待观察",c:"#A78BFA",bg:"linear-gradient(135deg,#A78BFA,#7C3AED)",d:"你们在一些维度上有差异，需要更多时间了解彼此的想法。"};
   return{t:"差异较大",c:"#FF6B6B",bg:"linear-gradient(135deg,#FF6B6B,#EE5A6F)",d:"你们的生活方式和价值观有较大差异，但差异也可以变成成长的空间。"};
 }
 
-const C={bg:"#0F0F0F",card:"#1A1A1A",bd:"rgba(255,255,255,0.08)",text:"#F5F5F5",sub:"rgba(255,255,255,0.5)",mut:"rgba(255,255,255,0.25)",accent:"#00E59B"};
+const C={bg:"#FAFAF7",card:"rgba(255,255,255,0.92)",bd:"rgba(0,0,0,0.06)",text:"#111",sub:"#777",mut:"#aaa",accent:"#C76D2E"};
 const dimLabels={openness:"生活方式",cognition:"认知互补",dynamics:"相处模式",material:"消费观",autonomy:"独立性",nurture:"生活态度",emotional_iq:"能量状态",fitness:"健康生活",family:"家庭观",loyalty:"忠诚度",balance:"关系默契",conflict:"冲突处理",core_need:"关系内核"};
 
 function App(){
@@ -354,7 +354,7 @@ function App(){
 
       // Try html2canvas if available
       if(window.html2canvas){
-        const cvs=await window.html2canvas(clone,{backgroundColor:"#0F0F0F",scale:2,useCORS:true,logging:false});
+        const cvs=await window.html2canvas(clone,{backgroundColor:"#FAFAF7",scale:2,useCORS:true,logging:false});
         const link=document.createElement("a");
         link.download="compatibility-result.png";
         link.href=cvs.toDataURL("image/png");
@@ -383,17 +383,17 @@ function App(){
   // ═══ INTRO ═══
   if(ph==="intro")return(
     <div style={S.pg}><div style={{...S.wr,opacity:fade?1:0,transition:"opacity 0.5s",paddingTop:80,textAlign:"center"}}>
-      <div style={{width:64,height:64,borderRadius:32,background:"linear-gradient(135deg,#00E59B,#00B4D8)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 24px",fontSize:26}}>&#x2728;</div>
+      <div style={{width:64,height:64,borderRadius:32,background:"linear-gradient(135deg,#C76D2E,#E8A86B)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 24px",fontSize:26}}>&#x2728;</div>
       <h1 style={{fontSize:26,fontWeight:300,color:C.text,margin:"0 0 6px",letterSpacing:3}}>默契测试</h1>
       <p style={{fontSize:12,color:C.sub,letterSpacing:3,margin:"0 0 32px",fontFamily:"'DM Sans',sans-serif"}}>COMPATIBILITY CHECK</p>
       <p style={{fontSize:14,lineHeight:2,color:C.sub,fontWeight:300,margin:"0 0 6px",padding:"0 20px"}}>33道场景题，从生活方式到价值观</p>
       <p style={{fontSize:14,lineHeight:2,color:C.sub,fontWeight:300,margin:"0 0 40px"}}>全方位测试我们的默契度</p>
-      <button style={{padding:"16px 56px",fontSize:15,fontWeight:500,color:"#0F0F0F",background:"linear-gradient(135deg,#00E59B,#00D4AA)",border:"none",borderRadius:50,letterSpacing:3,boxShadow:"0 4px 24px rgba(0,229,155,0.3)"}} onClick={()=>go(()=>setPh("quiz"))}>
+      <button style={{padding:"16px 56px",fontSize:15,fontWeight:500,color:"#fff",background:"linear-gradient(135deg,#C76D2E,#E8A86B)",border:"none",borderRadius:50,letterSpacing:3,boxShadow:"0 4px 24px rgba(199,109,46,0.3)"}} onClick={()=>go(()=>setPh("quiz"))}>
         开始测试
       </button>
       <p style={{fontSize:10,color:C.mut,marginTop:20,letterSpacing:1}}>约5分钟 · 选最真实的选项</p>
       {cachedRes&&(
-        <button style={{marginTop:24,padding:"12px 32px",fontSize:13,color:C.accent,background:"transparent",border:"1.5px solid rgba(0,229,155,0.3)",borderRadius:50,letterSpacing:2}} onClick={()=>go(()=>{setRes(cachedRes.res);setAns(cachedRes.ans);setPh("result");})}>
+        <button style={{marginTop:24,padding:"12px 32px",fontSize:13,color:C.accent,background:"transparent",border:"1.5px solid rgba(199,109,46,0.3)",borderRadius:50,letterSpacing:2}} onClick={()=>go(()=>{setRes(cachedRes.res);setAns(cachedRes.ans);setPh("result");})}>
           查看上次测试结果
         </button>
       )}
@@ -406,15 +406,15 @@ function App(){
     return(
       <div style={S.pg}><div style={{...S.wr,opacity:fade?1:0,transition:"opacity 0.5s",paddingTop:60,textAlign:"center"}}>
         <div style={{width:80,height:80,borderRadius:40,background:label.bg,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",boxShadow:"0 6px 24px "+label.c+"33"}}>
-          <span style={{fontSize:30,fontWeight:300,color:"#0F0F0F",fontFamily:"'DM Sans'"}}>{cachedRes.res.overall}</span>
+          <span style={{fontSize:30,fontWeight:300,color:"#fff",fontFamily:"'DM Sans'"}}>{cachedRes.res.overall}</span>
         </div>
         <h2 style={{fontSize:18,fontWeight:400,color:label.c,letterSpacing:3,margin:"0 0 6px"}}>{label.t}</h2>
         <p style={{fontSize:12,color:C.sub,margin:"0 0 24px"}}>你上次的测试结果</p>
         <div style={{display:"flex",flexDirection:"column",gap:10,maxWidth:300,margin:"0 auto"}}>
-          <button style={{padding:"14px",fontSize:14,fontWeight:500,color:"#0F0F0F",background:"linear-gradient(135deg,#00E59B,#00D4AA)",border:"none",borderRadius:14,letterSpacing:2}} onClick={()=>go(()=>{setRes(cachedRes.res);setAns(cachedRes.ans);setPh("result");})}>
+          <button style={{padding:"14px",fontSize:14,fontWeight:500,color:"#fff",background:"linear-gradient(135deg,#C76D2E,#E8A86B)",border:"none",borderRadius:14,letterSpacing:2}} onClick={()=>go(()=>{setRes(cachedRes.res);setAns(cachedRes.ans);setPh("result");})}>
             查看完整报告
           </button>
-          <button style={{padding:"14px",fontSize:13,color:C.text,background:"rgba(255,255,255,0.06)",border:"1.5px solid rgba(255,255,255,0.1)",borderRadius:14,letterSpacing:2}} onClick={()=>go(()=>{setQi(0);setAns({});setRes(null);setPh("quiz");})}>
+          <button style={{padding:"14px",fontSize:13,color:C.text,background:"rgba(0,0,0,0.04)",border:"1.5px solid rgba(0,0,0,0.08)",borderRadius:14,letterSpacing:2}} onClick={()=>go(()=>{setQi(0);setAns({});setRes(null);setPh("quiz");})}>
             重新测试
           </button>
         </div>
@@ -429,7 +429,7 @@ function App(){
       <div style={S.pg}><div style={S.wr}>
         <div style={{display:"flex",alignItems:"center",gap:10,padding:"16px 0 10px"}}>
           <div style={{flex:1,height:3,background:"#1E1E1E",borderRadius:2,overflow:"hidden"}}>
-            <div style={{height:"100%",width:`${qi/QS.length*100}%`,background:"linear-gradient(90deg,#00E59B,#00B4D8)",transition:"width 0.4s",borderRadius:2}}/>
+            <div style={{height:"100%",width:`${qi/QS.length*100}%`,background:"linear-gradient(90deg,#C76D2E,#E8A86B)",transition:"width 0.4s",borderRadius:2}}/>
           </div>
           <span style={{fontSize:11,color:C.sub,fontFamily:"'DM Sans',sans-serif"}}>{qi+1}/{QS.length}</span>
         </div>
@@ -440,9 +440,9 @@ function App(){
             {q.o.map((o,i)=>{
               const active=sel===i;
               return(
-                <button key={i} style={{display:"flex",alignItems:"flex-start",gap:12,padding:"14px 16px",background:active?"rgba(0,229,155,0.08)":"transparent",border:"1.5px solid "+(active?"#00E59B":"rgba(255,255,255,0.1)"),borderRadius:14,textAlign:"left",transition:"all 0.2s",width:"100%"}} onClick={()=>pick(q.id,o.s,i)}>
-                  <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:24,height:24,borderRadius:12,background:active?"rgba(0,229,155,0.2)":"rgba(255,255,255,0.06)",color:active?"#00E59B":"rgba(255,255,255,0.4)",fontSize:10,fontWeight:600,flexShrink:0,marginTop:1,fontFamily:"'DM Sans'"}}>{String.fromCharCode(65+i)}</span>
-                  <span style={{fontSize:13,lineHeight:1.6,color:active?"#fff":"rgba(255,255,255,0.7)",fontWeight:active?400:300}}>{o.t}</span>
+                <button key={i} style={{display:"flex",alignItems:"flex-start",gap:12,padding:"14px 16px",background:active?"rgba(199,109,46,0.08)":"transparent",border:"1.5px solid "+(active?"#C76D2E":"rgba(0,0,0,0.08)"),borderRadius:14,textAlign:"left",transition:"all 0.2s",width:"100%"}} onClick={()=>pick(q.id,o.s,i)}>
+                  <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:24,height:24,borderRadius:12,background:active?"rgba(199,109,46,0.2)":"rgba(0,0,0,0.04)",color:active?"#C76D2E":"rgba(0,0,0,0.3)",fontSize:10,fontWeight:600,flexShrink:0,marginTop:1,fontFamily:"'DM Sans'"}}>{String.fromCharCode(65+i)}</span>
+                  <span style={{fontSize:13,lineHeight:1.6,color:active?"#fff":"rgba(0,0,0,0.55)",fontWeight:active?400:300}}>{o.t}</span>
                 </button>
               );
             })}
@@ -463,7 +463,7 @@ function App(){
         <div ref={reportRef} style={{background:C.bg,padding:"20px 0"}}>
           <div style={{textAlign:"center",padding:"16px 0 24px"}}>
             <div style={{width:110,height:110,borderRadius:55,background:label.bg,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",boxShadow:"0 8px 32px "+label.c+"33"}}>
-              <span style={{fontSize:38,fontWeight:300,color:"#0F0F0F",fontFamily:"'DM Sans'"}}>{res.overall}</span>
+              <span style={{fontSize:38,fontWeight:300,color:"#fff",fontFamily:"'DM Sans'"}}>{res.overall}</span>
             </div>
             <h2 style={{fontSize:22,fontWeight:500,color:label.c,letterSpacing:4,margin:"0 0 4px"}}>{label.t}</h2>
             <p style={{fontSize:13,lineHeight:1.8,color:C.sub,fontWeight:300,margin:0,padding:"0 16px"}}>{label.d}</p>
@@ -472,14 +472,14 @@ function App(){
             <h3 style={{fontSize:12,fontWeight:500,color:C.text,letterSpacing:3,margin:"0 0 16px",fontFamily:"'DM Sans'"}}>DIMENSIONS</h3>
             {DIMS.map((d,i)=>{
               const det=res.details[d.key];
-              const bc=det.score>=75?"#00E59B":det.score>=45?"#FF9F43":"#FF6B6B";
+              const bc=det.score>=75?"#C76D2E":det.score>=45?"#FF9F43":"#FF6B6B";
               return(
                 <div key={d.key} style={{marginBottom:i<DIMS.length-1?14:0}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
                     <span style={{fontSize:12,color:C.text}}><span style={{marginRight:6}}>{d.icon}</span>{d.name}</span>
                     <span style={{fontSize:13,color:bc,fontWeight:600,fontFamily:"'DM Sans'"}}>{det.score}%</span>
                   </div>
-                  <div style={{height:5,background:"rgba(255,255,255,0.06)",borderRadius:3,overflow:"hidden",marginBottom:5}}>
+                  <div style={{height:5,background:"rgba(0,0,0,0.04)",borderRadius:3,overflow:"hidden",marginBottom:5}}>
                     <div style={{height:"100%",width:det.score+"%",background:bc,borderRadius:3,transition:"width 0.8s"}}/>
                   </div>
                   <p style={{fontSize:11,lineHeight:1.5,color:C.sub,fontWeight:300}}>{det.desc}</p>
@@ -493,10 +493,10 @@ function App(){
               {QS.map((q,i)=>{
                 const chosen=ans[q.id];const chosenOpt=q.o.find(o=>o.s===chosen);
                 return(
-                  <div key={q.id} style={{marginBottom:i<QS.length-1?12:0,paddingBottom:i<QS.length-1?12:0,borderBottom:i<QS.length-1?"1px solid rgba(255,255,255,0.05)":"none"}}>
+                  <div key={q.id} style={{marginBottom:i<QS.length-1?12:0,paddingBottom:i<QS.length-1?12:0,borderBottom:i<QS.length-1?"1px solid rgba(0,0,0,0.04)":"none"}}>
                     <p style={{fontSize:10,color:C.mut,margin:"0 0 2px"}}>Q{i+1} &middot; {dimLabels[q.d]}</p>
-                    <p style={{fontSize:12,color:"rgba(255,255,255,0.75)",margin:"0 0 3px",lineHeight:1.5}}>{q.t}</p>
-                    <p style={{fontSize:12,color:"#00E59B",margin:0}}>{chosenOpt?chosenOpt.t:"-"}</p>
+                    <p style={{fontSize:12,color:"rgba(0,0,0,0.6)",margin:"0 0 3px",lineHeight:1.5}}>{q.t}</p>
+                    <p style={{fontSize:12,color:"#C76D2E",margin:0}}>{chosenOpt?chosenOpt.t:"-"}</p>
                   </div>
                 );
               })}
@@ -506,16 +506,16 @@ function App(){
         </div>
 
         <div style={{padding:"8px 0 40px"}}>
-          <button style={{...S.ab,background:"rgba(255,255,255,0.06)",border:"1.5px solid rgba(255,255,255,0.1)",color:C.text,marginBottom:8}} onClick={()=>setShowAns(!showAns)}>
+          <button style={{...S.ab,background:"rgba(0,0,0,0.04)",border:"1.5px solid rgba(0,0,0,0.08)",color:C.text,marginBottom:8}} onClick={()=>setShowAns(!showAns)}>
             {showAns?"收起答案详情":"查看答案详情"} {showAns?"\u25B2":"\u25BC"}
           </button>
-          <button style={{...S.ab,background:"linear-gradient(135deg,#00E59B,#00B4D8)",color:"#0F0F0F",fontWeight:500,marginBottom:8,boxShadow:"0 4px 20px rgba(0,229,155,0.25)"}} onClick={saveImage}>
+          <button style={{...S.ab,background:"linear-gradient(135deg,#C76D2E,#E8A86B)",color:"#fff",fontWeight:500,marginBottom:8,boxShadow:"0 4px 20px rgba(199,109,46,0.25)"}} onClick={saveImage}>
             {saving?"正在生成...":"保存结果长图 \u{1F4F7}"}
           </button>
-          <button style={{...S.ab,background:copied?"rgba(0,229,155,0.15)":"rgba(255,255,255,0.06)",border:"1.5px solid "+(copied?"#00E59B":"rgba(255,255,255,0.1)"),color:copied?"#00E59B":C.text,marginBottom:8}} onClick={copyLink}>
+          <button style={{...S.ab,background:copied?"rgba(199,109,46,0.15)":"rgba(0,0,0,0.04)",border:"1.5px solid "+(copied?"#C76D2E":"rgba(0,0,0,0.08)"),color:copied?"#C76D2E":C.text,marginBottom:8}} onClick={copyLink}>
             {copied?"链接已复制 \u2713":"复制测试链接，分享给TA \u{1F517}"}
           </button>
-          <button style={{...S.ab,background:"transparent",border:"1.5px solid rgba(255,255,255,0.08)",color:C.sub}} onClick={()=>go(()=>{setPh("intro");setQi(0);setAns({});setRes(null);setShowAns(false);})}>
+          <button style={{...S.ab,background:"transparent",border:"1.5px solid rgba(0,0,0,0.06)",color:C.sub}} onClick={()=>go(()=>{setPh("intro");setQi(0);setAns({});setRes(null);setShowAns(false);})}>
             重新测试
           </button>
         </div>

@@ -4,3 +4,11 @@ compatibility_date = "2024-12-01"
 
 [assets]
 directory = "public"
+
+# ── D1 Database ──
+# Create: wrangler d1 create lovetype-db
+# Migrate: wrangler d1 execute lovetype-db --file=schema.sql
+[[d1_databases]]
+binding = "DB"
+database_name = "lovetype-db"
+database_id = "" # fill after: wrangler d1 create lovetype-db
