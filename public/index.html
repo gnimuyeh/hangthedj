@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>LoveType</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'PingFang SC','Noto Sans SC',-apple-system,sans-serif;
+    -webkit-font-smoothing: antialiased;
+    background: #FAFAF7;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .container {
+    max-width: 440px;
+    width: 100%;
+    text-align: center;
+  }
+  .brand {
+    font-size: 11px;
+    letter-spacing: 6px;
+    color: #C76D2E;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+  h1 {
+    font-size: 26px;
+    font-weight: 200;
+    color: #111;
+    letter-spacing: 3px;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    font-size: 11px;
+    color: #aaa;
+    letter-spacing: 2px;
+    margin-bottom: 24px;
+  }
+  .divider {
+    width: 28px;
+    height: 1px;
+    background: #C76D2E;
+    margin: 0 auto 28px;
+    opacity: 0.4;
+  }
+  .cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .card {
+    display: block;
+    text-decoration: none;
+    background: rgba(255,255,255,0.92);
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 14px;
+    padding: 24px 20px;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.02);
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .card:active { opacity: 0.8; transform: scale(0.98); }
+  .card-icon { font-size: 32px; margin-bottom: 10px; }
+  .card-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #111;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+  .card-desc {
+    font-size: 12px;
+    color: #777;
+    font-weight: 300;
+    line-height: 1.7;
+  }
+  .card-meta {
+    font-size: 10px;
+    color: #aaa;
+    margin-top: 10px;
+    letter-spacing: 1px;
+  }
+  .card-primary { border-color: rgba(199,109,46,0.2); }
+  .card-primary .card-title { color: #C76D2E; }
+  .footer {
+    margin-top: 32px;
+    font-size: 10px;
+    color: #ccc;
+    letter-spacing: 2px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="brand">LOVETYPE</div>
+  <h1>恋爱人格</h1>
+  <div class="subtitle">Love Personality</div>
+  <div class="divider"></div>
+  <div class="cards">
+    <a class="card card-primary" href="lovetype-test.html">
+      <div class="card-icon">🔮</div>
+      <div class="card-title">恋爱人格测试</div>
+      <div class="card-desc">4个维度 · 16种恋爱人格<br>探索你在亲密关系中的真实模式</div>
+      <div class="card-meta">32题快速版 / 60题完整版</div>
+    </a>
+    <a class="card" href="compatibility-quiz.html">
+      <div class="card-icon">💕</div>
+      <div class="card-title">恋爱契合度测试</div>
+      <div class="card-desc">和朋友一起测试<br>看看你们的恋爱契合度有多高</div>
+      <div class="card-meta">双人互动测试</div>
+    </a>
+  </div>
+  <div class="footer">LOVETYPE · 恋爱人格</div>
+</div>
+</body>
+</html>

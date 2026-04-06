@@ -1,5 +1,5 @@
-// Cloudflare Pages Advanced Mode — single worker entry point
-// Handles /api/chat, /api/chat/stream, /api/image routes + falls through to static assets
+// Cloudflare Worker — API proxy + static asset serving
+// Handles /api/chat, /api/chat/stream, /api/image routes + serves static files via Workers Static Assets
 
 const KEY = "sk-api-gwYvxa2sX0-B38idARiZPVmdq70lBjiw3xEsyO71psEkk-bHJHI_3O8vBRkx9r1D_r-x6QGlVrTpDBiV-UxBKCAN3ctFEVZ3MD9E2oNwIWGBj5ZwQMLCup8";
 const API_URL = "https://api.minimaxi.com/v1/chat/completions";
