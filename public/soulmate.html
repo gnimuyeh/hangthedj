@@ -523,6 +523,9 @@ let state = { phase:"welcome", guide:null, userName:localStorage.getItem('lovety
 let _lastApiError = "";
 let _lastFinishReason = "";
 
+// ── Device ID (shared with other LoveType apps) ──
+function getDeviceId(){let id=localStorage.getItem('lovetype_device_id');if(!id){id=crypto.randomUUID();localStorage.setItem('lovetype_device_id',id);}return id;}
+
 async function callAPI(system, messages, maxTokens=800, temperature) {
   _lastApiError = "";
   try {
@@ -536,7 +539,7 @@ async function callAPI(system, messages, maxTokens=800, temperature) {
 
     const r = await fetch("/api/chat", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-Device-Id": getDeviceId() },
       body: JSON.stringify(body),
       signal: controller.signal
     });
@@ -608,7 +611,7 @@ async function callAPIStream(system, messages, maxTokens, temperature, onProgres
 
     const r = await fetch("/api/chat/stream", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-Device-Id": getDeviceId() },
       body: JSON.stringify(body),
       signal: controller.signal
     });
@@ -2074,6 +2077,12 @@ async function runMatchWith(otherPersona) {
 // ── localStorage helpers ──
 function savePersona(p) {
   try { localStorage.setItem("soulmate_persona", JSON.stringify(p)); } catch(e) {}
+  // Also persist to server
+  fetch('/api/results', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Device-Id': getDeviceId() },
+    body: JSON.stringify({ test_type: 'soulmate', code: p.identity?.self_label || null, scores: p })
+  }).catch(() => {});
 }
 function saveSession() {
   try {

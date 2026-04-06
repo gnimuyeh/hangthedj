@@ -14,13 +14,13 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE INDEX IF NOT EXISTS idx_users_device ON users(device_id);
 
--- ── LoveType Test Results ──
+-- ── Test Results (all apps share this table) ──
 CREATE TABLE IF NOT EXISTS results (
   id         TEXT PRIMARY KEY,
   user_id    TEXT REFERENCES users(id) ON DELETE SET NULL,
-  test_type  TEXT NOT NULL,   -- 'lovetype' | 'compatibility'
-  code       TEXT,            -- e.g. 'SLAO' for lovetype
-  scores     TEXT NOT NULL,   -- JSON of dimension scores
+  test_type  TEXT NOT NULL,   -- 'lovetype' | 'soulmate'
+  code       TEXT,            -- e.g. 'SLAO' for lovetype, self_label for soulmate
+  scores     TEXT NOT NULL,   -- JSON: dimension scores (lovetype) or full persona (soulmate)
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
