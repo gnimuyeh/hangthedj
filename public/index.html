@@ -16,83 +16,52 @@
     justify-content: center;
     padding: 20px;
   }
-  .container {
-    max-width: 440px;
-    width: 100%;
-    text-align: center;
-  }
-  .brand {
-    font-size: 11px;
-    letter-spacing: 6px;
-    color: #C76D2E;
-    font-weight: 600;
-    margin-bottom: 16px;
-  }
-  h1 {
-    font-size: 26px;
-    font-weight: 200;
-    color: #111;
-    letter-spacing: 3px;
-    margin-bottom: 6px;
-  }
-  .subtitle {
-    font-size: 11px;
-    color: #aaa;
-    letter-spacing: 2px;
-    margin-bottom: 24px;
-  }
-  .divider {
-    width: 28px;
-    height: 1px;
-    background: #C76D2E;
-    margin: 0 auto 28px;
-    opacity: 0.4;
-  }
-  .cards {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
+  .container { max-width: 440px; width: 100%; text-align: center; }
+  .brand { font-size: 11px; letter-spacing: 6px; color: #C76D2E; font-weight: 600; margin-bottom: 16px; }
+  h1 { font-size: 26px; font-weight: 200; color: #111; letter-spacing: 3px; margin-bottom: 6px; }
+  .subtitle { font-size: 11px; color: #aaa; letter-spacing: 2px; margin-bottom: 24px; }
+  .divider { width: 28px; height: 1px; background: #C76D2E; margin: 0 auto 28px; opacity: 0.4; }
+  .cards { display: flex; flex-direction: column; gap: 12px; }
   .card {
-    display: block;
-    text-decoration: none;
-    background: rgba(255,255,255,0.92);
-    border: 1px solid rgba(0,0,0,0.06);
-    border-radius: 14px;
-    padding: 24px 20px;
-    box-shadow: 0 1px 8px rgba(0,0,0,0.02);
-    transition: all 0.2s;
-    cursor: pointer;
+    display: block; text-decoration: none;
+    background: rgba(255,255,255,0.92); border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 14px; padding: 24px 20px;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.02); transition: all 0.2s; cursor: pointer;
   }
   .card:active { opacity: 0.8; transform: scale(0.98); }
   .card-icon { font-size: 32px; margin-bottom: 10px; }
-  .card-title {
-    font-size: 16px;
-    font-weight: 500;
-    color: #111;
-    letter-spacing: 2px;
-    margin-bottom: 6px;
-  }
-  .card-desc {
-    font-size: 12px;
-    color: #777;
-    font-weight: 300;
-    line-height: 1.7;
-  }
-  .card-meta {
-    font-size: 10px;
-    color: #aaa;
-    margin-top: 10px;
-    letter-spacing: 1px;
-  }
+  .card-title { font-size: 16px; font-weight: 500; color: #111; letter-spacing: 2px; margin-bottom: 6px; }
+  .card-desc { font-size: 12px; color: #777; font-weight: 300; line-height: 1.7; }
+  .card-meta { font-size: 10px; color: #aaa; margin-top: 10px; letter-spacing: 1px; }
   .card-primary { border-color: rgba(199,109,46,0.2); }
   .card-primary .card-title { color: #C76D2E; }
-  .footer {
-    margin-top: 32px;
-    font-size: 10px;
-    color: #ccc;
-    letter-spacing: 2px;
+  /* Result card */
+  .result-card {
+    background: rgba(255,255,255,0.92); border: 1px solid rgba(199,109,46,0.2);
+    border-radius: 14px; padding: 28px 20px; margin-bottom: 12px;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.02);
   }
+  .result-icon { font-size: 48px; margin-bottom: 8px; }
+  .result-code { font-size: 22px; font-weight: 200; color: #C76D2E; letter-spacing: 6px; margin-bottom: 4px; }
+  .result-name { font-size: 17px; font-weight: 500; color: #111; margin-bottom: 4px; }
+  .result-en { font-size: 10px; color: #aaa; margin-bottom: 10px; }
+  .result-tag {
+    display: inline-block; font-size: 9px; padding: 3px 10px; border-radius: 14px;
+    background: rgba(199,109,46,0.08); color: #C76D2E; border: 1px solid rgba(199,109,46,0.15);
+    margin-bottom: 12px;
+  }
+  .result-tagline { font-size: 12px; line-height: 1.7; color: #666; font-weight: 300; }
+  .btn-row { display: flex; gap: 8px; margin-top: 16px; }
+  .btn {
+    flex: 1; display: block; text-decoration: none; text-align: center;
+    padding: 12px; border-radius: 10px; font-size: 13px; font-family: inherit;
+    cursor: pointer; letter-spacing: 2px; border: none; transition: all 0.2s;
+  }
+  .btn:active { opacity: 0.8; transform: scale(0.98); }
+  .btn-primary { background: #C76D2E; color: #fff; }
+  .btn-secondary { background: transparent; color: #C76D2E; border: 1px solid rgba(199,109,46,0.2); }
+  .footer { margin-top: 32px; font-size: 10px; color: #ccc; letter-spacing: 2px; }
+  .hidden { display: none; }
 </style>
 </head>
 <body>
@@ -101,7 +70,25 @@
   <h1>恋爱人格</h1>
   <div class="subtitle">Love Personality</div>
   <div class="divider"></div>
-  <div class="cards">
+
+  <!-- Returning user view (hidden by default) -->
+  <div id="returning" class="hidden">
+    <div class="result-card">
+      <div class="result-icon" id="r-icon"></div>
+      <div class="result-code" id="r-code"></div>
+      <div class="result-name" id="r-name"></div>
+      <div class="result-en" id="r-en"></div>
+      <span class="result-tag" id="r-group"></span>
+      <div class="result-tagline" id="r-tagline"></div>
+    </div>
+    <div class="btn-row">
+      <a class="btn btn-primary" href="lovetype-test.html">查看完整报告</a>
+      <a class="btn btn-secondary" id="btn-retest" href="lovetype-test.html">重新测试</a>
+    </div>
+  </div>
+
+  <!-- First-time visitor view -->
+  <div id="firsttime" class="cards">
     <a class="card card-primary" href="lovetype-test.html">
       <div class="card-icon">🔮</div>
       <div class="card-title">恋爱人格测试</div>
@@ -109,7 +96,62 @@
       <div class="card-meta">32题快速版 / 60题完整版</div>
     </a>
   </div>
+
   <div class="footer">LOVETYPE · 恋爱人格</div>
 </div>
+
+<script>
+const TYPES = {
+  SLAO:{n:"独行侠客",en:"Lone Ranger",ic:"\u{1F5E1}\uFE0F",g:"冷静守护者",tg:"理性自由的独立灵魂，爱是并肩远行而非互相束缚"},
+  SLAC:{n:"深海潜行者",en:"Deep Diver",ic:"\u{1F30A}",g:"冷静守护者",tg:"外表冷静内心深邃，一旦认定就全情投入"},
+  SLRO:{n:"铁面将军",en:"Iron General",ic:"\u{1F6E1}\uFE0F",g:"冷静守护者",tg:"有规划有担当的关系指挥官，用行动证明一切"},
+  SLRC:{n:"灯塔守望者",en:"Lighthouse Keeper",ic:"\u{1F3F0}",g:"冷静守护者",tg:"理性忠诚的守护者，为爱筑起最安全的港湾"},
+  SEAO:{n:"吟游歌者",en:"Wandering Bard",ic:"\u{1F3B5}",g:"温柔理想家",tg:"感性浪漫又保持自我，爱是灵感而非枷锁"},
+  SEAC:{n:"月光治愈师",en:"Moonlight Healer",ic:"\u{1F319}",g:"温柔理想家",tg:"温柔细腻的灵魂伴侣，用共情治愈一切疲惫"},
+  SERO:{n:"花园建筑师",en:"Garden Architect",ic:"\u{1F33F}",g:"温柔理想家",tg:"内在丰富不张扬，用耐心经营最有质感的关系"},
+  SERC:{n:"永恒誓约者",en:"Eternal Vow",ic:"\u{1F48D}",g:"温柔理想家",tg:"最传统的深情与忠诚，相信真爱就是一生一世"},
+  NLAO:{n:"闪电猎手",en:"Lightning Hunter",ic:"\u26A1",g:"热烈征服者",tg:"充满魅力的自由战士，用实力让人无法抗拒"},
+  NLAC:{n:"烈焰锻造师",en:"Flame Forger",ic:"\u{1F525}",g:"热烈征服者",tg:"需要深度连接的理性强者，爱得浓烈但头脑清醒"},
+  NLRO:{n:"王座执政官",en:"Throne Regent",ic:"\u{1F451}",g:"热烈征服者",tg:"有主见有规划的关系领袖，用担当赢得信任"},
+  NLRC:{n:"钻石守卫者",en:"Diamond Guard",ic:"\u{1F48E}",g:"热烈征服者",tg:"追求稳固关系的实力派，构建坚不可摧的爱情"},
+  NEAO:{n:"蝴蝶冒险家",en:"Butterfly Explorer",ic:"\u{1F98B}",g:"浪漫追光者",tg:"感性自由的灵魂舞者，爱情是场华丽的冒险"},
+  NEAC:{n:"烟火艺术家",en:"Firework Artist",ic:"\u{1F386}",g:"浪漫追光者",tg:"全情投入的极致浪漫主义者，爱得轰轰烈烈"},
+  NERO:{n:"红毯策展人",en:"Red Carpet Curator",ic:"\u{1F3AD}",g:"浪漫追光者",tg:"感性有条理的完美主义者，打造电影般的爱情"},
+  NERC:{n:"玫瑰骑士",en:"Rose Knight",ic:"\u{1F339}",g:"浪漫追光者",tg:"极致浪漫与绝对忠诚，爱就是毫无保留地奔赴"},
+};
+
+(function() {
+  // Check localStorage for saved result
+  try {
+    const saved = localStorage.getItem('lovetype_result');
+    if (!saved) return;
+    const res = JSON.parse(saved);
+    const code = res.code;
+    const tp = TYPES[code];
+    if (!tp) return;
+
+    // Populate returning user view
+    document.getElementById('r-icon').textContent = tp.ic;
+    document.getElementById('r-code').textContent = code;
+    document.getElementById('r-name').textContent = tp.n;
+    document.getElementById('r-en').textContent = tp.en;
+    document.getElementById('r-group').textContent = tp.g;
+    document.getElementById('r-tagline').textContent = tp.tg;
+
+    // Retest clears localStorage first
+    document.getElementById('btn-retest').addEventListener('click', function(e) {
+      e.preventDefault();
+      localStorage.removeItem('lovetype_result');
+      localStorage.removeItem('lovetype_answers');
+      localStorage.removeItem('lovetype_mode');
+      window.location.href = 'lovetype-test.html';
+    });
+
+    // Show returning, hide firsttime
+    document.getElementById('returning').classList.remove('hidden');
+    document.getElementById('firsttime').classList.add('hidden');
+  } catch(e) {}
+})();
+</script>
 </body>
 </html>

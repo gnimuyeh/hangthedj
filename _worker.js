@@ -113,22 +113,23 @@ function requirePOST(request) {
   return null;
 }
 
-/** Auth middleware (scaffold — returns user or null) */
+/** Device auth — find or create user by X-Device-Id header */
 async function getUser(request, env) {
-  const authHeader = request.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) return null;
-  const token = authHeader.slice(7);
+  const deviceId = request.headers.get("X-Device-Id");
+  if (!deviceId) return null;
 
-  // TODO: validate token against D1
-  // const row = await env.DB.prepare("SELECT * FROM sessions WHERE token = ? AND expires_at > datetime('now')").bind(token).first();
-  // return row ? { id: row.user_id, email: row.email } : null;
-  return null;
+  let user = await env.DB.prepare("SELECT * FROM users WHERE device_id = ?").bind(deviceId).first();
+  if (!user) {
+    const id = crypto.randomUUID();
+    await env.DB.prepare("INSERT INTO users (id, device_id) VALUES (?, ?)").bind(id, deviceId).run();
+    user = { id, device_id: deviceId };
+  }
+  return user;
 }
 
-/** Require authenticated user */
-async function requireAuth(request, env) {
-  const user = await getUser(request, env);
-  if (!user) return err("Unauthorized", 401);
+/** Require device ID */
+function requireDevice(request) {
+  if (!request.headers.get("X-Device-Id")) return err("X-Device-Id header required", 400);
   return null;
 }
 
@@ -258,30 +259,46 @@ async function handleImage(request) {
   }
 }
 
-// ── Auth Handlers (scaffold) ──
+// ── User + Results Handlers ──
 
-// POST /api/auth/register
-async function handleRegister(request, env) {
-  const cors = handleCORS(request); if (cors) return cors;
-  const post = requirePOST(request); if (post) return post;
-  // TODO: implement registration
-  return err("Not implemented", 501);
-}
-
-// POST /api/auth/login
-async function handleLogin(request, env) {
-  const cors = handleCORS(request); if (cors) return cors;
-  const post = requirePOST(request); if (post) return post;
-  // TODO: implement login
-  return err("Not implemented", 501);
-}
-
-// GET /api/auth/me
+// GET /api/auth/me — return current user
 async function handleMe(request, env) {
   const cors = handleCORS(request); if (cors) return cors;
-  const authErr = await requireAuth(request, env); if (authErr) return authErr;
+  const dev = requireDevice(request); if (dev) return dev;
   const user = await getUser(request, env);
   return json({ user });
+}
+
+// POST /api/results — save a test result
+async function handleSaveResult(request, env) {
+  const cors = handleCORS(request); if (cors) return cors;
+  const post = requirePOST(request); if (post) return post;
+  const dev = requireDevice(request); if (dev) return dev;
+  const user = await getUser(request, env);
+
+  const { test_type, code, scores } = await request.json();
+  if (!test_type || !scores) return err("test_type and scores required");
+
+  const id = crypto.randomUUID();
+  await env.DB.prepare(
+    "INSERT INTO results (id, user_id, test_type, code, scores) VALUES (?, ?, ?, ?, ?)"
+  ).bind(id, user.id, test_type, code || null, JSON.stringify(scores)).run();
+  return json({ id });
+}
+
+// GET /api/results — get user's test results
+async function handleGetResults(request, env) {
+  const cors = handleCORS(request); if (cors) return cors;
+  const dev = requireDevice(request); if (dev) return dev;
+  const user = await getUser(request, env);
+
+  const { results } = await env.DB.prepare(
+    "SELECT id, test_type, code, scores, created_at FROM results WHERE user_id = ? ORDER BY created_at DESC LIMIT 50"
+  ).bind(user.id).all();
+
+  // Parse scores JSON for each result
+  const parsed = results.map(r => ({ ...r, scores: JSON.parse(r.scores) }));
+  return json({ results: parsed });
 }
 
 // ── Router ──
@@ -290,9 +307,9 @@ const routes = {
   "POST /api/chat":        (req, env) => handleChat(req),
   "POST /api/chat/stream": (req, env) => handleChatStream(req),
   "POST /api/image":       (req, env) => handleImage(req),
-  "POST /api/auth/register": handleRegister,
-  "POST /api/auth/login":    handleLogin,
-  "GET /api/auth/me":        handleMe,
+  "GET /api/auth/me":      handleMe,
+  "POST /api/results":     handleSaveResult,
+  "GET /api/results":      handleGetResults,
 };
 
 function matchRoute(method, pathname) {

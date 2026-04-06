@@ -3,24 +3,16 @@
 
 -- ── Users ──
 CREATE TABLE IF NOT EXISTS users (
-  id         TEXT PRIMARY KEY,
-  email      TEXT UNIQUE NOT NULL,
-  name       TEXT NOT NULL,
-  password   TEXT NOT NULL,   -- hashed
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  id          TEXT PRIMARY KEY,
+  device_id   TEXT UNIQUE NOT NULL,
+  name        TEXT,
+  phone       TEXT UNIQUE,
+  avatar_url  TEXT,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- ── Sessions ──
-CREATE TABLE IF NOT EXISTS sessions (
-  token      TEXT PRIMARY KEY,
-  user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  expires_at TEXT NOT NULL,
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
-);
-
-CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
-CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_users_device ON users(device_id);
 
 -- ── Test Results ──
 CREATE TABLE IF NOT EXISTS results (

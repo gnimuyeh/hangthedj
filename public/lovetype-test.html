@@ -323,6 +323,20 @@ const dimK=["sn","le","ar","oc"];
 const lL=["安定 S","逻辑 L","敏捷 A","轨道 O"];
 const rL=["求证 N","情绪 E","规律 R","核心 C"];
 
+// ── Device auth helpers ──
+function getDeviceId() {
+  let id = localStorage.getItem('lovetype_device_id');
+  if (!id) { id = crypto.randomUUID(); localStorage.setItem('lovetype_device_id', id); }
+  return id;
+}
+function saveResultToServer(code, scores) {
+  fetch('/api/results', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Device-Id': getDeviceId() },
+    body: JSON.stringify({ test_type: 'lovetype', code, scores })
+  }).catch(() => {});
+}
+
 function App(){
   const[ph,setPh]=useState("intro");
   const[mode,setMode]=useState("quick");
@@ -359,6 +373,7 @@ function App(){
         else{
           const r=calc(na,mode);setRes(r);
           try{window.localStorage?.setItem('lovetype_result',JSON.stringify(r));window.localStorage?.setItem('lovetype_answers',JSON.stringify(na));window.localStorage?.setItem('lovetype_mode',mode);}catch(e){}
+          saveResultToServer(r.code, r.av);
           setPh("result");
         }
       });
