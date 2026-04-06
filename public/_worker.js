@@ -372,6 +372,18 @@ async function handleMe(request, env) {
   return json({ user });
 }
 
+// POST /api/auth/name — set user display name
+async function handleSetName(request, env) {
+  const cors = handleCORS(request); if (cors) return cors;
+  const post = requirePOST(request); if (post) return post;
+  const dev = requireDevice(request); if (dev) return dev;
+  const user = await getUser(request, env);
+  const { name } = await request.json();
+  if (!name?.trim()) return err("name required");
+  await env.DB.prepare("UPDATE users SET name = ?, updated_at = datetime('now') WHERE id = ?").bind(name.trim(), user.id).run();
+  return json({ ok: true });
+}
+
 // POST /api/results — save a test result
 async function handleSaveResult(request, env) {
   const cors = handleCORS(request); if (cors) return cors;
@@ -547,6 +559,7 @@ const routes = {
   "POST /api/chat/stream": (req, env) => handleChatStream(req),
   "POST /api/image":       (req, env) => handleImage(req),
   "GET /api/auth/me":      handleMe,
+  "POST /api/auth/name":   handleSetName,
   "POST /api/results":     handleSaveResult,
   "GET /api/results":      handleGetResults,
   "POST /api/quiz/generate": handleQuizGenerate,
