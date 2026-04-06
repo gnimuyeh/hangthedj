@@ -1,9 +1,6 @@
 name = "hangthedj"
-main = "_worker.js"
+pages_build_output_dir = "public"
 compatibility_date = "2024-12-01"
-
-[assets]
-directory = "public"
 
 # ── D1 Database ──
 # Create: wrangler d1 create lovetype-db
