@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>默契测试</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'PingFang SC','Noto Sans SC',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;background:#FAFAF7;color:#111;}
+button{font-family:inherit;-webkit-tap-highlight-color:transparent;cursor:pointer;}
+button:active{transform:scale(0.98);}
+::-webkit-scrollbar{display:none;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function(){var ow=console.warn;console.warn=function(){if(arguments[0]&&typeof arguments[0]==='string'&&arguments[0].indexOf('Babel')!==-1)return;ow.apply(console,arguments);};})();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js" data-presets="react"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script type="text/babel" data-type="module">
+const{useState,useRef,useCallback,useEffect}=React;
+
+// ── Device ID ──
+function getDeviceId(){let id=localStorage.getItem('lovetype_device_id');if(!id){id=crypto.randomUUID();localStorage.setItem('lovetype_device_id',id);}return id;}
+function apiHeaders(extra={}){return{'Content-Type':'application/json','X-Device-Id':getDeviceId(),...extra};}
+
+// ── Get quiz ID from URL ──
+const QUIZ_ID = window.location.pathname.split('/').filter(Boolean).pop();
+
+// ── Colors ──
+const C={bg:"#FAFAF7",card:"rgba(255,255,255,0.92)",bd:"rgba(0,0,0,0.06)",text:"#111",sub:"#777",mut:"#aaa",accent:"#C76D2E"};
+
+// ── Scoring ──
+function calcResult(answers, dims, qs){
+  const dimSum={},dimMax={},dimCount={};
+  dims.forEach(d=>{dimSum[d.key]=0;dimMax[d.key]=0;dimCount[d.key]=0;});
+  qs.forEach(q=>{
+    if(answers[q.id]!==undefined){
+      const chosen=answers[q.id];
+      const maxPossible=Math.max(...q.o.map(o=>o.s));
+      dimSum[q.d]+=Math.max(0,chosen);
+      dimMax[q.d]+=maxPossible;
+      dimCount[q.d]++;
+    }
+  });
+  let ts=0,tw=0;const det={};
+  dims.forEach(d=>{
+    const earned=dimSum[d.key];
+    const maxP=dimMax[d.key];
+    const rawSum=Object.keys(answers).reduce((acc,qid)=>{
+      const q=qs.find(qq=>qq.id===+qid);
+      if(q&&q.d===d.key)return acc+answers[qid];return acc;
+    },0);
+    const negPenalty=rawSum<0?Math.abs(rawSum)*5:0;
+    const pct=maxP>0?Math.max(0,Math.round((earned/maxP)*110-negPenalty)):0;
+    const score=Math.min(110,Math.max(0,pct));
+    det[d.key]={score,name:d.name,icon:d.icon};
+    // Descriptions
+    const s=score;
+    det[d.key].desc=s>=75?(d.descHigh||"高度契合"):s>=45?(d.descMid||"基础不错"):(d.descLow||"有差异，值得多聊聊");
+    ts+=score*(d.weight||1);tw+=(d.weight||1);
+  });
+  const overall=Math.min(110,Math.round(ts/tw));
+  return{overall,details:det};
+}
+
+function getLabel(s, tiers){
+  if(tiers&&tiers.length){
+    for(const t of tiers){if(s>=t.min)return{t:t.label,d:t.desc};}
+  }
+  if(s>=90)return{t:"天作之合",d:"你们在几乎所有维度上都高度一致。"};
+  if(s>=75)return{t:"心有灵犀",d:"你们在很多关键维度上高度契合。"};
+  if(s>=60)return{t:"值得探索",d:"有不少共同点，也有需要磨合的地方。"};
+  if(s>=40)return{t:"风格迥异",d:"差异不少，但差异也可以是互补。"};
+  return{t:"次元不同",d:"生活方式和价值观差距较大。"};
+}
+
+// ── Styles ──
+const S={
+  pg:{minHeight:"100vh",background:C.bg,display:"flex",justifyContent:"center",padding:"14px"},
+  wr:{maxWidth:500,width:"100%"},
+  cd:{background:C.card,borderRadius:14,padding:"18px 16px",border:"1px solid "+C.bd,marginBottom:10,boxShadow:"0 1px 8px rgba(0,0,0,0.02)"},
+  ab:{display:"block",width:"100%",padding:"14px",fontSize:13,borderRadius:14,cursor:"pointer",letterSpacing:2,textAlign:"center",border:"none",fontFamily:"inherit"},
+};
+
+function App(){
+  const[quiz,setQuiz]=useState(null);
+  const[loading,setLoading]=useState(true);
+  const[error,setError]=useState(null);
+  const[ph,setPh]=useState("loading");
+  const[qi,setQi]=useState(0);
+  const[ans,setAns]=useState({});
+  const[res,setRes]=useState(null);
+  const[fade,setFade]=useState(true);
+  const[sel,setSel]=useState(null);
+  const[showAns,setShowAns]=useState(false);
+  const[userName,setUserName]=useState("");
+  const[existingResult,setExistingResult]=useState(null);
+  const[submitting,setSubmitting]=useState(false);
+  const[saving,setSaving]=useState(false);
+  const[copied,setCopied]=useState(false);
+  const reportRef=useRef(null);
+
+  // Load quiz data + check existing submission
+  useEffect(()=>{
+    (async()=>{
+      try{
+        const r=await fetch("/api/quiz/"+QUIZ_ID);
+        if(!r.ok)throw new Error("Quiz not found");
+        const data=await r.json();
+        setQuiz(data);
+
+        // Check if already submitted
+        const mr=await fetch("/api/quiz/"+QUIZ_ID+"/my-result",{headers:apiHeaders()});
+        const mrd=await mr.json();
+        if(mrd.submitted){
+          setExistingResult(mrd);
+          const det={};
+          data.dimensions.forEach(d=>{
+            const s=mrd.scores[d.key]||0;
+            det[d.key]={score:s,name:d.name,icon:d.icon,
+              desc:s>=75?(d.descHigh||"高度契合"):s>=45?(d.descMid||"基础不错"):(d.descLow||"有差异")};
+          });
+          setRes({overall:mrd.overall,details:det});
+          setPh("result");
+        }else{
+          setPh("intro");
+        }
+      }catch(e){setError(e.message);}
+      setLoading(false);
+    })();
+  },[]);
+
+  const go=fn=>{setFade(false);setTimeout(()=>{fn();setFade(true);},200);};
+
+  const startQuiz=()=>{
+    if(!userName.trim()){alert("请输入你的名字");return;}
+    go(()=>setPh("quiz"));
+  };
+
+  const pick=(qid,score,idx)=>{
+    setSel(idx);
+    setTimeout(()=>{
+      const na={...ans,[qid]:score};setAns(na);setSel(null);
+      go(()=>{
+        if(qi<quiz.questions.length-1)setQi(qi+1);
+        else{
+          const r=calcResult(na,quiz.dimensions,quiz.questions);
+          setRes(r);
+          setPh("submitting");
+          // Submit to server
+          fetch("/api/quiz/"+QUIZ_ID+"/submit",{
+            method:"POST",
+            headers:apiHeaders(),
+            body:JSON.stringify({overall:r.overall,scores:Object.fromEntries(Object.entries(r.details).map(([k,v])=>[k,v.score])),name:userName})
+          }).then(()=>setPh("result")).catch(()=>setPh("result"));
+        }
+      });
+    },280);
+  };
+
+  const saveImage=useCallback(async()=>{
+    if(!reportRef.current||saving)return;
+    setSaving(true);
+    try{
+      const clone=reportRef.current.cloneNode(true);
+      clone.style.width='500px';clone.style.position='fixed';clone.style.left='-9999px';clone.style.background='#FAFAF7';
+      document.body.appendChild(clone);
+      if(window.html2canvas){
+        const cvs=await window.html2canvas(clone,{backgroundColor:"#FAFAF7",scale:2,useCORS:true,logging:false});
+        const link=document.createElement("a");link.download="compatibility-result.png";link.href=cvs.toDataURL("image/png");link.click();
+      }else{alert("请长按页面截图保存");}
+      document.body.removeChild(clone);
+    }catch(e){alert("图片生成失败，请尝试直接截图保存");}
+    setSaving(false);
+  },[saving]);
+
+  const copyLink=()=>{
+    const url=window.location.href.split('?')[0];
+    if(navigator.clipboard){navigator.clipboard.writeText(url).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});}
+    else{const ta=document.createElement('textarea');ta.value=url;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);setCopied(true);setTimeout(()=>setCopied(false),2000);}
+  };
+
+  // ─── Loading ───
+  if(ph==="loading")return(
+    <div style={S.pg}><div style={{...S.wr,textAlign:"center",paddingTop:100}}>
+      <div style={{fontSize:13,color:C.sub}}>加载中...</div>
+    </div></div>
+  );
+
+  if(error)return(
+    <div style={S.pg}><div style={{...S.wr,textAlign:"center",paddingTop:100}}>
+      <div style={{fontSize:16,color:C.text,marginBottom:8}}>测试不存在</div>
+      <div style={{fontSize:12,color:C.sub}}>{error}</div>
+    </div></div>
+  );
+
+  // ─── Intro ───
+  if(ph==="intro")return(
+    <div style={S.pg}><div style={{...S.wr,opacity:fade?1:0,transition:"opacity 0.4s"}}>
+      <div style={{textAlign:"center",padding:"40px 0 24px"}}>
+        <div style={{fontSize:11,letterSpacing:6,color:C.accent,fontWeight:600,marginBottom:16}}>LOVETYPE</div>
+        <h1 style={{fontSize:22,fontWeight:300,color:C.text,letterSpacing:2,marginBottom:8}}>{quiz.title}</h1>
+        {quiz.description&&<p style={{fontSize:12,color:C.sub,lineHeight:1.7,margin:"0 0 20px"}}>{quiz.description}</p>}
+        <div style={{width:28,height:1,background:C.accent,margin:"0 auto 24px",opacity:.4}}/>
+        <p style={{fontSize:12,color:C.mut,marginBottom:20}}>{quiz.questions.length}道题 · 约{Math.ceil(quiz.questions.length/5)}分钟</p>
+      </div>
+      <div style={S.cd}>
+        <p style={{fontSize:12,color:C.sub,marginBottom:10}}>输入你的名字</p>
+        <input value={userName} onChange={e=>setUserName(e.target.value)} placeholder="你的名字"
+          style={{width:"100%",padding:"12px 14px",fontSize:14,border:"1px solid "+C.bd,borderRadius:10,background:"transparent",color:C.text,outline:"none",fontFamily:"inherit"}}
+          onKeyDown={e=>{if(e.key==='Enter')startQuiz();}}/>
+      </div>
+      <button style={{...S.ab,background:C.accent,color:"#fff",fontWeight:500,boxShadow:"0 4px 20px rgba(199,109,46,0.25)"}} onClick={startQuiz}>
+        开始测试
+      </button>
+    </div></div>
+  );
+
+  // ─── Quiz ───
+  if(ph==="quiz"){
+    const q=quiz.questions[qi];
+    const dimName=quiz.dimensions.find(d=>d.key===q.d)?.name||"";
+    return(
+      <div style={S.pg}><div style={S.wr}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,paddingTop:8}}>
+          <div style={{flex:1,height:3,background:"rgba(0,0,0,0.04)",borderRadius:2,overflow:"hidden"}}>
+            <div style={{height:"100%",width:`${(qi/quiz.questions.length)*100}%`,background:C.accent,transition:"width 0.4s"}}/>
+          </div>
+          <span style={{fontSize:10,color:C.mut,whiteSpace:"nowrap"}}>{qi+1}/{quiz.questions.length}</span>
+        </div>
+        <div style={{fontSize:10,color:C.accent,letterSpacing:3,textAlign:"center",marginBottom:8}}>{dimName}</div>
+        <div style={{...S.cd,opacity:fade?1:0,transform:fade?"none":"translateY(6px)",transition:"all 0.25s"}}>
+          <p style={{fontSize:14,lineHeight:1.7,color:C.text,margin:"0 0 16px",textAlign:"center",fontWeight:300}}>{q.t}</p>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {q.o.map((o,i)=>{
+              const active=sel===i;
+              return(
+                <button key={i} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"12px 14px",background:active?"rgba(199,109,46,0.08)":"transparent",border:"1px solid "+(active?C.accent:C.bd),borderRadius:12,textAlign:"left",transition:"all 0.2s",width:"100%"}} onClick={()=>pick(q.id,o.s,i)}>
+                  <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:22,height:22,borderRadius:11,background:active?"rgba(199,109,46,0.15)":"rgba(0,0,0,0.04)",color:active?C.accent:C.mut,fontSize:10,fontWeight:600,flexShrink:0,marginTop:1}}>{String.fromCharCode(65+i)}</span>
+                  <span style={{fontSize:13,lineHeight:1.6,color:active?C.text:C.sub,fontWeight:active?400:300}}>{o.t}</span>
+                </button>
+              );
+            })}
+          </div>
+          {qi>0&&<button style={{marginTop:10,padding:"8px 0",fontSize:11,color:C.sub,background:"transparent",border:"none",cursor:"pointer",width:"100%",textAlign:"center"}}
+            onClick={()=>go(()=>{const na={...ans};delete na[quiz.questions[qi-1].id];setAns(na);setQi(qi-1);})}>
+            ← 上一题
+          </button>}
+        </div>
+      </div></div>
+    );
+  }
+
+  // ─── Submitting ───
+  if(ph==="submitting")return(
+    <div style={S.pg}><div style={{...S.wr,textAlign:"center",paddingTop:100}}>
+      <div style={{fontSize:13,color:C.sub}}>提交中...</div>
+    </div></div>
+  );
+
+  // ─── Result ───
+  if(ph==="result"&&res){
+    const lbl=getLabel(res.overall,quiz.config?.tiers);
+    const dims=Object.entries(res.details);
+    const hasLovetype=!!localStorage.getItem('lovetype_result');
+    return(
+      <div style={S.pg}><div style={S.wr}>
+        <div ref={reportRef} style={{opacity:fade?1:0,transition:"opacity 0.4s"}}>
+          <div style={{textAlign:"center",padding:"24px 0 20px"}}>
+            <div style={{fontSize:11,letterSpacing:6,color:C.accent,fontWeight:600,marginBottom:12}}>LOVETYPE</div>
+            <h2 style={{fontSize:18,fontWeight:300,color:C.text,letterSpacing:2,marginBottom:16}}>{quiz.title}</h2>
+            <div style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:90,height:90,borderRadius:45,background:"linear-gradient(135deg,#C76D2E,#E8A86B)",marginBottom:12}}>
+              <span style={{fontSize:34,fontWeight:300,color:"#fff"}}>{res.overall}</span>
+            </div>
+            <div style={{fontSize:16,fontWeight:500,color:C.accent,letterSpacing:3,marginBottom:4}}>{lbl.t}</div>
+            <p style={{fontSize:12,color:C.sub,lineHeight:1.6,padding:"0 20px"}}>{lbl.d}</p>
+          </div>
+
+          {/* Dimension breakdown */}
+          <div style={S.cd}>
+            <h3 style={{fontSize:13,fontWeight:500,color:C.text,letterSpacing:2,marginBottom:12}}>维度详情</h3>
+            {dims.map(([k,d],i)=>(
+              <div key={k} style={{marginBottom:i<dims.length-1?14:0}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                  <span style={{fontSize:12,color:C.text}}>{d.icon} {d.name}</span>
+                  <span style={{fontSize:12,fontWeight:600,color:C.accent}}>{d.score}</span>
+                </div>
+                <div style={{height:5,background:"rgba(0,0,0,0.04)",borderRadius:3,overflow:"hidden",marginBottom:4}}>
+                  <div style={{height:"100%",width:Math.min(100,d.score)+"%",borderRadius:3,transition:"width 0.5s",
+                    background:d.score>=75?"linear-gradient(90deg,#C76D2E,#E8A86B)":d.score>=45?"linear-gradient(90deg,#E8A86B,#FFCC5C)":"linear-gradient(90deg,#FF6B6B,#EE5A6F)"}}/>
+                </div>
+                <p style={{fontSize:11,color:C.sub,lineHeight:1.5}}>{d.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Answer review */}
+          {showAns&&<div style={S.cd}>
+            <h3 style={{fontSize:13,fontWeight:500,color:C.text,letterSpacing:2,marginBottom:10}}>答题回顾</h3>
+            {quiz.questions.map((q,i)=>{
+              const chosen=ans[q.id];
+              const opt=q.o.find(o=>o.s===chosen);
+              return(
+                <div key={q.id} style={{marginBottom:i<quiz.questions.length-1?10:0,paddingBottom:i<quiz.questions.length-1?10:0,borderBottom:i<quiz.questions.length-1?"1px solid "+C.bd:"none"}}>
+                  <p style={{fontSize:11,color:C.accent,marginBottom:2}}>{quiz.dimensions.find(d=>d.key===q.d)?.name}</p>
+                  <p style={{fontSize:12,color:C.text,margin:"0 0 3px",lineHeight:1.5}}>{q.t}</p>
+                  {opt&&<p style={{fontSize:11,color:C.sub}}>→ {opt.t}</p>}
+                </div>
+              );
+            })}
+          </div>}
+        </div>
+
+        {/* Actions */}
+        <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:4}}>
+          <button style={{...S.ab,background:"rgba(0,0,0,0.04)",border:"1px solid "+C.bd,color:C.text}} onClick={()=>setShowAns(!showAns)}>
+            {showAns?"收起答题回顾":"查看答题回顾"}
+          </button>
+          <button style={{...S.ab,background:"linear-gradient(135deg,#C76D2E,#E8A86B)",color:"#fff",fontWeight:500,boxShadow:"0 4px 20px rgba(199,109,46,0.25)"}} onClick={saveImage}>
+            {saving?"生成中...":"📷 保存结果图片"}
+          </button>
+          <button style={{...S.ab,background:copied?"rgba(199,109,46,0.1)":"rgba(0,0,0,0.04)",border:"1px solid "+(copied?C.accent:C.bd),color:copied?C.accent:C.text}} onClick={copyLink}>
+            {copied?"已复制！":"🔗 复制测试链接"}
+          </button>
+          {!hasLovetype&&(
+            <a href="/lovetype-test.html" style={{...S.ab,background:"rgba(199,109,46,0.08)",border:"1px solid rgba(199,109,46,0.15)",color:C.accent,textDecoration:"none",marginTop:4}}>
+              🔮 想更了解自己？来测测你的恋爱人格
+            </a>
+          )}
+        </div>
+        <div style={{textAlign:"center",padding:"16px",fontSize:10,color:C.mut,letterSpacing:2}}>LOVETYPE · 默契测试</div>
+      </div></div>
+    );
+  }
+
+  return null;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

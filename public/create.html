@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>创建默契测试 — LoveType</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'PingFang SC','Noto Sans SC',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;background:#FAFAF7;color:#111;}
+button{font-family:inherit;-webkit-tap-highlight-color:transparent;cursor:pointer;}
+button:active{transform:scale(0.98);}
+::-webkit-scrollbar{display:none;}
+</style>
+</head>
+<body>
+<script>if(!localStorage.getItem("lovetype_user_name"))window.location.href="/";</script>
+<div id="root"></div>
+<script>
+(function(){var ow=console.warn;console.warn=function(){if(arguments[0]&&typeof arguments[0]==='string'&&arguments[0].indexOf('Babel')!==-1)return;ow.apply(console,arguments);};})();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js" data-presets="react"></script>
+<script type="text/babel" data-type="module">
+const{useState,useRef,useEffect}=React;
+
+function getDeviceId(){let id=localStorage.getItem('lovetype_device_id');if(!id){id=crypto.randomUUID();localStorage.setItem('lovetype_device_id',id);}return id;}
+function apiHeaders(){return{'Content-Type':'application/json','X-Device-Id':getDeviceId()};}
+
+const C={bg:"#FAFAF7",card:"rgba(255,255,255,0.92)",bd:"rgba(0,0,0,0.06)",text:"#111",sub:"#777",mut:"#aaa",accent:"#C76D2E"};
+
+const INTERVIEW_SYS = `你是一个恋爱契合度测试设计专家。你的任务是通过5-8轮对话，了解用户在亲密关系中的偏好、价值观和生活方式，为他们定制一套个性化的默契测试。
+
+对话策略：
+
+第1轮：生活背景——你做什么工作？生活节奏？有什么不常规的地方伴侣需要接受？硬性底线？
+第2轮：关系动态——希望的分工？需要多少个人空间？理想的工作日/周末？
+第3轮：价值观——最看重伴侣什么？怎么处理冲突？健康运动饮食态度？
+第4轮：深层——家庭孩子计划？忠诚边界？想避免什么模式？
+第5轮：校准——3句话描述理想伴侣。什么大多数人想不到但对你很重要？
+
+风格：每条2-4句话，口语化，自然追问。适当给出观察。
+覆盖足够后说："我已经了解够了！点击下方的「生成测试」按钮，我帮你定制一套专属默契测试。"`;
+
+function App(){
+  const[ph,setPh]=useState("chat");
+  const[msgs,setMsgs]=useState([]);
+  const[input,setInput]=useState("");
+  const[loading,setLoading]=useState(false);
+  const[generating,setGenerating]=useState(false);
+  const[quizUrl,setQuizUrl]=useState(null);
+  const[copied,setCopied]=useState(false);
+  const[error,setError]=useState(null);
+  const chatRef=useRef(null);
+  const inputRef=useRef(null);
+
+  // Kick off interview on mount — seed a hidden user message to get AI's first reply
+  useEffect(()=>{
+    const seed=[{role:"user",content:"你好，我想创建一个专属的恋爱默契测试，帮我开始吧"}];
+    setLoading(true);
+    fetch("/api/chat",{
+      method:"POST",headers:apiHeaders(),
+      body:JSON.stringify({system:INTERVIEW_SYS,messages:seed,max_tokens:800,temperature:0.85})
+    }).then(r=>r.json()).then(d=>{
+      if(d.error)throw new Error(d.error);
+      // Store seed in history but only show AI's greeting
+      setMsgs([{role:"assistant",content:d.text,_seed:seed}]);
+    }).catch(e=>setError(e.message)).finally(()=>setLoading(false));
+  },[]);
+
+  useEffect(()=>{
+    if(chatRef.current)chatRef.current.scrollTop=chatRef.current.scrollHeight;
+  },[msgs]);
+
+  async function sendToAI(history){
+    setLoading(true);
+    try{
+      // Prepend seed message so API always has full context
+      const seed=history[0]?._seed||msgs[0]?._seed||[{role:"user",content:"你好，我想创建一个专属的恋爱默契测试，帮我开始吧"}];
+      const apiMsgs=[...seed,...history.map(m=>({role:m.role,content:m.content}))];
+      const r=await fetch("/api/chat",{
+        method:"POST",
+        headers:apiHeaders(),
+        body:JSON.stringify({system:INTERVIEW_SYS,messages:apiMsgs,max_tokens:800,temperature:0.85})
+      });
+      const d=await r.json();
+      if(d.error)throw new Error(d.error);
+      const aiMsg={role:"assistant",content:d.text};
+      setMsgs([...history,aiMsg]);
+    }catch(e){setError(e.message);}
+    setLoading(false);
+  }
+
+  function sendMessage(){
+    if(!input.trim()||loading)return;
+    const userMsg={role:"user",content:input.trim()};
+    const newMsgs=[...msgs,userMsg];
+    setMsgs(newMsgs);
+    setInput("");
+    sendToAI(newMsgs);
+  }
+
+  async function generateQuiz(){
+    setGenerating(true);setError(null);
+    try{
+      // Build transcript from messages
+      const transcript=msgs.map(m=>(m.role==="user"?"用户：":"AI：")+m.content).join("\n\n");
+      const r=await fetch("/api/quiz/generate",{
+        method:"POST",
+        headers:apiHeaders(),
+        body:JSON.stringify({transcript})
+      });
+      const d=await r.json();
+      if(d.error)throw new Error(d.error);
+      setQuizUrl(window.location.origin+"/quiz/"+d.id);
+      setPh("done");
+    }catch(e){setError(e.message);setGenerating(false);}
+  }
+
+  const copyLink=()=>{
+    if(!quizUrl)return;
+    if(navigator.clipboard){navigator.clipboard.writeText(quizUrl).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});}
+    else{const ta=document.createElement('textarea');ta.value=quizUrl;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);setCopied(true);setTimeout(()=>setCopied(false),2000);}
+  };
+
+  const S={
+    pg:{minHeight:"100vh",display:"flex",flexDirection:"column",background:C.bg},
+    header:{padding:"12px 16px",textAlign:"center",borderBottom:"1px solid "+C.bd,background:"rgba(255,255,255,0.8)",flexShrink:0},
+    chat:{flex:1,overflow:"auto",padding:"12px 14px"},
+    bubble:(isUser)=>({
+      maxWidth:"85%",padding:"10px 14px",borderRadius:isUser?"14px 14px 4px 14px":"14px 14px 14px 4px",
+      background:isUser?C.accent:C.card,color:isUser?"#fff":C.text,
+      fontSize:13,lineHeight:1.7,fontWeight:300,marginBottom:8,
+      marginLeft:isUser?"auto":0,marginRight:isUser?0:"auto",
+      border:isUser?"none":"1px solid "+C.bd,whiteSpace:"pre-wrap",
+    }),
+    toolbar:{padding:"10px 14px",borderTop:"1px solid "+C.bd,background:"rgba(255,255,255,0.9)",display:"flex",gap:8,flexShrink:0},
+    input:{flex:1,padding:"10px 14px",fontSize:14,border:"1px solid "+C.bd,borderRadius:20,background:"transparent",color:C.text,outline:"none",fontFamily:"inherit"},
+    sendBtn:{padding:"10px 16px",borderRadius:20,border:"none",background:C.accent,color:"#fff",fontSize:13,fontWeight:500},
+    genBtn:{padding:"10px 16px",borderRadius:20,border:"1px solid "+C.accent,background:"rgba(199,109,46,0.08)",color:C.accent,fontSize:12,fontWeight:500,whiteSpace:"nowrap"},
+  };
+
+  // ─── Done ───
+  if(ph==="done")return(
+    <div style={{...S.pg,alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{maxWidth:440,width:"100%",textAlign:"center"}}>
+        <div style={{fontSize:48,marginBottom:12}}>🎉</div>
+        <h2 style={{fontSize:20,fontWeight:300,color:C.text,letterSpacing:2,marginBottom:8}}>测试已生成！</h2>
+        <p style={{fontSize:12,color:C.sub,marginBottom:24,lineHeight:1.7}}>把链接分享给你想测试的人</p>
+        <div style={{background:C.card,border:"1px solid "+C.bd,borderRadius:12,padding:"14px 16px",marginBottom:16,fontSize:13,color:C.accent,wordBreak:"break-all"}}>
+          {quizUrl}
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          <button style={{padding:"14px",fontSize:14,fontWeight:500,color:"#fff",background:C.accent,border:"none",borderRadius:12,letterSpacing:2,boxShadow:"0 4px 20px rgba(199,109,46,0.25)"}} onClick={copyLink}>
+            {copied?"已复制！":"📋 复制链接"}
+          </button>
+          <a href={quizUrl} style={{padding:"14px",fontSize:13,color:C.accent,background:"rgba(199,109,46,0.08)",border:"1px solid rgba(199,109,46,0.15)",borderRadius:12,letterSpacing:2,textDecoration:"none",textAlign:"center"}}>
+            👀 预览测试
+          </a>
+          <a href="/" style={{padding:"12px",fontSize:12,color:C.sub,textDecoration:"none",textAlign:"center"}}>
+            ← 返回首页
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ─── Chat ───
+  return(
+    <div style={S.pg}>
+      <div style={S.header}>
+        <div style={{fontSize:10,letterSpacing:4,color:C.accent,fontWeight:600,marginBottom:2}}>LOVETYPE</div>
+        <div style={{fontSize:14,fontWeight:300,color:C.text,letterSpacing:2}}>创建你的默契测试</div>
+      </div>
+      <div ref={chatRef} style={S.chat}>
+        {msgs.map((m,i)=><div key={i} style={S.bubble(m.role==="user")}>{m.content}</div>)}
+        {loading&&<div style={{...S.bubble(false),color:C.mut}}>思考中...</div>}
+        {error&&<div style={{fontSize:11,color:"#C42B4B",padding:"8px 12px",background:"#FEF2F2",borderRadius:10,marginBottom:8}}>{error}</div>}
+      </div>
+      <div style={S.toolbar}>
+        <input ref={inputRef} value={input} onChange={e=>setInput(e.target.value)}
+          onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}}
+          placeholder="输入你的回答..." style={S.input} disabled={loading||generating}/>
+        <button onClick={sendMessage} disabled={loading||!input.trim()} style={{...S.sendBtn,opacity:loading||!input.trim()?0.5:1}}>发送</button>
+        {msgs.length>=6&&!generating&&(
+          <button onClick={generateQuiz} style={S.genBtn}>生成测试</button>
+        )}
+        {generating&&<span style={{fontSize:11,color:C.accent,alignSelf:"center",whiteSpace:"nowrap"}}>生成中...</span>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

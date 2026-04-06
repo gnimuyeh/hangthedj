@@ -13,16 +13,16 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root {
-  --bg: #FFF7F0; --card: #FFFFFF;
-  --pri: #FF8A9E; --priL: #FFD4DC; --priG: rgba(255,138,158,0.12);
-  --sec: #C4B5FD; --secL: #EDE9FE;
-  --txt: #3D2C2E; --txtS: #8B7577; --txtM: #BCA8AA;
-  --brd: rgba(255,138,158,0.15);
-  --grad: linear-gradient(135deg,#FF8A9E,#C4B5FD 50%,#6EE7B7);
-  --gradS: linear-gradient(135deg,#FFD4DC,#EDE9FE 50%,#D1FAE5);
-  --gradW: linear-gradient(135deg,#FF8A9E,#FFB5C2);
-  --shd: 0 4px 24px rgba(255,138,158,0.12);
-  --glow: 0 0 16px rgba(255,138,158,0.15);
+  --bg: #FAFAF7; --card: rgba(255,255,255,0.92);
+  --pri: #C76D2E; --priL: rgba(199,109,46,0.12); --priG: rgba(199,109,46,0.08);
+  --sec: #E8A86B; --secL: rgba(232,168,107,0.12);
+  --txt: #111; --txtS: #777; --txtM: #aaa;
+  --brd: rgba(0,0,0,0.06);
+  --grad: linear-gradient(135deg,#C76D2E,#E8A86B);
+  --gradS: linear-gradient(135deg,rgba(199,109,46,0.1),rgba(232,168,107,0.1));
+  --gradW: linear-gradient(135deg,#C76D2E,#E8A86B);
+  --shd: 0 1px 8px rgba(0,0,0,0.02);
+  --glow: 0 0 16px rgba(199,109,46,0.1);
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif; background:var(--bg); color:var(--txt); -webkit-font-smoothing:antialiased; }
@@ -30,21 +30,21 @@ body { font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif
 
 /* Welcome */
 .welcome { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 24px; text-align:center; }
-.welcome-icon { width:90px; height:90px; border-radius:24px; background:rgba(255,247,240,0.6); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1.5px solid rgba(255,138,158,0.2); display:flex; align-items:center; justify-content:center; font-size:44px; margin-bottom:24px; box-shadow:0 0 24px rgba(255,138,158,0.15), 0 0 48px rgba(196,181,253,0.1), var(--shd); animation:glow-pulse 3s ease-in-out infinite; }
+.welcome-icon { width:90px; height:90px; border-radius:24px; background:rgba(255,247,240,0.6); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1.5px solid rgba(199,109,46,0.15); display:flex; align-items:center; justify-content:center; font-size:44px; margin-bottom:24px; box-shadow:0 0 24px rgba(199,109,46,0.1), 0 0 48px rgba(232,168,107,0.08), var(--shd); animation:glow-pulse 3s ease-in-out infinite; }
 .welcome h1 { font-size:30px; font-weight:800; line-height:1.3; margin-bottom:8px; }
 .welcome h1 span { background:var(--grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
 .welcome p { color:var(--txtS); font-size:15px; line-height:1.7; max-width:280px; margin-bottom:36px; }
 .welcome .note { color:var(--txtM); font-size:12px; margin-top:24px; line-height:1.5; }
-.btn-main { background:var(--gradW); border:none; color:white; border-radius:28px; padding:16px 48px; font-size:17px; font-weight:700; cursor:pointer; box-shadow:0 8px 32px rgba(255,138,158,0.3); letter-spacing:1px; font-family:inherit; }
+.btn-main { background:var(--gradW); border:none; color:white; border-radius:28px; padding:16px 48px; font-size:17px; font-weight:700; cursor:pointer; box-shadow:0 8px 32px rgba(199,109,46,0.2); letter-spacing:1px; font-family:inherit; }
 
 /* Header */
 .header { background:rgba(255,247,240,0.95); backdrop-filter:blur(12px); border-bottom:1px solid var(--brd); position:sticky; top:0; z-index:10; flex-shrink:0; }
 .header-row { padding:12px 20px; display:flex; align-items:center; gap:10px; }
-.header-ava { width:38px; height:38px; border-radius:12px; background:rgba(255,247,240,0.6); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border:1px solid rgba(255,138,158,0.15); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; box-shadow:0 0 12px rgba(255,138,158,0.12); }
+.header-ava { width:38px; height:38px; border-radius:12px; background:rgba(255,247,240,0.6); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border:1px solid rgba(199,109,46,0.1); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; box-shadow:0 0 12px rgba(199,109,46,0.08); }
 .header-info { flex:1; }
 .header-info .name { font-weight:700; font-size:15px; }
 .header-info .sub { font-size:11px; color:var(--txtM); }
-.btn-gen { background:var(--gradW); border:none; color:white; border-radius:16px; padding:7px 16px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 2px 12px rgba(255,138,158,0.3); font-family:inherit; }
+.btn-gen { background:var(--gradW); border:none; color:white; border-radius:16px; padding:7px 16px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 2px 12px rgba(199,109,46,0.2); font-family:inherit; }
 .progress { padding:6px 20px; background:var(--priG); font-size:12px; color:var(--pri); font-weight:600; text-align:center; }
 
 /* Messages */
@@ -67,9 +67,9 @@ body { font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif
 /* Loading */
 .loading { flex:1; display:flex; align-items:center; justify-content:center; }
 .loading-inner { text-align:center; padding:40px; }
-.loading-icon { width:80px; height:80px; border-radius:50%; background:rgba(255,247,240,0.6); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1.5px solid rgba(255,138,158,0.15); margin:0 auto 24px; display:flex; align-items:center; justify-content:center; font-size:36px; animation:pulse 2s infinite; box-shadow:0 0 20px rgba(255,138,158,0.15), 0 0 40px rgba(196,181,253,0.08); }
-@keyframes pulse { 0%,100%{transform:scale(1);box-shadow:0 0 20px rgba(255,138,158,0.12)} 50%{transform:scale(1.08);box-shadow:0 0 36px rgba(255,138,158,0.25), 0 0 48px rgba(196,181,253,0.12)} }
-@keyframes glow-pulse { 0%,100%{box-shadow:0 0 20px rgba(255,138,158,0.15), 0 0 48px rgba(196,181,253,0.08), var(--shd)} 50%{box-shadow:0 0 32px rgba(255,138,158,0.28), 0 0 56px rgba(196,181,253,0.18), var(--shd)} }
+.loading-icon { width:80px; height:80px; border-radius:50%; background:rgba(255,247,240,0.6); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1.5px solid rgba(199,109,46,0.1); margin:0 auto 24px; display:flex; align-items:center; justify-content:center; font-size:36px; animation:pulse 2s infinite; box-shadow:0 0 20px rgba(199,109,46,0.1), 0 0 40px rgba(196,181,253,0.08); }
+@keyframes pulse { 0%,100%{transform:scale(1);box-shadow:0 0 20px rgba(199,109,46,0.08)} 50%{transform:scale(1.08);box-shadow:0 0 36px rgba(255,138,158,0.25), 0 0 48px rgba(196,181,253,0.12)} }
+@keyframes glow-pulse { 0%,100%{box-shadow:0 0 20px rgba(199,109,46,0.1), 0 0 48px rgba(196,181,253,0.08), var(--shd)} 50%{box-shadow:0 0 32px rgba(255,138,158,0.28), 0 0 56px rgba(196,181,253,0.18), var(--shd)} }
 .loading h2 { font-size:22px; font-weight:700; margin-bottom:8px; }
 .loading p { color:var(--txtS); font-size:14px; }
 
@@ -84,7 +84,7 @@ body { font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif
 .rcard h3 { font-size:16px; font-weight:700; margin-bottom:12px; }
 .tag { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:500; margin:3px 4px 3px 0; }
 .tag.pink { background:var(--priL); color:var(--pri); }
-.tag.purple { background:var(--secL); color:#7C3AED; }
+.tag.purple { background:var(--secL); color:#C76D2E; }
 .tag.green { background:#D1FAE5; color:#059669; }
 .tag.yellow { background:#FEF3C7; color:#D97706; }
 .bar-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; font-size:13px; }
@@ -96,7 +96,7 @@ body { font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif
 .actions { padding:0 16px 16px; display:flex; gap:10px; }
 .actions button { flex:1; padding:14px; border-radius:20px; font-size:14px; cursor:pointer; font-family:inherit; }
 .actions .sec { background:var(--card); border:1.5px solid var(--brd); color:var(--txtS); }
-.actions .prim { background:var(--gradW); border:none; color:white; font-weight:600; box-shadow:0 2px 12px rgba(255,138,158,0.3); }
+.actions .prim { background:var(--gradW); border:none; color:white; font-weight:600; box-shadow:0 2px 12px rgba(199,109,46,0.2); }
 .qr-area { margin:0 16px 16px; background:var(--grad); border-radius:24px; padding:24px; text-align:center; }
 .qr-box { width:176px; height:176px; margin:0 auto; background:var(--card); border-radius:16px; display:flex; align-items:center; justify-content:center; box-shadow:var(--shd); padding:8px; overflow:hidden; }
 .qr-box span { font-size:11px; color:var(--txtM); text-align:center; line-height:1.4; }
@@ -111,7 +111,7 @@ body { font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif
 .sim-timeline::before { content:""; position:absolute; left:16px; top:0; bottom:0; width:2px; background:var(--gradS); border-radius:1px; }
 .sim-scene { position:relative; padding-left:42px; margin-bottom:20px; }
 .sim-scene:last-child { margin-bottom:0; }
-.sim-dot { position:absolute; left:9px; top:2px; width:16px; height:16px; border-radius:50%; background:var(--grad); box-shadow:0 2px 8px rgba(255,138,158,0.3); }
+.sim-dot { position:absolute; left:9px; top:2px; width:16px; height:16px; border-radius:50%; background:var(--grad); box-shadow:0 2px 8px rgba(199,109,46,0.2); }
 .sim-dot::after { content:""; position:absolute; left:5px; top:5px; width:6px; height:6px; border-radius:50%; background:white; }
 .sim-time { font-size:11px; color:var(--pri); font-weight:600; letter-spacing:0.5px; margin-bottom:4px; }
 .sim-card { background:var(--card); border-radius:20px; padding:16px 18px; box-shadow:0 2px 12px rgba(0,0,0,0.04); }
@@ -127,7 +127,7 @@ body { font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif
 .sim-header .names-row { display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:16px; position:relative; z-index:1; }
 .sim-header .name-pill { background:rgba(255,255,255,0.2); color:white; padding:6px 16px; border-radius:20px; font-size:14px; font-weight:600; border:1.5px solid rgba(255,255,255,0.3); }
 .sim-header .name-x { color:rgba(255,255,255,0.6); font-size:18px; font-weight:300; }
-.sim-disclaimer { margin:0 16px 16px; padding:12px 16px; background:var(--secL); border-radius:16px; font-size:11px; color:#7C3AED; line-height:1.5; text-align:center; }
+.sim-disclaimer { margin:0 16px 16px; padding:12px 16px; background:var(--secL); border-radius:16px; font-size:11px; color:#C76D2E; line-height:1.5; text-align:center; }
 
 /* Radar chart */
 
@@ -148,6 +148,7 @@ body { font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif
 </style>
 </head>
 <body>
+<script>if(!localStorage.getItem("lovetype_user_name"))window.location.href="/";</script>
 
 <div class="shell" id="app">
   <!-- JS renders here -->
@@ -512,7 +513,7 @@ const GUIDES = {
 // STATE
 // ═══════════════════════════════════════
 
-let state = { phase:"welcome", guide:null, userName:"", msgs:[], input:"", typing:false, msgCount:0, coveredDimensions:[], persona:null, simulation:null, showBuild:false, apiError:false, pendingMatch:null, scannedPersona:null, buildError:null, failedCalls:[], extractionProgress:null, matchFailed:false };
+let state = { phase:"welcome", guide:null, userName:localStorage.getItem('lovetype_user_name')||"", msgs:[], input:"", typing:false, msgCount:0, coveredDimensions:[], persona:null, simulation:null, showBuild:false, apiError:false, pendingMatch:null, scannedPersona:null, buildError:null, failedCalls:[], extractionProgress:null, matchFailed:false };
 
 // ═══════════════════════════════════════
 // API
@@ -521,6 +522,9 @@ let state = { phase:"welcome", guide:null, userName:"", msgs:[], input:"", typin
 // API via Cloudflare Pages proxy (CORS workaround — MiniMax blocks direct browser calls)
 let _lastApiError = "";
 let _lastFinishReason = "";
+
+// ── Device ID (shared with other LoveType apps) ──
+function getDeviceId(){let id=localStorage.getItem('lovetype_device_id');if(!id){id=crypto.randomUUID();localStorage.setItem('lovetype_device_id',id);}return id;}
 
 async function callAPI(system, messages, maxTokens=800, temperature) {
   _lastApiError = "";
@@ -535,7 +539,7 @@ async function callAPI(system, messages, maxTokens=800, temperature) {
 
     const r = await fetch("/api/chat", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-Device-Id": getDeviceId() },
       body: JSON.stringify(body),
       signal: controller.signal
     });
@@ -607,7 +611,7 @@ async function callAPIStream(system, messages, maxTokens, temperature, onProgres
 
     const r = await fetch("/api/chat/stream", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-Device-Id": getDeviceId() },
       body: JSON.stringify(body),
       signal: controller.signal
     });
@@ -934,7 +938,7 @@ function generateQR(container, url) {
       text: url,
       width: 160,
       height: 160,
-      colorDark: "#3D2C2E",
+      colorDark: "#111",
       colorLight: "#FFFFFF",
       correctLevel: QRCode.CorrectLevel.L,
     });
@@ -978,7 +982,7 @@ async function exportAsImage(elementId, filename) {
       maxHeight:"none"
     });
     document.body.appendChild(clone);
-    const canvas = await html2canvas(clone, { backgroundColor:"#FFF7F0", scale:2, useCORS:true, logging:false });
+    const canvas = await html2canvas(clone, { backgroundColor:"#FAFAF7", scale:2, useCORS:true, logging:false });
     clone.remove();
     showImageOverlay(canvas.toDataURL("image/png"), filename);
   } catch(e) { console.error("Export error:", e); }
@@ -998,28 +1002,28 @@ function showImageOverlay(dataUrl) {
 async function exportChatImage() {
   // Build a temporary off-screen element with all chat messages styled nicely
   const g = GUIDES[state.guide] || GUIDES.xiaomei;
-  const container = h("div",{id:"chat-export-temp",style:{width:"390px",padding:"24px 16px",background:"#FFF7F0",fontFamily:"'PingFang SC','Hiragino Sans GB',sans-serif",position:"fixed",left:"-9999px",top:"0"}},
+  const container = h("div",{id:"chat-export-temp",style:{width:"390px",padding:"24px 16px",background:"#FAFAF7",fontFamily:"'PingFang SC','Hiragino Sans GB',sans-serif",position:"fixed",left:"-9999px",top:"0"}},
     // header
-    h("div",{style:{display:"flex",alignItems:"center",gap:"10px",marginBottom:"16px",paddingBottom:"12px",borderBottom:"1px solid rgba(255,138,158,0.15)"}},
-      h("div",{style:{width:"36px",height:"36px",borderRadius:"12px",background:"linear-gradient(135deg,#FFD4DC,#EDE9FE 50%,#D1FAE5)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"18px"}},g.avatar),
+    h("div",{style:{display:"flex",alignItems:"center",gap:"10px",marginBottom:"16px",paddingBottom:"12px",borderBottom:"1px solid rgba(199,109,46,0.1)"}},
+      h("div",{style:{width:"36px",height:"36px",borderRadius:"12px",background:"linear-gradient(135deg,rgba(199,109,46,0.1),rgba(232,168,107,0.1))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"18px"}},g.avatar),
       h("div",null,
-        h("div",{style:{fontWeight:"700",fontSize:"15px",color:"#3D2C2E"}}, `与${g.name}的对话`),
-        h("div",{style:{fontSize:"11px",color:"#BCA8AA"}}, `${state.msgs.length} 条消息 · ${new Date().toLocaleDateString("zh-CN")}`)
+        h("div",{style:{fontWeight:"700",fontSize:"15px",color:"#111"}}, `与${g.name}的对话`),
+        h("div",{style:{fontSize:"11px",color:"#aaa"}}, `${state.msgs.length} 条消息 · ${new Date().toLocaleDateString("zh-CN")}`)
       )
     ),
     // messages
     ...state.msgs.flatMap(m => split(m.text).map(p => {
       const isU = m.role === "user";
       return h("div",{style:{display:"flex",justifyContent:isU?"flex-end":"flex-start",marginBottom:"5px"}},
-        h("div",{style:{maxWidth:"78%",padding:"10px 14px",borderRadius:isU?"18px 18px 4px 18px":"18px 18px 18px 4px",background:isU?"linear-gradient(135deg,#FF8A9E,#FFB5C2)":"#FFFFFF",color:isU?"white":"#3D2C2E",fontSize:"14px",lineHeight:"1.55",boxShadow:isU?"none":"0 1px 8px rgba(0,0,0,0.04)"}},p)
+        h("div",{style:{maxWidth:"78%",padding:"10px 14px",borderRadius:isU?"18px 18px 4px 18px":"18px 18px 18px 4px",background:isU?"linear-gradient(135deg,#C76D2E,#E8A86B)":"#FFFFFF",color:isU?"white":"#111",fontSize:"14px",lineHeight:"1.55",boxShadow:isU?"none":"0 1px 8px rgba(0,0,0,0.04)"}},p)
       );
     })),
     // footer
-    h("div",{style:{marginTop:"16px",paddingTop:"12px",borderTop:"1px solid rgba(255,138,158,0.15)",textAlign:"center",fontSize:"11px",color:"#BCA8AA"}},"关系模拟器 · hangthedj")
+    h("div",{style:{marginTop:"16px",paddingTop:"12px",borderTop:"1px solid rgba(199,109,46,0.1)",textAlign:"center",fontSize:"11px",color:"#aaa"}},"关系模拟器 · hangthedj")
   );
   document.body.appendChild(container);
   try {
-    const canvas = await html2canvas(container, {backgroundColor:"#FFF7F0",scale:2,useCORS:true,logging:false});
+    const canvas = await html2canvas(container, {backgroundColor:"#FAFAF7",scale:2,useCORS:true,logging:false});
     showImageOverlay(canvas.toDataURL("image/png"), `chat-${g.name}.png`);
   } catch(e) { console.error(e); }
   container.remove();
@@ -1050,15 +1054,15 @@ function svgIcon(svg, size) {
 const SVG_XIAOMEI = `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
   <defs>
     <linearGradient id="gm" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FF8A9E"/><stop offset="1" stop-color="#C4B5FD"/>
+      <stop stop-color="#C76D2E"/><stop offset="1" stop-color="#E8A86B"/>
     </linearGradient>
     <filter id="glm"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
   <ellipse cx="32" cy="32" rx="28" ry="28" stroke="url(#gm)" stroke-width="1.2" opacity="0.3" stroke-dasharray="4 3"/>
   <circle cx="32" cy="26" r="11" fill="url(#gm)" filter="url(#glm)"/>
   <path d="M19 48 Q19 37 32 35 Q45 37 45 48" fill="url(#gm)" opacity="0.55"/>
-  <circle cx="55" cy="18" r="2.2" fill="#FF8A9E" opacity="0.7"><animate attributeName="opacity" values="0.7;0.3;0.7" dur="2.5s" repeatCount="indefinite"/></circle>
-  <circle cx="9" cy="42" r="1.6" fill="#C4B5FD" opacity="0.6"><animate attributeName="opacity" values="0.6;0.2;0.6" dur="3s" repeatCount="indefinite"/></circle>
+  <circle cx="55" cy="18" r="2.2" fill="#C76D2E" opacity="0.7"><animate attributeName="opacity" values="0.7;0.3;0.7" dur="2.5s" repeatCount="indefinite"/></circle>
+  <circle cx="9" cy="42" r="1.6" fill="#E8A86B" opacity="0.6"><animate attributeName="opacity" values="0.6;0.2;0.6" dur="3s" repeatCount="indefinite"/></circle>
   <circle cx="42" cy="16" r="1" fill="white" opacity="0.85"/>
   <circle cx="22" cy="14" r="0.8" fill="white" opacity="0.6"/>
 </svg>`;
@@ -1066,7 +1070,7 @@ const SVG_XIAOMEI = `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.o
 const SVG_XIAOSHUAI = `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
   <defs>
     <linearGradient id="gs" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#C4B5FD"/><stop offset="1" stop-color="#6EE7B7"/>
+      <stop stop-color="#E8A86B"/><stop offset="1" stop-color="#6EE7B7"/>
     </linearGradient>
     <filter id="gls"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
@@ -1080,7 +1084,7 @@ const SVG_XIAOSHUAI = `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3
 const SVG_CRYSTAL = `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
   <defs>
     <linearGradient id="gc" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FF8A9E"/><stop offset="0.5" stop-color="#C4B5FD"/><stop offset="1" stop-color="#6EE7B7"/>
+      <stop stop-color="#C76D2E"/><stop offset="0.5" stop-color="#E8A86B"/><stop offset="1" stop-color="#6EE7B7"/>
     </linearGradient>
     <radialGradient id="gcr" cx="50%" cy="45%" r="40%">
       <stop stop-color="white" stop-opacity="0.4"/><stop offset="1" stop-color="white" stop-opacity="0"/>
@@ -1092,15 +1096,15 @@ const SVG_CRYSTAL = `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.o
   <ellipse cx="32" cy="32" rx="26" ry="26" stroke="url(#gc)" stroke-width="1" opacity="0.25" stroke-dasharray="3 4"/>
   <ellipse cx="32" cy="32" rx="22" ry="8" stroke="url(#gc)" stroke-width="0.8" opacity="0.2" transform="rotate(-20 32 32)"/>
   <circle cx="24" cy="26" r="3" fill="white" opacity="0.35"/>
-  <circle cx="44" cy="14" r="1.5" fill="#FF8A9E" opacity="0.6"><animate attributeName="opacity" values="0.6;0.2;0.6" dur="2s" repeatCount="indefinite"/></circle>
+  <circle cx="44" cy="14" r="1.5" fill="#C76D2E" opacity="0.6"><animate attributeName="opacity" values="0.6;0.2;0.6" dur="2s" repeatCount="indefinite"/></circle>
   <circle cx="12" cy="38" r="1.2" fill="#6EE7B7" opacity="0.5"><animate attributeName="opacity" values="0.5;0.15;0.5" dur="2.6s" repeatCount="indefinite"/></circle>
-  <circle cx="52" cy="46" r="1" fill="#C4B5FD" opacity="0.5"><animate attributeName="opacity" values="0.5;0.2;0.5" dur="3s" repeatCount="indefinite"/></circle>
+  <circle cx="52" cy="46" r="1" fill="#E8A86B" opacity="0.5"><animate attributeName="opacity" values="0.5;0.2;0.5" dur="3s" repeatCount="indefinite"/></circle>
 </svg>`;
 
 const SVG_REPORT = `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
   <defs>
     <linearGradient id="gr" x1="0" y1="64" x2="64" y2="0" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FF8A9E"/><stop offset="0.5" stop-color="#C4B5FD"/><stop offset="1" stop-color="#6EE7B7"/>
+      <stop stop-color="#C76D2E"/><stop offset="0.5" stop-color="#E8A86B"/><stop offset="1" stop-color="#6EE7B7"/>
     </linearGradient>
     <filter id="glr"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
@@ -1162,9 +1166,14 @@ function renderWelcome(app) {
   const pickGuide = (id) => { state.guide = id; render(); };
   const existing = loadPersona();
 
-  // If guide already picked, show name input
+  // If guide already picked, check if we already have a name
   if (state.guide) {
     const g = GUIDES[state.guide];
+    // If name already set from landing page, skip name input and start chat
+    if (state.userName && state.userName.trim()) {
+      startChat();
+      return;
+    }
     const submitName = () => {
       const name = (state.userName || "").trim();
       if (!name) return;
@@ -1204,7 +1213,7 @@ function renderWelcome(app) {
           onMouseenter: e=>{ e.currentTarget.style.borderColor = id==="xiaomei"?"var(--pri)":"var(--sec)"; e.currentTarget.style.transform="translateY(-2px)"; },
           onMouseleave: e=>{ e.currentTarget.style.borderColor = id==="xiaomei"?"var(--priL)":"var(--secL)"; e.currentTarget.style.transform="none"; },
         },
-          h("div", {style:{width:"56px",height:"56px",borderRadius:"50%",margin:"0 auto 8px",background:"linear-gradient(135deg, rgba(255,138,158,0.08), rgba(196,181,253,0.08))",display:"flex",alignItems:"center",justifyContent:"center",border:"1.5px solid rgba(255,138,158,0.15)",boxShadow:"0 0 16px rgba(255,138,158,0.08)"}}, g.svgAvatar(36)),
+          h("div", {style:{width:"56px",height:"56px",borderRadius:"50%",margin:"0 auto 8px",background:"linear-gradient(135deg, rgba(255,138,158,0.08), rgba(196,181,253,0.08))",display:"flex",alignItems:"center",justifyContent:"center",border:"1.5px solid rgba(199,109,46,0.1)",boxShadow:"0 0 16px rgba(255,138,158,0.08)"}}, g.svgAvatar(36)),
           h("div", {style:{fontSize:"17px",fontWeight:"700",color:"var(--txt)",marginBottom:"4px"}}, g.name),
           h("div", {style:{fontSize:"12px",color:"var(--txtS)",lineHeight:"1.4"}}, g.desc)
         )
@@ -1247,7 +1256,7 @@ function renderMatchInvite(app) {
                 onMouseenter: e=>{ e.currentTarget.style.borderColor = id==="xiaomei"?"var(--pri)":"var(--sec)"; e.currentTarget.style.transform="translateY(-2px)"; },
                 onMouseleave: e=>{ e.currentTarget.style.borderColor = id==="xiaomei"?"var(--priL)":"var(--secL)"; e.currentTarget.style.transform="none"; },
               },
-                h("div", {style:{width:"56px",height:"56px",borderRadius:"50%",margin:"0 auto 8px",background:"linear-gradient(135deg, rgba(255,138,158,0.08), rgba(196,181,253,0.08))",display:"flex",alignItems:"center",justifyContent:"center",border:"1.5px solid rgba(255,138,158,0.15)",boxShadow:"0 0 16px rgba(255,138,158,0.08)"}}, g.svgAvatar(36)),
+                h("div", {style:{width:"56px",height:"56px",borderRadius:"50%",margin:"0 auto 8px",background:"linear-gradient(135deg, rgba(255,138,158,0.08), rgba(196,181,253,0.08))",display:"flex",alignItems:"center",justifyContent:"center",border:"1.5px solid rgba(199,109,46,0.1)",boxShadow:"0 0 16px rgba(255,138,158,0.08)"}}, g.svgAvatar(36)),
                 h("div", {style:{fontSize:"17px",fontWeight:"700",color:"var(--txt)",marginBottom:"4px"}}, g.name),
                 h("div", {style:{fontSize:"12px",color:"var(--txtS)",lineHeight:"1.4"}}, g.desc)
               )
@@ -1407,7 +1416,7 @@ function renderReport(app) {
     }
     if (ss.ideal) {
       ssCard.appendChild(h("div",null,
-        h("div",{style:{fontSize:"12px",color:"#7C3AED",fontWeight:"700",marginBottom:"6px"}},"💫 适合我的人"),
+        h("div",{style:{fontSize:"12px",color:"#C76D2E",fontWeight:"700",marginBottom:"6px"}},"💫 适合我的人"),
         h("div",{style:{fontSize:"15px",color:"var(--txt)",lineHeight:"1.7",fontWeight:"500"}}, ss.ideal)
       ));
     }
@@ -1536,7 +1545,7 @@ function renderReport(app) {
     rpCard.appendChild(h("div",{style:{marginTop:"8px"}},
       h("div",{style:{display:"flex",alignItems:"center",gap:"6px",marginBottom:"4px"}},
         h("span",{style:{fontSize:"13px"}},"🚫"),
-        h("span",{style:{fontSize:"12px",color:"#7C3AED",fontWeight:"600"}},"关系底线")
+        h("span",{style:{fontSize:"12px",color:"#C76D2E",fontWeight:"600"}},"关系底线")
       ),
       ...dealbreakers.map(d=>h("div",{class:"tag purple"},String(d)))
     ));
@@ -2068,6 +2077,12 @@ async function runMatchWith(otherPersona) {
 // ── localStorage helpers ──
 function savePersona(p) {
   try { localStorage.setItem("soulmate_persona", JSON.stringify(p)); } catch(e) {}
+  // Also persist to server
+  fetch('/api/results', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Device-Id': getDeviceId() },
+    body: JSON.stringify({ test_type: 'soulmate', code: p.identity?.self_label || null, scores: p })
+  }).catch(() => {});
 }
 function saveSession() {
   try {

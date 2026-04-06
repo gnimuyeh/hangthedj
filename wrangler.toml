@@ -1,3 +1,11 @@
-name = "soulmate-app"
-compatibility_date = "2024-01-01"
-pages_build_output_dir = "."
+name = "hangthedj"
+pages_build_output_dir = "public"
+compatibility_date = "2024-12-01"
+
+# ── D1 Database ──
+# Create: wrangler d1 create lovetype-db
+# Migrate: wrangler d1 execute lovetype-db --file=schema.sql
+[[d1_databases]]
+binding = "DB"
+database_name = "lovetype-db"
+database_id = "96780fbb-c7ea-4362-9333-39596af9155d"
