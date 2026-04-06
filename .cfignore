@@ -1,9 +1,0 @@
-sandbox/
-functions/
-*.zip
-*.py
-CLAUDE.md
-api/
-node_modules/
-server.js
-package.json
