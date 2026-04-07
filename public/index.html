@@ -35,6 +35,14 @@
   .card-meta { font-size: 10px; color: #aaa; margin-top: 10px; letter-spacing: 1px; }
   .card-primary { border-color: rgba(199,109,46,0.2); }
   .card-primary .card-title { color: #C76D2E; }
+  .card { position: relative; }
+  .hot-label {
+    position: absolute; top: 10px; right: 10px;
+    font-size: 9px; font-weight: 700; letter-spacing: 1px;
+    padding: 3px 8px; border-radius: 10px;
+    background: linear-gradient(135deg, #FF6B35, #C76D2E);
+    color: #fff; box-shadow: 0 2px 8px rgba(255,107,53,0.3);
+  }
   /* Result card */
   .result-card {
     background: rgba(255,255,255,0.92); border: 1px solid rgba(199,109,46,0.2);
@@ -119,6 +127,7 @@
   <!-- First-time visitor view -->
   <div id="firsttime" class="cards">
     <a class="card card-primary" href="lovetype-test.html">
+      <span class="hot-label">🔥 HOT</span>
       <div class="card-icon">🔮</div>
       <div class="card-title">16型恋爱人格测试 (LERA)</div>
       <div class="card-desc">4个维度 · 16种恋爱人格<br>探索你在亲密关系中的真实模式</div>
