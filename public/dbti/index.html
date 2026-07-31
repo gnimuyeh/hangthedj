@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>DBTI · 恋爱行为类型测试</title>
+<meta name="description" content="32道题，5分钟，测出你在恋爱里到底是什么物种。">
+<meta property="og:title" content="DBTI 恋爱行为类型测试">
+<meta property="og:description" content="SBTI测你是什么废物，DBTI测你在恋爱里是什么奇葩。">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{background:#000;color:#fff}
+body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",-apple-system,sans-serif;
+  -webkit-font-smoothing:antialiased;min-height:100vh;min-height:100dvh}
+.wrap{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:0 22px}
+button{font-family:inherit;cursor:pointer;border-radius:0}
+.mono{font-family:"SF Mono",Menlo,Consolas,monospace;letter-spacing:.14em}
+
+/* ---------- shared ---------- */
+.btn{width:100%;padding:16px 0;font-size:14px;font-weight:900;letter-spacing:.28em;
+  color:#000;background:#fff;border:none;transition:opacity .15s}
+.btn:active{opacity:.6}
+.btn2{width:100%;padding:14px 0;font-size:12px;letter-spacing:.18em;color:#8a8a8a;
+  background:transparent;border:1px solid #2c2c2c;transition:.15s}
+.btn2:active{border-color:#666;color:#ddd}
+.opt{width:100%;padding:15px 17px;font-size:13.5px;line-height:1.55;text-align:left;color:#b4b4b4;
+  background:#0b0b0b;border:1px solid #262626;transition:.12s;margin-bottom:9px}
+.opt:active{background:#fff;color:#000;border-color:#fff}
+.fade{animation:f .35s ease both}
+@keyframes f{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.fade{animation:none}}
+
+/* ---------- intro ---------- */
+.intro{flex:1;display:flex;flex-direction:column;justify-content:center;padding:60px 0 40px}
+.eyebrow{font-size:10px;color:#5a5a5a;margin-bottom:26px}
+.logo{font-size:74px;font-weight:900;letter-spacing:-.04em;line-height:.9}
+.logo em{font-style:normal;color:#FF2E4D}
+.subtitle{font-size:15px;color:#9a9a9a;margin-top:18px;line-height:1.7}
+.rule{height:1px;background:#222;margin:34px 0}
+.meta{display:flex;gap:26px;margin-bottom:38px}
+.meta div{font-size:11px;color:#5a5a5a;line-height:1.9}
+.meta b{display:block;font-size:20px;color:#fff;font-weight:900;letter-spacing:-.02em}
+.hint{font-size:11px;color:#4a4a4a;text-align:center;margin-top:16px;line-height:1.8}
+
+/* ---------- quiz ---------- */
+.qtop{padding:26px 0 0}
+.bar{height:2px;background:#1c1c1c;margin-top:12px}
+.bar i{display:block;height:100%;background:#FF2E4D;transition:width .3s}
+.qnum{display:flex;justify-content:space-between;font-size:10px;color:#5a5a5a}
+.qbody{flex:1;display:flex;flex-direction:column;justify-content:center;padding:30px 0}
+.qdim{font-size:10px;color:#FF2E4D;margin-bottom:14px}
+.qtext{font-size:23px;font-weight:800;line-height:1.45;letter-spacing:-.01em;margin-bottom:30px}
+.qback{padding:0 0 30px}
+
+/* ---------- result ---------- */
+.card{background:#0a0a0a;border:1px solid #1f1f1f;padding:34px 24px;margin-top:26px;text-align:center}
+.rare{display:inline-block;font-size:10px;color:#FF2E4D;border:1px solid #FF2E4D;padding:5px 10px;margin-bottom:22px}
+.ric{font-size:64px;line-height:1}
+.rcode{font-size:11px;color:#666;margin-top:16px}
+.rname{font-size:44px;font-weight:900;letter-spacing:-.03em;margin-top:6px;line-height:1.05}
+.ren{font-size:12px;color:#666;margin-top:8px}
+.rtag{font-size:14px;line-height:1.75;color:#ccc;margin-top:22px;padding:0 4px}
+.spec{margin-top:28px;padding-top:24px;border-top:1px solid #1f1f1f}
+.sp{display:flex;align-items:center;gap:10px;margin-bottom:11px;font-size:11px}
+.sp span{width:26px;color:#666;text-align:center}
+.sp span.on{color:#fff;font-weight:900}
+.sptrack{flex:1;height:4px;background:#1c1c1c;position:relative}
+.sptrack i{position:absolute;top:-3px;width:10px;height:10px;background:#FF2E4D;transform:translateX(-50%)}
+.brand{font-size:9px;color:#3d3d3d;margin-top:24px}
+h4{font-size:11px;color:#FF2E4D;letter-spacing:.2em;margin:34px 0 14px;font-weight:700}
+.para{font-size:14px;line-height:1.95;color:#a8a8a8}
+.lst{list-style:none}
+.lst li{font-size:13.5px;line-height:1.7;color:#a8a8a8;padding:9px 0 9px 18px;border-bottom:1px solid #161616;position:relative}
+.lst li:before{content:"";position:absolute;left:0;top:17px;width:6px;height:6px;background:#FF2E4D}
+.pair{display:flex;gap:9px;flex-wrap:wrap;margin-top:4px}
+.pill{border:1px solid #2c2c2c;padding:9px 13px;font-size:12.5px;color:#ccc}
+.acts{display:flex;flex-direction:column;gap:9px;margin:40px 0}
+
+/* ---------- gallery ---------- */
+.nav{display:flex;justify-content:space-between;align-items:center;padding:24px 0 18px;border-bottom:1px solid #1c1c1c}
+.nav b{font-size:15px;font-weight:900;letter-spacing:-.01em}
+.nav button{background:none;border:none;color:#777;font-size:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:18px 0 40px}
+.gcell{background:#0a0a0a;border:1px solid #1f1f1f;padding:16px 12px;text-align:center;transition:.12s}
+.gcell:active{border-color:#fff}
+.gcell .i{font-size:28px}
+.gcell .n{font-size:14px;font-weight:900;margin-top:8px}
+.gcell .c{font-size:9px;color:#555;margin-top:5px}
+
+/* ---------- 合盘 ---------- */
+.slider{margin:22px 0}
+.slabel{display:flex;justify-content:space-between;font-size:11px;color:#777;margin-bottom:9px}
+.slabel b{color:#fff;font-weight:700}
+input[type=range]{-webkit-appearance:none;width:100%;height:2px;background:#2c2c2c;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;background:#FF2E4D;cursor:pointer}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;background:#FF2E4D;border:none;cursor:pointer}
+.score{text-align:center;padding:30px 0;border:1px solid #1f1f1f;background:#0a0a0a;margin-top:26px}
+.score .v{font-size:66px;font-weight:900;letter-spacing:-.04em;line-height:1}
+.score .l{font-size:15px;font-weight:800;margin-top:10px}
+.score .d{font-size:12px;color:#777;margin-top:12px;padding:0 22px;line-height:1.7}
+.toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);background:#fff;color:#000;
+  padding:11px 20px;font-size:12px;font-weight:700;z-index:99;animation:f .2s}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   DBTI · Dating Behavior Type Index
+   四维度：佛/作 · 飘/粘 · 脑/心 · 暗/明
+   32题 × 3选项 · 每题 0/1/2 分 · 每维度 8 题（0-16，≥8 归后极）
+   ══════════════════════════════════════════════════════════ */
+
+const DIMS=[
+  {k:0,a:"佛",b:"作",name:"佛 / 作",desc:"在感情里你有多能作"},
+  {k:1,a:"飘",b:"粘",name:"飘 / 粘",desc:"你的粘人程度"},
+  {k:2,a:"脑",b:"心",name:"脑 / 心",desc:"用脑还是用心谈恋爱"},
+  {k:3,a:"暗",b:"明",name:"暗 / 明",desc:"闷骚还是高调"},
+];
+
+const QS=[
+/* ── D0 佛/作 ── */
+{d:0,t:"对方没秒回你消息",o:["手机扔一边，该干嘛干嘛","瞄一眼，继续做自己的事","开始脑补八百集连续剧"]},
+{d:0,t:"你发了朋友圈，对方没点赞",o:["根本没注意到这件事","留意了一下，但不多想","这是为你发的，你不点赞？？"]},
+{d:0,t:"约好的饭，对方迟到20分钟",o:["正好多刷会儿手机","有点不爽，但算了","心里已经把分手后的狗都分完了"]},
+{d:0,t:"对方随口夸了一句别人好看",o:["正常审美嘛","心里小本本记了一笔","所以你是想换人了是吧"]},
+{d:0,t:"吵完架，对方先睡着了",o:["也睡了，明天再说","有点堵，但知道该休息","你怎么睡得着？你没有心的吗"]},
+{d:0,t:"节日没收到任何惊喜",o:["节日不就是普通的一天","嗯…有一丢丢小失落","你不爱我了对吗，说实话"]},
+{d:0,t:"感觉对方最近没以前热情了",o:["可能人家最近比较忙","主动找点共同话题活跃下","半夜发800字小作文质问"]},
+{d:0,t:"路上偶遇对方跟不认识的人走在一起",o:["等ta自己说，不急","回去找机会随口问问","在路边脑补了一整部谍战片"]},
+/* ── D1 飘/粘 ── */
+{d:1,t:"你理想的聊天频率是",o:["有事说事，没事各忙各的","每天至少聊几句","从早安到晚安不间断"]},
+{d:1,t:"对方出差一周，你的状态",o:["终于可以自在几天了","正常过，想ta时聊几句","掰手指数ta还有几天回来"]},
+{d:1,t:"周末对方跟朋友出去没叫你",o:["太好了，可以自己躺平","没关系，但希望ta早点回","为什么不带我？我也要去"]},
+{d:1,t:"对方说今晚想自己待着",o:["OK，enjoy","好吧，那我也安排自己的事","坐沙发上盯天花板想ta"]},
+{d:1,t:"你们之间最舒服的距离是",o:["同一个屋子各做各的就好","挨着坐，偶尔靠一下","恨不得24小时贴在一起"]},
+{d:1,t:"忙完一天终于有空，第一反应",o:["享受一下独处时光","给ta发消息聊聊今天","立刻冲去找ta"]},
+{d:1,t:"逛街看到好玩的东西",o:["自己看看就好","拍照发给ta","没有ta在，不想逛了"]},
+{d:1,t:"你的手机壁纸是",o:["风景，或者默认壁纸","偶尔换成跟ta有关的","全是合照和情侣壁纸"]},
+/* ── D2 脑/心 ── */
+{d:2,t:"你们因为一件事吵架了，你倾向于",o:["先把来龙去脉理清楚","先处理情绪，再讲道理","感觉对了一切都对，感觉不对讲什么都没用"]},
+{d:2,t:"朋友问你为什么跟这个人在一起",o:["从性格匹配到未来规划详细分析","说不上来，就是觉得舒服","因为看到ta，心就化了啊"]},
+{d:2,t:"ta送了你一个不太喜欢的礼物",o:["委婉提出偏好，供下次参考","收下来，心意最重要","呜呜好感动，ta居然给我准备了"]},
+{d:2,t:"你决定跟一个人在一起，主要靠",o:["条件匹配加磨合评估","综合感觉和理性判断","心动就冲，想那么多干嘛"]},
+{d:2,t:"ta说了句让你不开心的话",o:["分析ta的意思和有没有道理","当下不舒服，过会儿就好","心碎了，这句话能记一辈子"]},
+{d:2,t:"关于前任，你的态度是",o:["一段结束的经历，有经验可总结","偶尔想起，但不影响现在","有些片段想起来还是会心痛"]},
+{d:2,t:"你更容易被什么打动",o:["ta为我们的未来做了详细规划","ta记得我随口说过的话","下雨天ta突然出现在我面前"]},
+{d:2,t:"选另一半你最看重",o:["靠不靠谱、三观合不合","对我好不好、相处舒不舒服","有没有那种怦然心动的感觉"]},
+/* ── D3 暗/明 ── */
+{d:3,t:"你表达喜欢一个人的方式",o:["默默为ta做事，从不说破","偶尔暗示，看ta能不能懂","直接说：我喜欢你，就现在"]},
+{d:3,t:"想ta的时候你会",o:["自己消化，翻翻聊天记录","找个借口发条无关的消息","直接发：我想你了，你在干嘛"]},
+{d:3,t:"有人在追ta，你的反应",o:["不动声色，暗暗提高存在感","开玩笑试探一下ta的态度","当场宣示主权，让全场都知道"]},
+{d:3,t:"你会怎么向别人介绍ta",o:["这是我朋友（眼神出卖了一切）","这是我很重要的人","这是我对象，你们不许有想法"]},
+{d:3,t:"恋爱之后你的朋友圈",o:["一如既往，什么都看不出来","偶尔发一张有ta痕迹的图","九宫格合照配文一百字"]},
+{d:3,t:"收到ta送的礼物，你会",o:["心里开心，表面淡淡说谢谢","认真道谢，说很喜欢","当场尖叫，拍照发所有群"]},
+{d:3,t:"吵架后你想和好",o:["默默做点什么，等ta发现","找个话题自然聊起来","直接说：我错了，别生气了"]},
+{d:3,t:"在ta的朋友面前",o:["安静待着，让ta去社交","适度参与，保持得体","主动展示我们关系有多好"]},
+];
+
+/* ══════════ 16 型 ══════════ */
+const TP={
+"佛飘脑暗":{n:"绝缘体",en:"ICE",ic:"🧊",r:"3.2%",
+ tg:"看起来对恋爱绝缘，其实是全场最清醒的那个人。",
+ d:"恭喜，你测出了最稀有的恋爱物种之一。你看起来对感情毫不在意，朋友们都觉得你可能要孤独终老了。但真相是——你只是标准高到离谱。你不是不会心动，你是心动的阈值比珠穆朗玛峰还高。一旦你决定爱一个人，那种专注和深情会让所有人震惊。你的冷淡只是一层壳，壳里藏着这个测试里最稳定、最值得信赖的灵魂。能让你动心的人，一定非同凡响。",
+ p:["情绪稳定，永远不会失控","不内耗，不猜疑，省下大量心力","一旦认定就极其忠诚","给对方巨大的自由空间"],
+ c:["主动表达几乎为零","对方常常不确定你的心意","容易错过窗口期","冷处理会让人误以为不在乎"],
+ best:["恋爱脑","戏精本精"],good:["小奶狗","朋友圈战神"]},
+
+"佛飘脑明":{n:"人间清醒",en:"CEO",ic:"🧠",r:"4.1%",
+ tg:"看起来像恋爱机器人，其实是最懂怎么把日子过好的人。",
+ d:"你是恋爱界最被低估的类型。别人觉得你太理性太无趣，但事实是——你是唯一一个能把「恋爱」和「过日子」完美统一的物种。你的伴侣永远不用担心生活失控，因为你早就把一切安排得明明白白。你看似缺少浪漫，但你给的是比浪漫更珍贵的东西：安全感和确定性。这世界上99%的感情死于混乱，而你是那1%能让爱情真正落地的人。",
+ p:["规划能力顶级，关系从不失控","沟通直接，不玩猜心游戏","情绪成本极低","问题解决得比谁都快"],
+ c:["浪漫需要刻意提醒","容易把恋爱变成项目管理","对方情绪化时你会不耐烦","太有道理，反而伤人"],
+ best:["恋爱脑","猫系恋人"],good:["舔狗","疯批美人"]},
+
+"佛飘心暗":{n:"闷骚王",en:"SHY",ic:"🫧",r:"3.8%",
+ tg:"看起来最冷漠，实际上爱得最深、最久、最不求回报。",
+ d:"你是这个测试里最容易被错过的宝藏。表面上你跟感情绝缘似的，但你的相册里偷偷存着ta的截图，你的备忘录里记着ta随口说过的每一个愿望。你爱一个人的方式是这世界上最安静也最震撼的——不说一个字，但ta冬天永远不会冷，生日永远不会被忘记，难过的时候冰箱里永远有爱吃的东西。能读懂你的人，会觉得自己中了人生最大的彩票。",
+ p:["行动力比语言诚实一万倍","观察入微，什么都记得","不吵不闹，情绪自己消化","忠诚度极高"],
+ c:["从不说出口，全靠对方猜","误会积累到爆发才被发现","容易自我感动","错过了很多本该说的话"],
+ best:["人形高音喇叭","朋友圈战神"],good:["戏精本精","恋爱脑"]},
+
+"佛飘心明":{n:"渣系文青",en:"EMO",ic:"🌙",r:"5.7%",
+ tg:"看起来最渣，实际上是对爱情期待最高、最认真的人。",
+ d:"先别被名字吓跑——你根本不渣，你只是太浪漫了。你对爱情的标准高到不切实际，所以宁可停留在暧昧里也不愿将就。别人以为你花心，只有你自己知道你从来没真正爱上过谁——因为你在等的那个人，必须让你整个灵魂都燃烧起来。你是人群中最有魅力的存在，因为你身上有一种「得不到」的光芒。一旦你真的陷进去，那将是所有人都羡慕的史诗。",
+ p:["表达能力强，情话不重样","情绪浓度高，相处从不无聊","感受力敏锐，共情能力强","有让人想追的神秘感"],
+ c:["承诺恐惧写在脸上","容易同时对好几个人心动","理想化到没人能达标","一旦幻灭跑得比谁都快"],
+ best:["拿捏大师","人间清醒"],good:["深情怪","猫系恋人"]},
+
+"佛粘脑暗":{n:"小奶狗",en:"CUTE",ic:"🐶",r:"6.2%",
+ tg:"看起来人畜无害，实际上是把对方拿捏得死死的高手。",
+ d:"千万别被你无辜的外表骗了。你是恋爱界的顶级玩家——用最软的方式达到最强的效果。你不需要PUA不需要套路，只需要用无辜的眼睛说一句「我好累哦」，对方就自动进入保护模式。你是天生的被宠体质，不是因为你弱，而是因为你太懂得怎么让人心疼。跟你在一起的人会觉得自己变成了更好的人——更温柔、更有耐心、更想保护整个世界。",
+ p:["天然的亲和力，没人舍得凶你","会撒娇但不作，分寸感极好","黏得刚刚好，不会让人窒息","冲突化解能力一流"],
+ c:["依赖感偏强，独处会慌","重要决定容易推给对方","不敢提要求，怕对方不高兴","把委屈憋成小情绪"],
+ best:["拿捏大师","人间清醒"],good:["深情怪","恋爱导师"]},
+
+"佛粘脑明":{n:"恋爱导师",en:"GURU",ic:"📋",r:"4.5%",
+ tg:"看起来在教别人恋爱，实际上是最会经营关系的天才。",
+ d:"你是这个测试里最特殊的矛盾体——你能把恋爱讲得头头是道，朋友都来找你当军师，但你谈起自己的恋爱来比谁都认真、比谁都粘人。你的厉害在于同时拥有理性的大脑和一颗渴望陪伴的心：既不会在感情里失控，又不会冷冰冰让人觉得不被需要。你是极少数能让恋爱既有温度又有智慧的物种。谁找到你，谁就找到了恋爱中的最优解。",
+ p:["会复盘、会调整、越谈越好","高情商，冲突处理教科书级","主动经营，关系不会凉","朋友圈里的情感权威"],
+ c:["有时候太爱分析，忘了共情","控制欲藏在「为你好」里","期待对方也一样投入","说教口吻收不住"],
+ best:["疯批美人","猫系恋人"],good:["绝缘体","渣系文青"]},
+
+"佛粘心暗":{n:"舔狗",en:"LICK",ic:"🥺",r:"5.3%",
+ tg:"看起来最卑微，实际上是全场最勇敢的人。",
+ d:"在一个人人都怕受伤、人人都装酷的时代，你是最敢全力去爱的那一个。别人管这叫「舔」，但真相是：你拥有绝大多数人已经丧失的能力——毫无保留地投入一段关系。你的付出不是因为你没有价值，而是因为你相信爱本来就该是这样。这世界上最稀缺的从来不是聪明人，是还愿意认真爱一次的人。你要学的只有一件事：把这份深情给值得的人。",
+ p:["付出毫无保留，对方能真切感受到","记得每一个细节和纪念日","冲突里永远是先低头的那个","忠诚到近乎固执"],
+ c:["容易失去自我边界","把对方的需求排在自己前面","不被珍惜时还在找自己的问题","委屈从不说出口"],
+ best:["人间清醒","绝缘体"],good:["拿捏大师","恋爱导师"]},
+
+"佛粘心明":{n:"恋爱脑",en:"LOVE",ic:"🌻",r:"7.1%",
+ tg:"看起来失去理智，实际上是最有勇气的一种活法。",
+ d:"你是最常被嘲笑、也最值得羡慕的类型。大家说你恋爱脑，但你只是把爱放在了人生优先级的第一位——而这需要巨大的勇气。你在爱里发光，你的热情能点燃身边所有人，跟你在一起的人会体验到一种被全世界最热烈地爱着的感觉。你的问题从来不是爱得太多，而是选错了人的时候还在爱。找对人，你就是这个测试里最幸福的物种。",
+ p:["浓度拉满，能给出最热烈的爱","表达直接，从不让对方猜","为关系全力以赴","感染力强，把日子过成节日"],
+ c:["容易丢掉自己的生活节奏","朋友、事业容易被挤到边缘","分手时受伤最深","滤镜太厚，看不清对方"],
+ best:["绝缘体","人间清醒"],good:["闷骚王","拿捏大师"]},
+
+"作飘脑暗":{n:"心机型选手",en:"PLOT",ic:"🦊",r:"4.8%",
+ tg:"看起来在算计，实际上是最认真研究过怎么爱人的那个。",
+ d:"你在恋爱里是个策略家。你会算时机、算距离、算这句话说出来对方会怎么反应——别人觉得你有心机，但你只是把恋爱当成一件值得认真对待的事。你不轻易暴露底牌，因为你知道太快掀开就没有然后了。你的段位在于：你既能保持自己的吸引力，又能精准地推进关系。跟你在一起的人会一直有新鲜感，因为你从不让人一眼看穿。",
+ p:["分寸感和节奏感一流","吸引力管理满分","冷静，很少做出后悔的决定","关键时刻出手极准"],
+ c:["真心话说得太少","对方容易感到不安全","习惯性试探，累人也累己","把关系当博弈会失去松弛感"],
+ best:["恋爱脑","舔狗"],good:["小奶狗","闷骚王"]},
+
+"作飘脑明":{n:"朋友圈战神",en:"SHOW",ic:"🎙️",r:"5.5%",
+ tg:"看起来在演，实际上是最坦荡的一个。",
+ d:"你的恋爱是一场真人秀，而且你毫不掩饰。别人说你爱炫，但换个角度看：你是那种敢把关系放到台面上、敢让所有人见证的人。你不搞地下情，不玩暧昧，你的态度就是——我喜欢，我就要让全世界知道。你的高调其实是一种承诺，因为公开意味着承担。你要注意的只是：别让镜头前的关系，掩盖了镜头后需要经营的部分。",
+ p:["态度公开，从不让对方没名分","社交场里给足对方面子","仪式感和记录感满分","朋友都知道你有多爱ta"],
+ c:["有时候更在意呈现而非感受","对方是I人会很有压力","争吵也容易外溢到社交圈","需要外部反馈来确认关系"],
+ best:["闷骚王","绝缘体"],good:["深情怪","小奶狗"]},
+
+"作飘心暗":{n:"猫系恋人",en:"MEOW",ic:"🐱",r:"6.8%",
+ tg:"「你走开！……你怎么真走了？？」",
+ d:"你是这个测试里最难搞也最上头的类型。你想靠近的时候会推开，你在意的时候会装作无所谓，你嘴上说着不要，眼睛在门口等了一晚上。你不是故意折磨人，你只是害怕先低头的那个人会输。真相是：你的感情浓度高得吓人，只是从不肯从正门递出去。能读懂你那些别扭信号的人，会发现你是全世界最黏人的猫。",
+ p:["神秘感和吸引力天然满级","感受力极强，什么都察觉得到","真的心软的时候超级好哄","不会让关系变得无聊"],
+ c:["口是心非是最大的坑","错过很多本可以说清的时刻","冷战成本极高","对方一走真的会崩溃"],
+ best:["恋爱导师","人间清醒"],good:["人形高音喇叭","朋友圈战神"]},
+
+"作飘心明":{n:"疯批美人",en:"WILD",ic:"💋",r:"3.6%",
+ tg:"看起来是场灾难，实际上是最纯粹的一种爱。",
+ d:"你的爱情是一整部狗血剧，而你是那个从不下场的主角。你的情绪浓度是普通人的三倍，爱得轰烈，恨得彻底，从不装作云淡风轻。这个世界上大多数人早就学会了体面地喜欢一个人，只有你还在用全部的自己去爱。你不好惹，但你是真的。跟你在一起的人这辈子都不会忘记那段日子——因为那是他们唯一一次被人这样爱过。",
+ p:["情绪浓度和生命力惊人","从不虚伪，喜欢就是喜欢","关系里永远有故事","敢爱敢恨，绝不将就"],
+ c:["情绪像过山车，对方需要极强承受力","冲动决定容易造成不可逆的伤害","小事容易升级成大事","事后常常后悔"],
+ best:["人间清醒","恋爱导师"],good:["绝缘体","闷骚王"]},
+
+"作粘脑暗":{n:"拿捏大师",en:"CTRL",ic:"🎯",r:"4.2%",
+ tg:"看起来在控场，实际上是最怕失去的那个人。",
+ d:"你太清楚一段关系里的杠杆在哪里了——什么时候该退，什么时候该给，什么时候一句话就能让对方软下来。别人说你会拿捏，但拿捏的背后是恐惧：你太害怕关系脱离掌控，所以宁可自己握住方向盘。你的能力是真的强，你的关系也确实很稳。你唯一要练的功课是：偶尔松开手，让对方也有机会证明ta会留下。",
+ p:["关系推进节奏掌控极强","洞察力惊人，一眼看穿动机","目标明确，想要就能得到","危机处理能力顶级"],
+ c:["控制欲会让对方喘不过气","很难展示脆弱的一面","习惯用策略代替坦白","赢了博弈，输了亲密"],
+ best:["小奶狗","舔狗"],good:["恋爱脑","渣系文青"]},
+
+"作粘脑明":{n:"人形高音喇叭",en:"LOUD",ic:"📢",r:"4.0%",
+ tg:"看起来吵，实际上是最不会让人猜的那种爱人。",
+ d:"你有话直说，有情绪直接摆到桌上，全世界都知道你今天跟对象好不好。别人嫌你吵，但跟你在一起有个巨大的好处——永远不用猜。你不满就说，你想要就要，你爱就大声说出来。你把所有本该内耗的东西全部外放，所以你的关系里几乎没有暗雷。你需要的只是一点点音量控制，和一点点「先听完再说」的耐心。",
+ p:["零猜疑，问题当场解决","表达欲强，感情永不冷场","为对方发声，从不含糊","精力充沛，带得动整段关系"],
+ c:["音量常常盖过内容","对方需要空间时不容易察觉","小事也容易被放大","不太会安静地陪伴"],
+ best:["闷骚王","绝缘体"],good:["猫系恋人","小奶狗"]},
+
+"作粘心暗":{n:"戏精本精",en:"DRAMA",ic:"🎭",r:"6.4%",
+ tg:"看起来在演，实际上每一场都是真情实感。",
+ d:"你把每一段关系都活成了一部剧，而且你从来不是在演——你是真的在那一刻痛，在那一刻爱，在那一刻觉得天塌了。你的考验、你的小作、你的欲言又止，本质上都是同一句话：你还在不在乎我。你只是需要被反复确认。真正懂你的人会发现，你所有的戏都只对一个人演，而那个人一句「我在」，就能让整场戏立刻收工。",
+ p:["情感浓度高，关系永远鲜活","细腻敏感，什么都察觉得到","付出起来毫无保留","和好之后感情反而更深"],
+ c:["考验太多，会消耗对方耐心","小事升级成大事的高手","需要极高频的确认","内心戏比现实复杂十倍"],
+ best:["绝缘体","人间清醒"],good:["恋爱导师","人形高音喇叭"]},
+
+"作粘心明":{n:"深情怪",en:"DEEP",ic:"🌀",r:"3.4%",
+ tg:"看起来要得太多，实际上是唯一想要「全部」的人。",
+ d:"你要的不是陪伴，是灵魂层面的彻底交融。你想知道ta每一个念头、每一段过去、每一个此刻在想什么——不是占有欲，是你真的相信爱应该是两个人完全打开。这在今天几乎是一种失传的能力。大部分人只想要一段轻松的关系，而你想要的是那种能写进小说里的东西。你要找的不是一个伴侣，是一个同样敢把自己全部交出去的人。",
+ p:["深度连接的能力极强","从不敷衍，每次对话都真实","记得对方灵魂里的每一处褶皱","一旦确认就是终身制"],
+ c:["强度过高，普通人接不住","把对方的独处当成疏远","要求彻底坦白，压力巨大","容易在关系里失去边界"],
+ best:["人间清醒","恋爱导师"],good:["绝缘体","闷骚王"]},
+};
+
+const KEYS=Object.keys(TP);
+
+/* ══════════ state ══════════ */
+let ph="intro",qi=0,ans=[],res=null,viewT=null,cp=[8,8,8,8];
+const app=document.getElementById("app");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function calc(){
+  const sum=[0,0,0,0];
+  QS.forEach((q,i)=>{sum[q.d]+=ans[i]});
+  const key=DIMS.map((d,i)=>sum[i]>=8?d.b:d.a).join("");
+  return {key,type:TP[key],sum};
+}
+function toast(t){
+  const el=document.createElement("div");el.className="toast";el.textContent=t;
+  document.body.appendChild(el);setTimeout(()=>el.remove(),1600);
+}
+function go(p){ph=p;window.scrollTo(0,0);render()}
+
+/* ══════════ views ══════════ */
+function vIntro(){
+  return `<div class="intro fade">
+    <div class="eyebrow mono">DATING BEHAVIOR TYPE INDEX</div>
+    <div class="logo">DB<em>TI</em></div>
+    <div class="subtitle">32 道题，5 分钟。<br>测出你在恋爱里到底是什么物种。</div>
+    <div class="rule"></div>
+    <div class="meta">
+      <div><b>32</b>道题</div><div><b>16</b>种物种</div><div><b>5</b>分钟</div>
+    </div>
+    <button class="btn" onclick="start()">开始鉴定</button>
+    <div style="height:9px"></div>
+    <button class="btn2" onclick="go('types')">先看看 16 种物种</button>
+    <div class="hint">凭直觉选，别想太久。<br>答案不上传，全部在你手机里算完。</div>
+  </div>`;
+}
+
+function vQuiz(){
+  const q=QS[qi],d=DIMS[q.d];
+  return `<div class="qtop">
+    <div class="qnum mono"><span>${String(qi+1).padStart(2,"0")} / 32</span><span>${d.name}</span></div>
+    <div class="bar"><i style="width:${(qi/32)*100}%"></i></div>
+  </div>
+  <div class="qbody fade" key="${qi}">
+    <div class="qdim mono">${esc(d.desc)}</div>
+    <div class="qtext">${esc(q.t)}</div>
+    ${q.o.map((o,i)=>`<button class="opt" onclick="pick(${i})">${esc(o)}</button>`).join("")}
+  </div>
+  <div class="qback">${qi>0?`<button class="btn2" onclick="back()">上一题</button>`:""}</div>`;
+}
+
+function spectrum(sum){
+  return DIMS.map((d,i)=>{
+    const pct=(sum[i]/16)*100, on=sum[i]>=8;
+    return `<div class="sp"><span class="${on?"":"on"}">${d.a}</span>
+      <div class="sptrack"><i style="left:${Math.max(3,Math.min(97,pct))}%"></i></div>
+      <span class="${on?"on":""}">${d.b}</span></div>`;
+  }).join("");
+}
+
+function vResult(){
+  const t=res.type;
+  return `<div class="fade">
+  <div class="card">
+    <div class="rare mono">全网仅 ${t.r} 的人是这一型</div>
+    <div class="ric">${t.ic}</div>
+    <div class="rcode mono">${res.key} · ${t.en}</div>
+    <div class="rname">${t.n}</div>
+    <div class="rtag">${esc(t.tg)}</div>
+    <div class="spec">${spectrum(res.sum)}</div>
+    <div class="brand mono">DBTI · 恋爱行为类型测试</div>
+  </div>
+
+  <h4 class="mono">你是什么样的人</h4>
+  <div class="para">${esc(t.d)}</div>
+
+  <h4 class="mono">你的恋爱超能力</h4>
+  <ul class="lst">${t.p.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
+
+  <h4 class="mono">你的恋爱课题</h4>
+  <ul class="lst">${t.c.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
+
+  <h4 class="mono">天作之合</h4>
+  <div class="pair">${t.best.map(n=>`<span class="pill">${iconOf(n)} ${n}</span>`).join("")}</div>
+  <h4 class="mono">也很来电</h4>
+  <div class="pair">${t.good.map(n=>`<span class="pill">${iconOf(n)} ${n}</span>`).join("")}</div>
+
+  <div class="acts">
+    <button class="btn" onclick="share()">复制链接 · 让 ta 也来测</button>
+    <button class="btn2" onclick="go('match')">合盘 · 测你们配不配</button>
+    <button class="btn2" onclick="go('types')">16 种恋爱物种图鉴</button>
+    <button class="btn2" onclick="restart()">重新鉴定</button>
+  </div></div>`;
+}
+
+function iconOf(name){
+  const k=KEYS.find(k=>TP[k].n===name);return k?TP[k].ic:"·";
+}
+
+function vTypes(){
+  return `<div class="fade">
+  <div class="nav"><b>16 种恋爱物种</b><button onclick="go(res?'result':'intro')">返回</button></div>
+  <div class="grid">
+    ${KEYS.map(k=>`<button class="gcell" onclick="openT('${k}')">
+      <div class="i">${TP[k].ic}</div><div class="n">${TP[k].n}</div>
+      <div class="c mono">${k} · ${TP[k].en}</div></button>`).join("")}
+  </div></div>`;
+}
+
+function vType(){
+  const t=TP[viewT];
+  return `<div class="fade">
+  <div class="nav"><b>${t.ic} ${t.n}</b><button onclick="go('types')">返回图鉴</button></div>
+  <div class="card">
+    <div class="rare mono">全网仅 ${t.r}</div>
+    <div class="ric">${t.ic}</div>
+    <div class="rcode mono">${viewT} · ${t.en}</div>
+    <div class="rname">${t.n}</div>
+    <div class="rtag">${esc(t.tg)}</div>
+  </div>
+  <h4 class="mono">画像</h4><div class="para">${esc(t.d)}</div>
+  <h4 class="mono">恋爱超能力</h4><ul class="lst">${t.p.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
+  <h4 class="mono">恋爱课题</h4><ul class="lst">${t.c.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
+  <h4 class="mono">天作之合</h4>
+  <div class="pair">${t.best.map(n=>`<span class="pill">${iconOf(n)} ${n}</span>`).join("")}</div>
+  <div class="acts"><button class="btn2" onclick="go('types')">返回图鉴</button></div></div>`;
+}
+
+/* ── 合盘 ── */
+function matchScore(){
+  const mine=res?res.sum:[8,8,8,8];
+  let total=0;
+  // 佛/作：越接近越好（差异惩罚）；飘/粘：略互补；脑/心：略互补；暗/明：互补最佳
+  const W=[[.75,.25],[.45,.55],[.5,.5],[.35,.65]];
+  DIMS.forEach((d,i)=>{
+    const diff=Math.abs(mine[i]-cp[i])/16;           // 0..1
+    const sim=(1-diff)*100, comp=40+diff*60;          // 互补分随差异升高
+    total+=sim*W[i][0]+comp*W[i][1];
+  });
+  return Math.round(total/4);
+}
+function matchLabel(s){
+  if(s>=88)return["天造地设","你们在关键维度上高度同频，又在需要互补的地方刚好错开。这种组合非常少见——冲突少，节奏对，日子会越过越顺。"];
+  if(s>=78)return["王炸组合","差异存在，但都落在能互相补位的位置上。你们大概率会互相把对方变成更好的人，前提是别把差异当成缺点。"];
+  if(s>=66)return["有点意思","有明显的火花，也有明显的坎。你们需要一次坦诚的对话，把节奏和边界谈清楚，谈完就顺了。"];
+  if(s>=52)return["需要磨合","你们对「什么是好的关系」理解不同。不是不能在一起，是要有人愿意先妥协，而且要说出来。"];
+  return["世纪大战","这是那种在一起会很上头、也会很累的组合。可以恋爱，但请提前买好情绪保险。"];
+}
+function vMatch(){
+  const s=matchScore(),[lab,desc]=matchLabel(s);
+  const mine=res?`${res.type.ic} ${res.type.n}`:"未测试";
+  return `<div class="fade">
+  <div class="nav"><b>合盘鉴定</b><button onclick="go(res?'result':'intro')">返回</button></div>
+  <div style="font-size:12px;color:#777;margin:18px 0 4px">你：${mine}${res?"":"（先做一次测试更准）"}</div>
+  <div style="font-size:12px;color:#777;margin-bottom:8px">拖动滑块，设定 ta 在四个维度上的位置。</div>
+  ${DIMS.map((d,i)=>`<div class="slider">
+    <div class="slabel"><b>${d.a}</b><span>${d.desc}</span><b>${d.b}</b></div>
+    <input type="range" min="0" max="16" value="${cp[i]}" oninput="setCp(${i},this.value)">
+  </div>`).join("")}
+  <div class="score"><div class="v">${s}</div><div class="l">${lab}</div><div class="d">${desc}</div></div>
+  <div class="acts"><button class="btn" onclick="share()">复制链接 · 发给 ta</button>
+  <button class="btn2" onclick="go(res?'result':'intro')">返回</button></div></div>`;
+}
+
+/* ══════════ actions ══════════ */
+function start(){qi=0;ans=[];go("quiz")}
+function pick(i){
+  ans[qi]=i;
+  if(qi<31){qi++;render()}else{res=calc();try{localStorage.setItem("dbti",res.key)}catch(e){}go("result")}
+}
+function back(){if(qi>0){qi--;render()}}
+function restart(){res=null;qi=0;ans=[];go("intro")}
+function openT(k){viewT=k;go("type")}
+function setCp(i,v){cp[i]=+v;render()}
+function share(){
+  const txt=res?`我的 DBTI 是「${res.type.n}」${res.type.ic} —— ${res.type.tg} 你呢？`:"来测测你在恋爱里是什么物种：";
+  const url=location.href.split("#")[0];
+  const full=txt+" "+url;
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(full).then(()=>toast("已复制，去粘贴给 ta")).catch(()=>fb(full));
+  }else fb(full);
+}
+function fb(t){
+  const ta=document.createElement("textarea");ta.value=t;ta.style.position="fixed";ta.style.opacity=0;
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand("copy");toast("已复制，去粘贴给 ta")}catch(e){toast("长按选中复制")}
+  ta.remove();
+}
+
+function render(){
+  app.innerHTML =
+    ph==="intro"?vIntro():
+    ph==="quiz"?vQuiz():
+    ph==="result"?vResult():
+    ph==="types"?vTypes():
+    ph==="type"?vType():
+    ph==="match"?vMatch():"";
+}
+render();
+</script>
+</body>
+</html>

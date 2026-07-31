@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>LERA · 16 型恋爱人格测评</title>
+<meta name="description" content="Love · Emotion · Relationship · Assessment —— 四个维度，16 型恋爱人格，32 道场景题。">
+<meta property="og:title" content="LERA 16 型恋爱人格测评">
+<meta property="og:description" content="不是又一个 MBTI 翻版。四个维度，只讲亲密关系。">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --paper:#F2F1EE; --ink:#16191D; --ink2:#5B6067; --ink3:#9A9EA4;
+  --line:#DAD8D2; --lineS:#E7E5E0; --card:#FBFAF8;
+  --ac:#1B3A5C; --acL:#E3EBF3;
+}
+html,body{background:var(--paper);color:var(--ink)}
+body{font-family:"Songti SC","Source Han Serif SC","Noto Serif CJK SC",Georgia,"Times New Roman",serif;
+  -webkit-font-smoothing:antialiased;min-height:100vh;min-height:100dvh}
+.wrap{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:0 24px}
+button{font-family:inherit;cursor:pointer}
+.sans{font-family:"PingFang SC","Hiragino Sans GB",-apple-system,"Helvetica Neue",sans-serif}
+.lbl{font-family:"PingFang SC",-apple-system,sans-serif;font-size:10px;letter-spacing:.24em;color:var(--ink3)}
+
+.btn{width:100%;padding:17px 0;font-size:14px;letter-spacing:.24em;color:#fff;background:var(--ac);
+  border:none;border-radius:2px;transition:opacity .15s;font-family:"PingFang SC",sans-serif}
+.btn:active{opacity:.75}
+.btn2{width:100%;padding:15px 0;font-size:12.5px;letter-spacing:.16em;color:var(--ink2);background:transparent;
+  border:1px solid var(--line);border-radius:2px;font-family:"PingFang SC",sans-serif;transition:.15s}
+.btn2:active{border-color:var(--ac);color:var(--ac)}
+.opt{width:100%;padding:16px 18px;font-size:14.5px;line-height:1.6;text-align:left;color:var(--ink);
+  background:var(--card);border:1px solid var(--line);border-radius:2px;margin-bottom:10px;transition:.12s}
+.opt:active{background:var(--ac);color:#fff;border-color:var(--ac)}
+.fade{animation:f .4s ease both}
+@keyframes f{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.fade{animation:none}}
+
+/* intro */
+.intro{flex:1;display:flex;flex-direction:column;justify-content:center;padding:64px 0 44px}
+.mark{font-size:11px;letter-spacing:.4em;color:var(--ac);font-family:"PingFang SC",sans-serif;margin-bottom:30px}
+h1{font-size:80px;font-weight:400;letter-spacing:.02em;line-height:.94}
+.expand{font-size:12px;color:var(--ink3);letter-spacing:.1em;margin-top:14px;font-family:"PingFang SC",sans-serif}
+.lede{font-size:16.5px;line-height:1.95;color:var(--ink2);margin-top:26px}
+hr{border:none;height:1px;background:var(--line);margin:30px 0}
+.dimlist{margin-bottom:34px}
+.dimrow{display:flex;justify-content:space-between;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--lineS)}
+.dimrow b{font-size:15px;font-weight:400}
+.dimrow span{font-size:11.5px;color:var(--ink3);font-family:"PingFang SC",sans-serif}
+.foot{font-size:11.5px;color:var(--ink3);text-align:center;margin-top:18px;line-height:1.9;font-family:"PingFang SC",sans-serif}
+
+/* quiz */
+.qtop{padding:28px 0 0}
+.qmeta{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.2em;color:var(--ink3);font-family:"PingFang SC",sans-serif}
+.track{height:1px;background:var(--line);margin-top:12px}
+.track i{display:block;height:1px;background:var(--ac);transition:width .35s}
+.qbody{flex:1;display:flex;flex-direction:column;justify-content:center;padding:34px 0}
+.qtext{font-size:25px;line-height:1.55;margin-bottom:32px}
+.qfoot{padding:0 0 32px}
+
+/* result */
+.hero{background:var(--card);border:1px solid var(--line);border-top:3px solid var(--ac);
+  padding:38px 26px 32px;margin-top:28px;text-align:center;border-radius:2px}
+.grp{font-size:11px;letter-spacing:.24em;color:var(--ac);font-family:"PingFang SC",sans-serif}
+.sym{font-size:56px;margin-top:20px;line-height:1}
+.code{font-size:42px;letter-spacing:.14em;margin-top:16px;color:var(--ac)}
+.tname{font-size:38px;margin-top:10px;letter-spacing:.04em}
+.ten{font-size:11px;letter-spacing:.18em;color:var(--ink3);margin-top:8px;font-family:"PingFang SC",sans-serif}
+.tline{font-size:15px;line-height:1.8;color:var(--ink2);margin-top:20px}
+.spec{margin-top:30px;padding-top:24px;border-top:1px solid var(--lineS)}
+.sp{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.sp b{font-size:12px;width:52px;color:var(--ink3);font-weight:400;font-family:"PingFang SC",sans-serif}
+.sp b.on{color:var(--ac);font-weight:600}
+.sp b.r{text-align:right}
+.tr{flex:1;height:1px;background:var(--line);position:relative}
+.tr i{position:absolute;top:-4px;width:9px;height:9px;background:var(--ac);transform:translateX(-50%) rotate(45deg)}
+.sig{font-size:9.5px;letter-spacing:.3em;color:var(--ink3);margin-top:26px;font-family:"PingFang SC",sans-serif}
+
+h4{font-size:11px;letter-spacing:.24em;color:var(--ac);margin:38px 0 6px;font-family:"PingFang SC",sans-serif;font-weight:600}
+.hr2{height:1px;background:var(--ac);opacity:.25;margin-bottom:16px}
+.para{font-size:15.5px;line-height:2.05;color:var(--ink)}
+.para.q{color:var(--ink2);font-size:15px}
+.lst{list-style:none}
+.lst li{font-size:14.5px;line-height:1.75;color:var(--ink2);padding:11px 0 11px 20px;border-bottom:1px solid var(--lineS);position:relative}
+.lst li:before{content:"";position:absolute;left:2px;top:19px;width:6px;height:6px;background:var(--ac);transform:rotate(45deg)}
+.pair{display:flex;gap:10px;flex-wrap:wrap}
+.pill{border:1px solid var(--line);background:var(--card);padding:11px 14px;font-size:13.5px;border-radius:2px}
+.pill i{font-style:normal;color:var(--ink3);font-size:10.5px;letter-spacing:.12em;margin-left:6px;font-family:"PingFang SC",sans-serif}
+.acts{display:flex;flex-direction:column;gap:10px;margin:42px 0}
+
+/* gallery */
+.nav{display:flex;justify-content:space-between;align-items:baseline;padding:26px 0 16px;border-bottom:1px solid var(--line)}
+.nav b{font-size:19px;font-weight:400}
+.nav button{background:none;border:none;color:var(--ink3);font-size:12px;font-family:"PingFang SC",sans-serif}
+.gsec{margin-top:26px}
+.ghd{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+.gdot{width:8px;height:8px;transform:rotate(45deg)}
+.ghd span{font-size:12px;letter-spacing:.2em;font-family:"PingFang SC",sans-serif}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.gcell{background:var(--card);border:1px solid var(--line);border-left-width:3px;padding:15px 13px;text-align:left;border-radius:2px}
+.gcell:active{background:#fff}
+.gcell .i{font-size:22px}
+.gcell .n{font-size:15px;margin-top:7px}
+.gcell .c{font-size:9.5px;letter-spacing:.18em;color:var(--ink3);margin-top:5px;font-family:"PingFang SC",sans-serif}
+
+/* 合盘 */
+.sel{width:100%;padding:15px 14px;font-size:15px;border:1px solid var(--line);background:var(--card);
+  border-radius:2px;font-family:inherit;color:var(--ink);margin-bottom:14px;-webkit-appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,#9A9EA4 50%),linear-gradient(135deg,#9A9EA4 50%,transparent 50%);
+  background-position:calc(100% - 18px) 21px,calc(100% - 12px) 21px;background-size:6px 6px;background-repeat:no-repeat}
+.score{background:var(--card);border:1px solid var(--line);border-top:3px solid var(--ac);
+  padding:32px 24px;text-align:center;margin-top:24px;border-radius:2px}
+.score .v{font-size:72px;line-height:1;color:var(--ac)}
+.score .v em{font-style:normal;font-size:20px;color:var(--ink3)}
+.score .l{font-size:19px;margin-top:12px}
+.score .d{font-size:14px;line-height:1.85;color:var(--ink2);margin-top:14px}
+.dimtbl{margin-top:22px}
+.dt{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--lineS);font-size:13.5px}
+.dt span{font-size:11px;color:var(--ink3);font-family:"PingFang SC",sans-serif}
+.dt b{font-weight:400}
+.tag{font-size:10.5px;padding:3px 8px;border:1px solid var(--line);border-radius:2px;color:var(--ink2);font-family:"PingFang SC",sans-serif}
+.note{font-size:12.5px;line-height:1.9;color:var(--ink3);margin-top:20px;font-family:"PingFang SC",sans-serif}
+.toast{position:fixed;left:50%;bottom:44px;transform:translateX(-50%);background:var(--ink);color:#fff;
+  padding:12px 22px;font-size:12.5px;border-radius:2px;z-index:99;font-family:"PingFang SC",sans-serif;animation:f .2s}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+/* ══════════════════════════════════════════════════════════
+   LERA · Love · Emotion · Relationship · Assessment
+   四维度 · 16 型 · 32 道场景题
+   S 内生安全 / N 外求确认 · L 理性处理 / E 感性处理
+   A 自由节奏 / R 规律节奏 · O 独立边界 / C 交融边界
+   计分：每题 -2 / -1 / +1 / +2，负向归前极，正向归后极
+   ══════════════════════════════════════════════════════════ */
+
+const DIMS=[
+ {a:"S",b:"N",an:"内生型",bn:"外求型",t:"安全感来源",d:"安全感来自内在信任，还是外在确认"},
+ {a:"L",b:"E",an:"理性型",bn:"感性型",t:"冲突处理",d:"关系出问题时，先讲道理还是先讲感受"},
+ {a:"A",b:"R",an:"自由型",bn:"规律型",t:"生活节奏",d:"偏好灵活随性，还是稳定有序"},
+ {a:"O",b:"C",an:"独立型",bn:"交融型",t:"亲密边界",d:"关系里保留自我，还是深度交融"},
+];
+
+const W=[-2,-1,1,2];
+const QS=[
+/* ── S / N 安全感来源 ── */
+{d:0,t:"对方几个小时没回消息，你会",o:["各忙各的，完全不影响","想起来的时候看一眼","会留意，心里有点在意","反复看手机，脑补各种可能"]},
+{d:0,t:"你觉得关系里的安全感，主要来自",o:["我对自己的判断和价值","长期稳定的相处模式","对方持续的爱意表达","对方明确的承诺和规划"]},
+{d:0,t:"伴侣突然比平时冷淡了，你会",o:["可能ta有自己的事，不用多想","观察几天，持续了再问","直接问是不是哪里不对","立刻焦虑，反复回想哪里做错了"]},
+{d:0,t:"需不需要每天互道晚安",o:["完全不需要，自然就好","偶尔说说挺好，不是必须","最好每天都有，这是一种习惯","一定要说，不说会睡不着"]},
+{d:0,t:"争吵冷战后，你更希望",o:["各自冷静，想清楚了再谈","等对方先开口就好","希望对方能主动来找我","自己先忍不住主动求和"]},
+{d:0,t:"你会怎样确认对方的心意",o:["观察ta的行为就够了","通过日常默契来判断","偶尔需要ta说出来","需要ta经常明确地表达"]},
+{d:0,t:"伴侣当着朋友夸别的异性好看",o:["客观评价而已，完全没感觉","轻微不舒服，但不会表现","会开玩笑地表示吃醋","会认真地觉得不太开心"]},
+{d:0,t:"跟伴侣分开一段时间，你的状态",o:["享受自己的时间，效率更高","偶尔想念，日常不受影响","比较想念，会增加联系频率","非常想念，时间过得特别慢"]},
+/* ── L / E 冲突处理 ── */
+{d:1,t:"对方哭了，你的第一反应是",o:["想知道发生了什么，好帮忙解决","先让ta哭完，再问怎么回事","递纸巾，拍拍背，等ta说","一起难过，自己也会眼眶红"]},
+{d:1,t:"你表达不满的方式通常是",o:["直接说出来，有什么讲什么","找一个合适的时机认真谈","通过语气和行为暗示","先憋着，攒多了才爆发"]},
+{d:1,t:"你觉得感情中最重要的是",o:["双方认知水平匹配","有效的沟通和解决问题的能力","情感上的理解和共鸣","无条件的接纳和包容"]},
+{d:1,t:"什么会让你对一个人产生好感",o:["ta的见识和思维深度","ta的幽默感和聪明","ta让我感到放松和舒服","ta的温柔细心让我心动"]},
+{d:1,t:"面对一个感情难题（比如异地要不要继续）",o:["列出利弊清单，客观分析","先分析可行性，再考虑感受","先问自己内心想不想，再看现实","跟着心走，分析会让感情变味"]},
+{d:1,t:"朋友的感情问题来找你，你通常",o:["帮ta理清思路，分析问题出在哪","给ta一些建议和不同角度","先让ta倾诉完，再聊聊感受","陪ta聊天、发泄情绪"]},
+{d:1,t:"你原谅一个人通常需要",o:["ta真正意识到问题并提出解决方案","ta说明白到底为什么这么做","ta真诚地道歉，让我感受到在乎","ta抱抱我，其实我气早就消了"]},
+{d:1,t:"吵架的当下，你更在意",o:["谁说的更有道理","事情到底怎么解决","ta有没有在听我说","ta还爱不爱我"]},
+/* ── A / R 生活节奏 ── */
+{d:2,t:"你的房间通常是",o:["东西随手放，我知道在哪就行","不太乱就好，不需要特别整齐","基本整洁有序，看着舒服","每个东西都有固定的位置"]},
+{d:2,t:"对于未来生活规划，你倾向于",o:["走一步看一步，机会来了就抓住","有大方向，但不做太细的计划","有三到五年的清晰规划","人生每个阶段都有明确目标"]},
+{d:2,t:"旅行时你更喜欢",o:["完全不做攻略，到了再说","订好机票酒店，其余随意","大致行程规划好，留一些自由时间","详细攻略，每天安排提前想好"]},
+{d:2,t:"你对存钱和花钱的态度是",o:["享受当下最重要，赚多少花多少","大部分随意花，偶尔存一些","有储蓄习惯，但不会太克制","严格的收支管理，先存后花"]},
+{d:2,t:"伴侣突然说走就走去旅行",o:["太棒了，我最喜欢这种","有点意外但很开心","开心，但需要先处理一些事","会有压力，希望能提前计划"]},
+{d:2,t:"你更喜欢什么样的约会",o:["随心所欲，走到哪算哪","有个大致想法就出门","提前选好餐厅和活动","精心安排每个环节的完美约会"]},
+{d:2,t:"你对工作和生活的平衡态度是",o:["界限模糊也没关系，随时切换","大致分开就好，不用太刻意","有明确的工作时间和休息时间","严格区分，到点就停下来"]},
+{d:2,t:"周末通常是怎么过的",o:["临时决定，看当天心情","有个模糊想法，随时可变","一般会提前想好做什么","周末的安排基本是固定的"]},
+/* ── O / C 亲密边界 ── */
+{d:3,t:"理想中和伴侣的日常相处模式",o:["各有各的空间和朋友圈，定期约会","大部分时间各自活动，晚上一起","尽量在一起，但也保留个人时间","能在一起就在一起，分享所有"]},
+{d:3,t:"关于和伴侣分享秘密，你觉得",o:["每个人都应该有自己的隐私空间","大部分会说，但保留一点私人空间","愿意分享大部分，希望对方也是","完全坦诚，不应该有秘密"]},
+{d:3,t:"伴侣不在身边时你通常",o:["很享受独处，甚至有点开心","正常生活，偶尔想起来联系","会想ta，每天至少聊几句","会很想ta，恨不得一直视频"]},
+{d:3,t:"你希望和伴侣的社交圈是",o:["基本独立，偶尔一起社交就好","有交集，但各自保留核心朋友圈","大部分重叠，一起交朋友","最好完全融合"]},
+{d:3,t:"恋爱后个人爱好应该",o:["完全保留，这是我的一部分","保留为主，愿意一起尝试新的","愿意调整，培养更多共同爱好","最好有很多共同爱好，一起成长"]},
+{d:3,t:"你对共同财务的看法是",o:["各管各的最好，经济独立最重要","分开为主，共同开销另算","大部分合在一起管理比较方便","完全共享，不分你我"]},
+{d:3,t:"你更喜欢哪种聊天频率",o:["有事说事，不需要没话找话","每天聊一聊，但不必很长","希望经常分享日常，保持连接","随时想到什么就发，保持在线"]},
+{d:3,t:"如果伴侣想看你的手机，你会",o:["不太舒服，这是我的隐私","可以看，但希望先说一声","没问题，我们之间没什么不能看的","随便看，我也想看ta的"]},
+];
+
+/* ══════════ 分组 ══════════ */
+const GRP={
+ SL:{n:"冷静守护者",en:"Cool Guardians",c:"#1B3A5C",l:"#E3EBF3"},
+ SE:{n:"温柔理想家",en:"Gentle Dreamers",c:"#C76D2E",l:"#F8EDE3"},
+ NL:{n:"热烈征服者",en:"Fierce Conquerors",c:"#6B2FA0",l:"#F0E5FA"},
+ NE:{n:"浪漫追光者",en:"Romantic Chasers",c:"#C42B4B",l:"#FAE5EA"},
+};
+
+/* ══════════ 16 型 ══════════ */
+const TP={
+SLAO:{n:"独行侠客",en:"Lone Ranger",ic:"🗡️",g:"SL",
+ tg:"理性自由的独立灵魂，爱是并肩远行，而非互相束缚。",
+ d:"你是这十六型里最完整的一个人。你的安全感全部来自内部——你不需要谁每天证明什么，因为你对自己的判断有足够的信心。恋爱对你来说不是补全，是同行。关系初期你慢热，不是因为不动心，而是你习惯先观察再投入；进入稳定期后你极其可靠，不闹不猜不内耗。冲突发生时你的第一反应是把事情理清楚，而不是先处理情绪，这让你在争吵中显得冷静得有点不近人情。你需要空间，需要自己的节奏，也真心愿意把同样的自由还给对方。你不是不会爱，你是把爱理解成了两个完整的人并肩往前走。",
+ p:["情绪极其稳定，几乎不内耗","不猜疑、不试探，省下大量心力","尊重对方的独立性和边界","理性判断能力强，很少做错决定","一旦认定，忠诚度极高"],
+ c:["情感表达偏少，对方需要猜","冷静容易被误读成冷淡","不太主动创造亲密时刻","冲突时先讲道理，容易伤人","不习惯示弱和求助"],
+ ideal:"一个情感浓度高、愿意主动靠近、但同时有自己世界的人。ta的热能融化你的距离感，而ta的独立不会让你觉得被消耗。",
+ best:["NLAC","NEAC"],good:["NERO","NLRC"]},
+
+SLAC:{n:"深海潜行者",en:"Deep Diver",ic:"🌊",g:"SL",
+ tg:"外表冷静，内心深邃，一旦认定就全情投入。",
+ d:"你身上有一种极强的反差。别人看到的是一个冷静自持、不太表露情绪的人，但你内心的感情浓度远超所有人的想象。你不轻易开始一段关系，因为你知道自己一旦投入就是全部。在关系里你渴望深度交融——你想知道ta的一切，也愿意交出自己的一切，但这些需求你几乎从不主动说出口。你处理冲突的方式是往内收，先自己想明白，再决定要不要说。这让你显得很稳，也让你的伴侣常常不知道你到底在想什么。你需要的是一个愿意主动来敲门的人。",
+ p:["感情浓度极高，认定之后毫无保留","观察入微，记得对方所有细节","不吵不闹，情绪自我消化能力强","深度陪伴的能力是十六型里最强的","忠诚，几乎不会动摇"],
+ c:["需求从不主动开口，全靠对方察觉","内心戏远比表现出来的多","独占欲藏在冷静之下","受伤后会长时间沉默","不擅长处理被误解的时刻"],
+ ideal:"一个表达直接、愿意先开口的人。ta能读懂你的沉默，也不介意先把话说破。你不需要热闹，你需要一个能潜到你这个深度的人。",
+ best:["NERO","NEAC"],good:["NLAO","SEAC"]},
+
+SLRO:{n:"铁面将军",en:"Iron General",ic:"🛡️",g:"SL",
+ tg:"有规划有担当的关系指挥官，用行动证明一切。",
+ d:"你是那种把关系当成一件正经事来经营的人。你有计划、有原则、有节奏，你说到做到，你的伴侣永远不用担心生活会失控。你的安全感来自你自己搭建的秩序，所以别人的情绪波动很难影响你。你不太会说甜言蜜语，但你会把ta的证件、体检、生日、行程全部记在心里并安排妥当——在你的世界里，这就是最高级别的爱。你保留自己的边界，也严格尊重对方的。你的挑战在于：不是所有人都能从一张排得明明白白的日程表里读出深情。",
+ p:["责任感和执行力极强","关系有秩序，几乎不会失控","承诺一旦给出就绝对兑现","危机时刻最靠得住的那个人","边界清晰，不越界也不被越界"],
+ c:["情绪表达偏硬，柔软度不足","计划被打乱时会明显不悦","不太懂得制造浪漫和惊喜","有时把关系管理得像项目","不习惯说「我需要你」"],
+ ideal:"一个感性、有生活情趣、能把你的秩序变得有温度的人。ta负责让日子生动，你负责让日子稳当。",
+ best:["NEAO","NEAC"],good:["NERC","SEAC"]},
+
+SLRC:{n:"灯塔守望者",en:"Lighthouse Keeper",ic:"🏰",g:"SL",
+ tg:"理性忠诚的守护者，为爱筑起最安全的港湾。",
+ d:"你是十六型里最能给人安全感的类型。你稳定、可靠、有长期视角，你会把两个人的未来一步步规划清楚，然后一件件落实。你渴望深度的交融——你希望两个人共享生活的绝大部分，也愿意为此调整自己。但你的表达方式始终是理性的：你不会说「我很想你」，你会说「我把周末的时间空出来了」。你的伴侣会在很多年后才完全明白你给的是什么。你要学的是允许自己偶尔失控一下，让对方看到你也会怕、也会累。",
+ p:["安全感的天花板，让人无比安心","长期主义者，关系越久越好","把承诺当成不可动摇的事","照顾细节，把生活打理得妥帖","冲突中始终保持理性和克制"],
+ c:["灵活性偏低，变化会让你紧张","对亲密的需求高但表达含蓄","容易替对方做决定","不擅长处理自己的脆弱","关系里的控制感需要警惕"],
+ ideal:"一个自由灵动、情绪外放的人。ta带你出门看世界，你带ta回家。你们的差异越大，反而越互补。",
+ best:["NEAO","NERC"],good:["SEAC","NEAC"]},
+
+SEAO:{n:"吟游歌者",en:"Wandering Bard",ic:"🎵",g:"SE",
+ tg:"感性浪漫又保持自我，爱是灵感而非枷锁。",
+ d:"你的内心世界丰富到能自给自足。你感性、细腻、共情能力强，但你的安全感不依赖任何人——这个组合非常罕见。你在关系里给出的是理解和温度，同时坚持保留自己的空间和节奏。你讨厌被安排，也不会去安排别人。爱情对你来说更像是灵感的来源，而不是人生的组织架构。你会为ta写下很多东西、记住很多瞬间，但你也需要一个人待着的时间来消化这些。跟你在一起的人会觉得被深深理解，同时也永远抓不住你的全部。",
+ p:["共情能力强，情绪价值给得足","情绪稳定又感性，非常难得","不占有、不控制，给足自由","生活有审美和情趣","懂得欣赏对方的独特之处"],
+ c:["承诺时会犹豫，怕失去自我","需要独处，对方可能感到被推开","不喜欢被规划和被安排","逃避冲突，倾向于回避","有时活在自己的世界里"],
+ ideal:"一个热烈、主动、能把你从自己的世界里拉出来的人。ta的强度不会吓到你，因为你稳；ta的投入会让你终于愿意停下来。",
+ best:["NLAC","NLRC"],good:["NERO","SLAO"]},
+
+SEAC:{n:"月光治愈师",en:"Moonlight Healer",ic:"🌙",g:"SE",
+ tg:"温柔细腻的灵魂伴侣，用共情治愈一切疲惫。",
+ d:"你是十六型里最温柔的存在。你的共情能力接近本能——对方还没开口，你已经知道ta今天不太好。你渴望深度的情感连接，愿意把自己完全打开，也希望对方一样。难得的是，你的安全感是内生的：你温柔，但不卑微；你付出，但不失衡。你不喜欢被计划束缚，更愿意跟着感觉走。你的伴侣会在你身边卸下所有防备，因为你从不评判。你要注意的只有一件事：你太擅长照顾别人的情绪，以至于常常忘了自己的。",
+ p:["共情和抚慰能力是十六型第一","让对方感到被完全接纳","不评判、不施压、不比较","情感表达真诚且自然","关系里的修复能力极强"],
+ c:["过度照顾对方，忽略自己","不擅长提出自己的需求","冲突时容易先妥协","吸收太多别人的情绪","边界感偏弱，容易被消耗"],
+ ideal:"一个有力量、有主见、愿意主动扛事的人。ta不需要你治愈，但会珍惜你的治愈；ta负责在前面挡风，你负责让家有温度。",
+ best:["NLAO","NLRO"],good:["SLAC","SLRC"]},
+
+SERO:{n:"花园建筑师",en:"Garden Architect",ic:"🌿",g:"SE",
+ tg:"内在丰富不张扬，用耐心经营最有质感的关系。",
+ d:"你是那种把关系当成一座花园来照料的人——不追求瞬间的绚烂，而是一年一年地把它养好。你感性但不外放，有规律但不僵硬，你相信好的关系是耐心浇出来的。你保留自己的独立空间，也从不侵占对方的。在冲突里你会先照顾情绪再谈事情，方式温和但立场清楚。你的伴侣可能要过很久才意识到：这段关系之所以这么舒服，是因为你在背后做了大量看不见的经营。",
+ p:["经营关系的耐心和长性极强","温和但有原则，不容易被推着走","懂生活，把日子过得有质感","冲突处理温和，很少激化","尊重边界，从不越界"],
+ c:["主动性偏低，习惯等待","不太表达自己的委屈","变化和意外会让你不适","有时过于克制，缺少激情","慢热到对方以为你不感兴趣"],
+ ideal:"一个热烈、有推进力的人。ta负责点火，你负责让火长久地烧下去。你要的不是刺激，是一个愿意跟你一起把日子过好的人。",
+ best:["NLRC","NEAO"],good:["NLAC","NEAC"]},
+
+SERC:{n:"永恒誓约者",en:"Eternal Vow",ic:"💍",g:"SE",
+ tg:"最传统的深情与忠诚，相信真爱就是一生一世。",
+ d:"你是十六型里最相信「一生一世」这四个字的人。你感性、专一、有规划，你渴望的是那种可以完全交融、共享一切的关系。你的安全感来自内部，所以你的深情不是不安，而是选择——你只是真心觉得，爱一个人就该是这样。你会为关系放弃很多，但不会因此失衡，因为你付出得心甘情愿。你的伴侣会得到这个世界上最稳定也最完整的爱。你唯一要练的功课，是接受关系里必然存在的不完美。",
+ p:["专一和忠诚是十六型的顶点","愿意为关系长期投入","情感深厚且稳定","把家和未来看得极重","给对方极强的归属感"],
+ c:["期待值偏高，容易失望","对方需要空间时会不安","不太能接受关系的不确定性","付出多了会隐隐期待回报","传统观念有时显得固执"],
+ ideal:"一个同样想要长期关系、但更有活力和主动性的人。ta让日子不至于太安静，你让日子不至于散掉。",
+ best:["NLAO","NLRO"],good:["NERC","SLRC"]},
+
+NLAO:{n:"闪电猎手",en:"Lightning Hunter",ic:"⚡",g:"NL",
+ tg:"充满魅力的自由战士，用实力让人无法抗拒。",
+ d:"你是那种一进场就会被注意到的人。你有能量、有魅力、反应极快，你享受追逐的过程，也享受被追逐。你的安全感需要外部的确认——你要看到对方的在意，才会确认这段关系是真的。你理性、独立，不喜欢被绑定，所以你在关系里推进得快，但承诺得慢。你给的是激情、是活力、是那种「跟你在一起每天都不一样」的体验。你要面对的问题是：新鲜感消退之后，你愿不愿意留下来经营。",
+ p:["魅力值和感染力拉满","反应快，关系里从不无聊","有能力也有行动力","独立，不会依赖对方","关键时刻能立刻扛起来"],
+ c:["稳定性不足，容易被新鲜感牵走","承诺时会明显犹豫","需要外部确认，容易吃醋","享受征服过程，多过守成","让对方缺乏安全感"],
+ ideal:"一个温柔、稳定、能给你确认感的人。ta的温度让你不再需要向外求证；ta的稳定让你终于愿意停下来。",
+ best:["SEAC","SERC"],good:["NEAC","SLAC"]},
+
+NLAC:{n:"烈焰锻造师",en:"Flame Forger",ic:"🔥",g:"NL",
+ tg:"需要深度连接的理性强者，爱得浓烈但头脑清醒。",
+ d:"你在关系里是热的，但你的头脑始终是冷的。你要的是深度——你想真正理解一个人，也想被真正理解，浅层的相处让你觉得没意思。你的表达非常直接：不满就说，想要就要，从不玩暧昧和试探。同时你需要对方的回应来确认关系的状态，回应慢了你会明显不安。你是那种能把一段关系推进得又快又深的人，跟你在一起的人会被卷进一种前所未有的强度里。",
+ p:["沟通直接，从不让对方猜","情感浓烈又有深度","理性和热情罕见地同时具备","解决问题的能力极强","关系推进速度快且有效"],
+ c:["需求感强，回应慢了会不安","期望值偏高，容易失望","强度对普通人来说压力很大","不太容忍模糊和拖延","独处空间给得不够"],
+ ideal:"一个内心丰富、能接得住强度、同时保有自我的人。ta不会被你的浓度吓退，也不会因此丢掉自己。",
+ best:["SEAO","SLAO"],good:["SERO","NEAO"]},
+
+NLRO:{n:"王座执政官",en:"Throne Regent",ic:"👑",g:"NL",
+ tg:"有主见有规划的关系领袖，用担当赢得信任。",
+ d:"你天生带着一种主导气场。你有清晰的目标、明确的规划，你习惯做决定并对结果负责。在关系里你是掌舵的那个人——你安排、你承担、你解决问题。你的安全感需要外部反馈，所以对方的认可对你比你承认的更重要。你保留自己的独立空间，也不会过度介入对方的生活。你给的爱是「我会把一切安排好」，你要学的是偶尔放下方向盘，问一句「你想怎么样」。",
+ p:["领导力和决断力极强","目标清晰，关系有明确方向","可靠有担当，说到做到","抗压能力强，关键时刻顶得住","独立，不会缠住对方"],
+ c:["强势感明显，不易妥协","习惯替对方做决定","不太会示弱和求助","需要被认可，被质疑时会硬","柔软度和浪漫需要刻意练习"],
+ ideal:"一个温柔、有主见、愿意在你身后但也敢跟你说不的人。ta给你确认，也给你提醒。",
+ best:["SEAC","SERC"],good:["NEAC","SLAC"]},
+
+NLRC:{n:"钻石守卫者",en:"Diamond Guard",ic:"💎",g:"NL",
+ tg:"追求稳固关系的实力派，构建坚不可摧的爱情。",
+ d:"你把一段关系当成一件要造出来的东西——有结构、有计划、有防护。你理性、有规划、执行力强，同时你渴望极深的交融：你希望两个人的生活彻底打通，不留缝隙。你的安全感需要外部确认，所以你会用大量的行动去换取确定性。你给出的是这个测试里最强的安全感和最扎实的未来。你要注意的是：把关系保护得太严实，有时也是一种窒息。",
+ p:["给人极强的安全感和确定性","行动力和执行力顶级","忠诚可靠，不会动摇","为关系全力以赴，投入不打折","把未来规划得清清楚楚"],
+ c:["控制感偏重，边界容易模糊","灵活性低，变化会让你焦虑","浪漫需要刻意营造","对方需要独处时你会不安","习惯用行动代替表达"],
+ ideal:"一个自由、感性、能给关系带来呼吸感的人。ta让你知道，不抓那么紧，ta也不会走。",
+ best:["SEAO","SLAO"],good:["SERO","NEAO"]},
+
+NEAO:{n:"蝴蝶冒险家",en:"Butterfly Explorer",ic:"🦋",g:"NE",
+ tg:"感性自由的灵魂舞者，爱情是场华丽的冒险。",
+ d:"你是十六型里最难被定义的一个。你感性、自由、感受力极其敏锐，你把爱情当成一场需要不断有新鲜风景的旅程。你需要对方的回应来确认自己被爱着，但你同时抗拒任何形式的束缚——这个矛盾是你所有关系问题的来源。你给的是魅力、是惊喜、是那种让人一辈子难忘的相处体验。你要面对的，是决定什么时候停下来，以及为谁停下来。",
+ p:["个人魅力独特，极具吸引力","感受力敏锐，什么都察觉得到","给彼此呼吸的空间","让关系永远充满惊喜","真诚，喜欢就是喜欢"],
+ c:["稳定性是十六型里最弱的","承诺恐惧明显","容易被新鲜感牵走","情绪起伏大，难以捉摸","需要确认，但又抗拒承诺"],
+ ideal:"一个稳定、包容、不追不逼但始终在原地的人。ta的确定性是你的锚，ta的耐心让你终于敢降落。",
+ best:["SLRC","SLRO"],good:["SERO","NLRC"]},
+
+NEAC:{n:"烟火艺术家",en:"Firework Artist",ic:"🎆",g:"NE",
+ tg:"全情投入的极致浪漫主义者，爱得轰轰烈烈。",
+ d:"你爱一个人的方式是把自己全部烧起来。你感性到极致，投入到极致，你要的是那种可以彻底融为一体的关系。你的情绪浓度是普通人的好几倍——开心的时候整个世界都亮着，难过的时候整个世界都塌了。你需要频繁的确认，也愿意给出同样频繁的表达。跟你在一起的人会体验到一生中最热烈的一段感情。你的功课是：在燃烧的同时，别把自己烧没了。",
+ p:["热情似火，感染力极强","浪漫到极致，仪式感满分","全情投入，毫无保留","让对方感到被深深需要","表达直接，从不让人猜"],
+ c:["情绪像过山车，起伏极大","理想化严重，容易失望","失去自我边界的风险高","分手时受伤最深","对回应的频率要求很高"],
+ ideal:"一个稳定、理性、接得住你所有情绪的人。ta不会被你的浓度吓跑，也会在你烧过头的时候，轻轻拉你一把。",
+ best:["SLAO","SLRO"],good:["SERO","NLAO"]},
+
+NERO:{n:"红毯策展人",en:"Red Carpet Curator",ic:"🎭",g:"NE",
+ tg:"感性有条理的完美主义者，打造电影般的爱情。",
+ d:"你把每一段关系都当成一件作品来策划。你感性、细腻、有极强的审美和秩序感，你会精心安排每一个纪念日、每一次约会、每一张照片的构图。你需要外部的确认来确定自己被爱着，同时你保留自己独立的空间和圈子。你给出的是这个测试里质感最高的关系体验——被你爱着的人会觉得自己活在一部拍得很好的电影里。你要放下的，是「必须完美」这件事。",
+ p:["仪式感和品质感满分","体贴入微，把细节做到位","善于经营，关系始终新鲜","审美出众，生活有格调","独立，不会过度依附"],
+ c:["完美主义容易走向偏执","内耗和焦虑偏多","期待过高，落差感强","在意呈现，有时忽略真实感受","需要持续的正反馈"],
+ ideal:"一个真诚、稳定、不太在意形式但极其在意你的人。ta会告诉你：不用布景，你本来就够好。",
+ best:["SLAO","SLAC"],good:["SEAO","NLAO"]},
+
+NERC:{n:"玫瑰骑士",en:"Rose Knight",ic:"🌹",g:"NE",
+ tg:"极致浪漫与绝对忠诚，爱就是毫无保留地奔赴。",
+ d:"你是十六型里最纯粹的浪漫主义者。你感性、专一、有秩序，你渴望的是彻底的交融和一生的承诺。你会用尽全力去爱一个人，会为ta改变计划、调整人生、放下自尊。你需要对方的回应来确认这份爱是双向的，所以你在关系里既深情又敏感。跟你在一起的人会得到那种小说里才有的对待。你要学的是：真正的爱不需要牺牲自己来证明。",
+ p:["浪漫与忠诚同时拉满","为关系全力以赴，绝不敷衍","情感表达丰富且真诚","有规划，愿意认真谈未来","让对方感到被珍视和优先"],
+ c:["容易过度付出，失去自我","期待被同等对待，落差感强","对方冷淡时会极度不安","理想化滤镜偏厚","把牺牲当成爱的证明"],
+ ideal:"一个稳重、可靠、会明确回应你的人。ta不需要你证明什么，因为ta早就把你放在了心上。",
+ best:["SLRO","SLRC"],good:["NLRC","SEAC"]},
+};
+
+const KEYS=Object.keys(TP);
+
+/* ══════════ state ══════════ */
+let ph="intro",qi=0,ans=[],res=null,viewT=null,partner="SEAC";
+const app=document.getElementById("app");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function setAc(c){document.documentElement.style.setProperty("--ac",c)}
+function go(p){ph=p;window.scrollTo(0,0);render()}
+function toast(t){const e=document.createElement("div");e.className="toast";e.textContent=t;
+  document.body.appendChild(e);setTimeout(()=>e.remove(),1700)}
+
+function calc(){
+  const raw=[0,0,0,0];
+  QS.forEach((q,i)=>{raw[q.d]+=W[ans[i]]});   // 每维 -16 .. +16
+  const key=DIMS.map((d,i)=>raw[i]<0?d.a:d.b).join("");
+  return {key,type:TP[key],raw};
+}
+
+/* ══════════ views ══════════ */
+function vIntro(){
+  setAc("#1B3A5C");
+  return `<div class="intro fade">
+    <div class="mark">LOVE · EMOTION · RELATIONSHIP · ASSESSMENT</div>
+    <h1>LERA</h1>
+    <div class="expand">16 型恋爱人格测评</div>
+    <div class="lede">不是又一个 MBTI 翻版。<br>四个维度，只讲一件事——<br>你在亲密关系里，究竟是个什么样的人。</div>
+    <hr>
+    <div class="dimlist">
+      ${DIMS.map(d=>`<div class="dimrow"><b>${d.an} ${d.a} / ${d.b} ${d.bn}</b><span>${d.t}</span></div>`).join("")}
+    </div>
+    <button class="btn" onclick="start()">开始测评</button>
+    <div style="height:10px"></div>
+    <button class="btn2" onclick="go('types')">先浏览 16 型</button>
+    <div class="foot">32 道场景题，约 5 分钟。<br>没有标准答案，凭第一直觉选。</div>
+  </div>`;
+}
+
+function vQuiz(){
+  const q=QS[qi],d=DIMS[q.d];
+  return `<div class="qtop">
+    <div class="qmeta"><span>${String(qi+1).padStart(2,"0")} / 32</span><span>${d.t}</span></div>
+    <div class="track"><i style="width:${(qi/32)*100}%"></i></div>
+  </div>
+  <div class="qbody fade">
+    <div class="qtext">${esc(q.t)}</div>
+    ${q.o.map((o,i)=>`<button class="opt" onclick="pick(${i})">${esc(o)}</button>`).join("")}
+  </div>
+  <div class="qfoot">${qi>0?`<button class="btn2" onclick="back()">上一题</button>`:""}</div>`;
+}
+
+function spectrum(raw){
+  return DIMS.map((d,i)=>{
+    const pct=((raw[i]+16)/32)*100, right=raw[i]>=0;
+    return `<div class="sp">
+      <b class="${right?"":"on"}">${d.a} ${d.an}</b>
+      <div class="tr"><i style="left:${Math.max(3,Math.min(97,pct))}%"></i></div>
+      <b class="r ${right?"on":""}">${d.bn} ${d.b}</b></div>`;
+  }).join("");
+}
+
+function typeCard(key,raw){
+  const t=TP[key],g=GRP[t.g];
+  return `<div class="hero">
+    <div class="grp">${g.n} · ${g.en.toUpperCase()}</div>
+    <div class="sym">${t.ic}</div>
+    <div class="code">${key}</div>
+    <div class="tname">${t.n}</div>
+    <div class="ten">${t.en}</div>
+    <div class="tline">${esc(t.tg)}</div>
+    ${raw?`<div class="spec">${spectrum(raw)}</div>`:""}
+    <div class="sig">LERA · 16 型恋爱人格测评</div>
+  </div>`;
+}
+
+function body(t){
+  return `
+  <h4>人格画像</h4><div class="hr2"></div><div class="para">${esc(t.d)}</div>
+  <h4>你的恋爱超能力</h4><div class="hr2"></div>
+  <ul class="lst">${t.p.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
+  <h4>你的恋爱功课</h4><div class="hr2"></div>
+  <ul class="lst">${t.c.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
+  <h4>你的理想伴侣</h4><div class="hr2"></div><div class="para q">${esc(t.ideal)}</div>
+  <h4>最佳拍档</h4><div class="hr2"></div>
+  <div class="pair">${t.best.map(k=>`<span class="pill">${TP[k].ic} ${TP[k].n}<i>${k}</i></span>`).join("")}</div>
+  <h4>良好拍档</h4><div class="hr2"></div>
+  <div class="pair">${t.good.map(k=>`<span class="pill">${TP[k].ic} ${TP[k].n}<i>${k}</i></span>`).join("")}</div>`;
+}
+
+function vResult(){
+  const t=res.type;setAc(GRP[t.g].c);
+  return `<div class="fade">${typeCard(res.key,res.raw)}${body(t)}
+  <div class="acts">
+    <button class="btn" onclick="share()">复制链接 · 邀请 ta 来测</button>
+    <button class="btn2" onclick="go('match')">合盘 · 你们的适配度</button>
+    <button class="btn2" onclick="go('types')">浏览全部 16 型</button>
+    <button class="btn2" onclick="restart()">重新测评</button>
+  </div></div>`;
+}
+
+function vTypes(){
+  if(!res)setAc("#1B3A5C");
+  const groups=["SL","SE","NL","NE"];
+  return `<div class="fade">
+  <div class="nav"><b>16 型恋爱人格</b><button onclick="go(res?'result':'intro')">返回</button></div>
+  ${groups.map(g=>`<div class="gsec">
+    <div class="ghd"><span class="gdot" style="background:${GRP[g].c}"></span>
+      <span style="color:${GRP[g].c}">${GRP[g].n}</span></div>
+    <div class="grid">
+      ${KEYS.filter(k=>TP[k].g===g).map(k=>`<button class="gcell" style="border-left-color:${GRP[g].c}" onclick="openT('${k}')">
+        <div class="i">${TP[k].ic}</div><div class="n">${TP[k].n}</div><div class="c">${k}</div></button>`).join("")}
+    </div></div>`).join("")}
+  <div class="acts"><button class="btn2" onclick="go(res?'result':'intro')">返回</button></div></div>`;
+}
+
+function vType(){
+  const t=TP[viewT];setAc(GRP[t.g].c);
+  return `<div class="fade">
+  <div class="nav"><b>${t.n}</b><button onclick="go('types')">返回列表</button></div>
+  ${typeCard(viewT,null)}${body(t)}
+  <div class="acts"><button class="btn2" onclick="go('types')">返回列表</button></div></div>`;
+}
+
+/* ── 合盘：相似性 / 互补性加权 ── */
+const RULE=[
+ {same:98,diff:55,w:"高度看相似",why:"安全感模式不同的两个人，一个不断确认、一个觉得没必要，是最常见的消耗来源。"},
+ {same:88,diff:80,w:"相似略优",why:"处理冲突的方式接近会更省力，但一理性一感性也能互相补位，差异影响不大。"},
+ {same:95,diff:62,w:"高度看相似",why:"生活节奏是每天都要面对的事。一个要计划一个要随性，会在无数小事上摩擦。"},
+ {same:68,diff:95,w:"明显看互补",why:"边界需求一致反而容易出问题：两个都要空间会疏远，两个都要交融会窒息。一推一拉才是健康的。"},
+];
+function matchCalc(a,b){
+  const per=DIMS.map((d,i)=>{
+    const same=a[i]===b[i];
+    return {i,same,score:same?RULE[i].same:RULE[i].diff};
+  });
+  const total=Math.round(per.reduce((s,p)=>s+p.score,0)/4);
+  return {per,total};
+}
+function matchLabel(s){
+  if(s>=88)return["天造地设","你们在最需要一致的维度上高度同频，又在最需要错开的地方刚好互补。这种组合非常少见，相处成本极低。"];
+  if(s>=80)return["高度契合","核心节奏对得上，差异也落在能互相补位的位置。你们大概率会越处越顺。"];
+  if(s>=72)return["值得一试","有明确的火花，也有明确的坎。把节奏和边界谈清楚，这段关系就成立了。"];
+  if(s>=64)return["需要磨合","你们对「好的关系是什么样」的理解不同。不是不合适，是要有人先说出来，并且有人愿意调整。"];
+  return["高消耗组合","在关键维度上你们的需求相反。可以很上头，但长期需要非常多的沟通和让步。"];
+}
+function vMatch(){
+  const mine=res?res.key:null;
+  if(!mine){return `<div class="fade"><div class="nav"><b>合盘</b><button onclick="go('intro')">返回</button></div>
+    <div class="para" style="margin-top:28px">合盘需要先知道你的类型。<br>做完 32 道题之后再回来吧。</div>
+    <div class="acts"><button class="btn" onclick="start()">开始测评</button></div></div>`}
+  const m=matchCalc(mine,partner),[lab,desc]=matchLabel(m.total);
+  const pt=TP[partner];
+  return `<div class="fade">
+  <div class="nav"><b>合盘鉴定</b><button onclick="go('result')">返回</button></div>
+  <div class="dt" style="border-bottom:1px solid var(--line);padding:16px 0">
+    <b>${res.type.ic} ${res.type.n}</b><span>你 · ${mine}</span></div>
+  <div style="margin-top:16px"><div class="lbl" style="margin-bottom:9px">选择 TA 的类型</div>
+  <select class="sel" onchange="setP(this.value)">
+    ${KEYS.map(k=>`<option value="${k}" ${k===partner?"selected":""}>${TP[k].ic} ${TP[k].n} · ${k}</option>`).join("")}
+  </select></div>
+  <div class="score"><div class="v">${m.total}<em> / 100</em></div>
+    <div class="l">${lab}</div><div class="d">${desc}</div></div>
+  <h4>逐维度拆解</h4><div class="hr2"></div>
+  <div class="dimtbl">${m.per.map(p=>{
+    const d=DIMS[p.i],ok=(p.same&&RULE[p.i].same>=RULE[p.i].diff)||(!p.same&&RULE[p.i].diff>RULE[p.i].same);
+    return `<div class="dt"><div><b>${d.t}</b><br><span>你 ${mine[p.i]} · ta ${partner[p.i]} —— ${RULE[p.i].w}</span></div>
+    <span class="tag" style="${ok?`color:var(--ac);border-color:var(--ac)`:""}">${ok?"加分":"需注意"}</span></div>`;
+  }).join("")}</div>
+  <div class="note">LERA 的合盘不是「越像越配」。安全感模式和生活节奏这两个维度看相似，冲突处理影响较小，而亲密边界恰恰要互补——一个要空间、一个要靠近，才推得动。</div>
+  <h4>ta 是什么样的人</h4><div class="hr2"></div><div class="para q">${esc(pt.d)}</div>
+  <div class="acts"><button class="btn" onclick="share()">复制链接 · 邀请 ta 来测</button>
+  <button class="btn2" onclick="go('result')">返回我的报告</button></div></div>`;
+}
+
+/* ══════════ actions ══════════ */
+function start(){qi=0;ans=[];go("quiz")}
+function pick(i){ans[qi]=i;if(qi<31){qi++;render()}else{res=calc();try{localStorage.setItem("lera",res.key)}catch(e){}go("result")}}
+function back(){if(qi>0){qi--;render()}}
+function restart(){res=null;qi=0;ans=[];go("intro")}
+function openT(k){viewT=k;go("type")}
+function setP(k){partner=k;render()}
+function share(){
+  const txt=res?`我的 LERA 恋爱人格是 ${res.key}「${res.type.n}」${res.type.ic} —— ${res.type.tg} 你是哪一型？`:"LERA · 16 型恋爱人格测评：";
+  const full=txt+" "+location.href.split("#")[0];
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(full).then(()=>toast("已复制，去粘贴给 ta")).catch(()=>fb(full));
+  }else fb(full);
+}
+function fb(t){const ta=document.createElement("textarea");ta.value=t;ta.style.position="fixed";ta.style.opacity=0;
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand("copy");toast("已复制，去粘贴给 ta")}catch(e){toast("长按选中复制")}
+  ta.remove()}
+
+function render(){
+  app.innerHTML =
+    ph==="intro"?vIntro(): ph==="quiz"?vQuiz(): ph==="result"?vResult():
+    ph==="types"?vTypes(): ph==="type"?vType(): ph==="match"?vMatch():"";
+}
+render();
+</script>
+</body>
+</html>
