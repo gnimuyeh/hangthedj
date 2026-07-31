@@ -169,7 +169,7 @@ function App(){
   return(
     <div style={S.pg}>
       <div style={S.header}>
-        <div style={{fontSize:10,letterSpacing:4,color:C.accent,fontWeight:600,marginBottom:2}}>LOVETYPE</div>
+        <div style={{fontSize:10,letterSpacing:4,color:C.accent,fontWeight:600,marginBottom:2,cursor:"pointer"}} onClick={()=>window.location.href='/'}>← LOVETYPE</div>
         <div style={{fontSize:14,fontWeight:300,color:C.text,letterSpacing:2}}>创建你的默契测试</div>
       </div>
       <div ref={chatRef} style={S.chat}>

@@ -1275,7 +1275,9 @@ function renderChat(app) {
 
   // header + progress
   const genBtn = state.showBuild ? h("button",{class:"btn-gen",onClick:buildPersona},"生成档案 ✨") : null;
+  const homeBtn = h("div",{style:{cursor:"pointer",fontSize:"11px",color:"var(--pri)",fontWeight:"600",letterSpacing:"1px",padding:"4px 8px",marginRight:"4px"},onClick:()=>window.location.href='/'},"←");
   const headerRow = h("div",{class:"header-row"},
+    homeBtn,
     h("div",{class:"header-ava"}, g.svgAvatar(24)),
     h("div",{class:"header-info"}, h("div",{class:"name"}, g.name), h("div",{class:"sub"}, g.sub)),
     genBtn
