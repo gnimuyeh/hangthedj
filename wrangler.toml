@@ -9,3 +9,15 @@ compatibility_date = "2024-12-01"
 binding = "DB"
 database_name = "lovetype-db"
 database_id = "96780fbb-c7ea-4362-9333-39596af9155d"
+
+# ── Tencent Cloud SMS (fill in from LoveGPT project credentials) ──
+# TENCENT_SECRET_ID / TENCENT_SECRET_KEY: https://console.cloud.tencent.com/cam/capi
+# SMS_SDK_APP_ID: SMS console → 应用管理
+# SMS_SIGN_NAME: approved 签名 content (e.g. "LoveType")
+# SMS_TEMPLATE_ID: approved 模板 ID — template must accept {1}=code, {2}=minutes
+[vars]
+TENCENT_SECRET_ID = ""
+TENCENT_SECRET_KEY = ""
+SMS_SDK_APP_ID = ""
+SMS_SIGN_NAME = ""
+SMS_TEMPLATE_ID = ""

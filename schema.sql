@@ -53,3 +53,15 @@ CREATE TABLE IF NOT EXISTS quiz_submissions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_submissions_quiz ON quiz_submissions(quiz_id);
+
+-- ── SMS Verification Codes ──
+CREATE TABLE IF NOT EXISTS sms_codes (
+  id         TEXT PRIMARY KEY,
+  phone      TEXT NOT NULL,
+  code       TEXT NOT NULL,
+  attempts   INTEGER NOT NULL DEFAULT 0,
+  expires_at TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_sms_phone ON sms_codes(phone, created_at DESC);

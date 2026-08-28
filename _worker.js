@@ -416,6 +416,159 @@ async function handleGetResults(request, env) {
   return json({ results: parsed });
 }
 
+// ── SMS Verification (Tencent Cloud SMS) ──
+// Credentials come from wrangler.toml [vars]:
+//   TENCENT_SECRET_ID, TENCENT_SECRET_KEY, SMS_SDK_APP_ID, SMS_SIGN_NAME, SMS_TEMPLATE_ID
+// Template is expected to take two params: {1} = code, {2} = validity minutes.
+
+async function hmacSha256(key, msg) {
+  const k = await crypto.subtle.importKey("raw", key, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  return new Uint8Array(await crypto.subtle.sign("HMAC", k, new TextEncoder().encode(msg)));
+}
+async function sha256Hex(msg) {
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(d)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+function bytesToHex(bytes) {
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Call Tencent Cloud SendSms with TC3-HMAC-SHA256 signing */
+async function sendTencentSms(env, phone, code, validMinutes = "5") {
+  const host = "sms.tencentcloudapi.com";
+  const service = "sms";
+  const action = "SendSms";
+  const version = "2021-01-11";
+  const region = "ap-guangzhou";
+  const timestamp = Math.floor(Date.now() / 1000);
+  const date = new Date(timestamp * 1000).toISOString().slice(0, 10);
+
+  const payload = JSON.stringify({
+    PhoneNumberSet: ["+86" + phone],
+    SmsSdkAppId: env.SMS_SDK_APP_ID,
+    SignName: env.SMS_SIGN_NAME,
+    TemplateId: env.SMS_TEMPLATE_ID,
+    TemplateParamSet: [code, validMinutes],
+  });
+
+  const hashedPayload = await sha256Hex(payload);
+  const canonicalRequest = [
+    "POST", "/", "",
+    "content-type:application/json; charset=utf-8",
+    "host:" + host,
+    "x-tc-action:" + action.toLowerCase(),
+    "",
+    "content-type;host;x-tc-action",
+    hashedPayload,
+  ].join("\n");
+
+  const credentialScope = `${date}/${service}/tc3_request`;
+  const stringToSign = [
+    "TC3-HMAC-SHA256",
+    String(timestamp),
+    credentialScope,
+    await sha256Hex(canonicalRequest),
+  ].join("\n");
+
+  const kDate = await hmacSha256(new TextEncoder().encode("TC3" + env.TENCENT_SECRET_KEY), date);
+  const kService = await hmacSha256(kDate, service);
+  const kSigning = await hmacSha256(kService, "tc3_request");
+  const signature = bytesToHex(await hmacSha256(kSigning, stringToSign));
+
+  const authorization = `TC3-HMAC-SHA256 Credential=${env.TENCENT_SECRET_ID}/${credentialScope}, SignedHeaders=content-type;host;x-tc-action, Signature=${signature}`;
+
+  const resp = await fetch("https://" + host, {
+    method: "POST",
+    headers: {
+      "Authorization": authorization,
+      "Content-Type": "application/json; charset=utf-8",
+      "Host": host,
+      "X-TC-Action": action,
+      "X-TC-Version": version,
+      "X-TC-Timestamp": String(timestamp),
+      "X-TC-Region": region,
+    },
+    body: payload,
+  });
+  const result = await resp.json();
+  if (result.Response?.Error) {
+    throw new Error(result.Response.Error.Code + ": " + result.Response.Error.Message);
+  }
+  const status = result.Response?.SendStatusSet?.[0];
+  if (status && status.Code !== "Ok") {
+    throw new Error(status.Code + ": " + (status.Message || "send failed"));
+  }
+  return result;
+}
+
+// POST /api/sms/send — send a verification code to a Chinese mobile number
+async function handleSmsSend(request, env) {
+  const cors = handleCORS(request); if (cors) return cors;
+  const post = requirePOST(request); if (post) return post;
+  const dev = requireDevice(request); if (dev) return dev;
+
+  const { phone } = await request.json();
+  if (!/^1[3-9]\d{9}$/.test(phone || "")) return err("请输入正确的手机号");
+
+  if (!env.TENCENT_SECRET_ID || !env.TENCENT_SECRET_KEY || !env.SMS_SDK_APP_ID) {
+    return err("SMS not configured — set TENCENT_SECRET_ID / TENCENT_SECRET_KEY / SMS_SDK_APP_ID / SMS_SIGN_NAME / SMS_TEMPLATE_ID", 503);
+  }
+
+  // Rate limit: max 1 send per 60s per phone, max 10 per day per phone
+  const recent = await env.DB.prepare(
+    "SELECT created_at FROM sms_codes WHERE phone = ? AND created_at > datetime('now','-60 seconds') LIMIT 1"
+  ).bind(phone).first();
+  if (recent) return err("发送太频繁，请稍后再试", 429);
+  const daily = await env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM sms_codes WHERE phone = ? AND created_at > datetime('now','-1 day')"
+  ).bind(phone).first();
+  if ((daily?.n || 0) >= 10) return err("今日发送次数已达上限", 429);
+
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  await env.DB.prepare(
+    "INSERT INTO sms_codes (id, phone, code, expires_at) VALUES (?, ?, ?, datetime('now','+5 minutes'))"
+  ).bind(crypto.randomUUID(), phone, code).run();
+
+  try {
+    await sendTencentSms(env, phone, code);
+  } catch (e) {
+    return err("短信发送失败：" + e.message, 502);
+  }
+  return json({ ok: true });
+}
+
+// POST /api/sms/verify — verify code, attach phone to this device's user
+async function handleSmsVerify(request, env) {
+  const cors = handleCORS(request); if (cors) return cors;
+  const post = requirePOST(request); if (post) return post;
+  const dev = requireDevice(request); if (dev) return dev;
+  const user = await getUser(request, env);
+
+  const { phone, code } = await request.json();
+  if (!/^1[3-9]\d{9}$/.test(phone || "")) return err("请输入正确的手机号");
+  if (!/^\d{6}$/.test(code || "")) return err("请输入6位验证码");
+
+  const row = await env.DB.prepare(
+    "SELECT id, code, attempts FROM sms_codes WHERE phone = ? AND expires_at > datetime('now') ORDER BY created_at DESC LIMIT 1"
+  ).bind(phone).first();
+  if (!row) return err("验证码已过期，请重新获取");
+  if (row.attempts >= 5) return err("尝试次数过多，请重新获取验证码");
+
+  if (row.code !== code) {
+    await env.DB.prepare("UPDATE sms_codes SET attempts = attempts + 1 WHERE id = ?").bind(row.id).run();
+    return err("验证码不正确");
+  }
+
+  // Success — clean up codes, attach phone to this device's user row
+  await env.DB.prepare("DELETE FROM sms_codes WHERE phone = ?").bind(phone).run();
+  try {
+    await env.DB.prepare("UPDATE users SET phone = ?, updated_at = datetime('now') WHERE id = ?").bind(phone, user.id).run();
+  } catch (e) {
+    // Phone already attached to another user row (UNIQUE constraint) — verification still succeeds
+  }
+  return json({ ok: true, verified: true });
+}
+
 // ── Router ──
 
 // ── Quiz Handlers ──
@@ -561,6 +714,8 @@ const routes = {
   "GET /api/auth/me":      handleMe,
   "POST /api/auth/name":   handleSetName,
   "POST /api/results":     handleSaveResult,
+  "POST /api/sms/send":    handleSmsSend,
+  "POST /api/sms/verify":  handleSmsVerify,
   "GET /api/results":      handleGetResults,
   "POST /api/quiz/generate": handleQuizGenerate,
 };
