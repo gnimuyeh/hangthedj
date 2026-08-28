@@ -53,7 +53,9 @@ Router → middleware → handler pattern.
 | POST | /api/image | handleImage | MiniMax image generation |
 | GET | /api/auth/me | handleMe | Get current device user |
 | POST | /api/auth/name | handleSetName | Set user display name |
-| POST | /api/results | handleSaveResult | Save test result (lovetype/soulmate) |
+| POST | /api/results | handleSaveResult | Save test result (lovetype/soulmate/dbti) |
+| POST | /api/sms/send | handleSmsSend | Send SMS verification code (Tencent Cloud) |
+| POST | /api/sms/verify | handleSmsVerify | Verify code, attach phone to device's user |
 | GET | /api/results | handleGetResults | Get user's result history |
 | POST | /api/quiz/generate | handleQuizGenerate | AI generates quiz from interview transcript |
 | GET | /api/quiz/:id | handleQuizGet | Fetch quiz config (dimensions + questions) |
@@ -68,6 +70,33 @@ users:            id, device_id (unique), name, phone, avatar_url
 results:          id, user_id, test_type ('lovetype'|'soulmate'), code, scores (JSON)
 quizzes:          id, creator_id, title, description, dimensions (JSON), questions (JSON), config (JSON)
 quiz_submissions: id, quiz_id, user_id, overall, scores (JSON), UNIQUE(quiz_id, user_id)
+```
+
+### SMS Verification Gate (current launch config)
+
+Landing page currently shows **only** the LERA card (`lovetype-test.html`) — the other
+five are commented out in `public/index.html`, one uncomment away from restoring.
+
+LERA gates its results behind SMS verification:
+- After the last question → `verify` phase (not `result`)
+- Phone + 6-digit code, 60s resend countdown
+- On success: `lovetype_verified_phone` in localStorage (skips gate on return),
+  phone written to `users.phone`, result saved via `POST /api/results`
+- Nav links to personal views (我的报告 / 合盘) also route through the gate;
+  informational views (16型总览 / 字母解读) stay open
+- Users with a pre-gate cached result are sent to the gate on next visit
+
+Credentials live in `wrangler.toml` `[vars]` — `TENCENT_SECRET_ID`,
+`TENCENT_SECRET_KEY`, `SMS_SDK_APP_ID`, `SMS_SIGN_NAME`, `SMS_TEMPLATE_ID`.
+Template must take two params: `{1}` = code, `{2}` = validity minutes.
+Endpoints return a 503 "SMS not configured" until these are filled.
+
+Pull phone + report together:
+```sql
+SELECT u.phone, r.code, r.scores, r.created_at
+FROM results r JOIN users u ON r.user_id = u.id
+WHERE r.test_type = 'lovetype' AND u.phone IS NOT NULL
+ORDER BY r.created_at DESC;
 ```
 
 ### Auth

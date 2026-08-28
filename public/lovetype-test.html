@@ -330,6 +330,9 @@ function getDeviceId() {
   if (!id) { id = crypto.randomUUID(); localStorage.setItem('lovetype_device_id', id); }
   return id;
 }
+function isVerified() {
+  try { return !!localStorage.getItem('lovetype_verified_phone'); } catch (e) { return false; }
+}
 function saveResultToServer(code, scores) {
   fetch('/api/results', {
     method: 'POST',
@@ -350,6 +353,12 @@ function App(){
   const[vl,setVl]=useState(null);// view letter
   const[sliders,setSliders]=useState({sn:0,le:0,ar:0,oc:0});
   const[cr,setCr]=useState(null);
+  // ── SMS verification gate ──
+  const[vPhone,setVPhone]=useState("");
+  const[vCode,setVCode]=useState("");
+  const[vErr,setVErr]=useState("");
+  const[vBusy,setVBusy]=useState(false);
+  const[vCountdown,setVCountdown]=useState(0);
 
   // Load cached result on mount
   useEffect(()=>{
@@ -357,9 +366,49 @@ function App(){
       const c=window.localStorage?.getItem('lovetype_result');
       const a=window.localStorage?.getItem('lovetype_answers');
       const m=window.localStorage?.getItem('lovetype_mode');
-      if(c&&a){setRes(JSON.parse(c));setAns(JSON.parse(a));if(m)setMode(m);setPh("result");}
+      if(c&&a){setRes(JSON.parse(c));setAns(JSON.parse(a));if(m)setMode(m);setPh(isVerified()?"result":"verify");}
     }catch(e){}
   },[]);
+
+  // Resend countdown — controlled inputs keep focus across these re-renders
+  useEffect(()=>{
+    if(vCountdown<=0)return;
+    const t=setTimeout(()=>setVCountdown(vCountdown-1),1000);
+    return ()=>clearTimeout(t);
+  },[vCountdown]);
+
+  const sendCode=async()=>{
+    const phone=vPhone.trim();
+    if(!/^1[3-9]\d{9}$/.test(phone)){setVErr("请输入正确的手机号");return;}
+    setVBusy(true);setVErr("");
+    try{
+      const r=await fetch('/api/sms/send',{method:'POST',
+        headers:{'Content-Type':'application/json','X-Device-Id':getDeviceId()},
+        body:JSON.stringify({phone})});
+      const d=await r.json();
+      if(d.error)throw new Error(d.error);
+      setVCountdown(60);
+    }catch(e){setVErr(e.message);}
+    setVBusy(false);
+  };
+
+  const verifyCode=async()=>{
+    const phone=vPhone.trim(),code=vCode.trim();
+    if(!/^1[3-9]\d{9}$/.test(phone)){setVErr("请输入正确的手机号");return;}
+    if(!/^\d{6}$/.test(code)){setVErr("请输入6位验证码");return;}
+    setVBusy(true);setVErr("");
+    try{
+      const r=await fetch('/api/sms/verify',{method:'POST',
+        headers:{'Content-Type':'application/json','X-Device-Id':getDeviceId()},
+        body:JSON.stringify({phone,code})});
+      const d=await r.json();
+      if(d.error)throw new Error(d.error);
+      try{localStorage.setItem('lovetype_verified_phone',phone)}catch(e){}
+      if(res)saveResultToServer(res.code,res.av);
+      setVBusy(false);
+      go(()=>setPh("result"));
+    }catch(e){setVErr(e.message);setVBusy(false);}
+  };
 
   const go=fn=>{setFade(false);setTimeout(()=>{fn();setFade(true);},200);};
   const totalQ=mode==="full"?60:32;
@@ -374,8 +423,8 @@ function App(){
         else{
           const r=calc(na,mode);setRes(r);
           try{window.localStorage?.setItem('lovetype_result',JSON.stringify(r));window.localStorage?.setItem('lovetype_answers',JSON.stringify(na));window.localStorage?.setItem('lovetype_mode',mode);}catch(e){}
-          saveResultToServer(r.code, r.av);
-          setPh("result");
+          if(isVerified()){saveResultToServer(r.code, r.av);setPh("result");}
+          else setPh("verify");
         }
       });
     },280);
@@ -391,10 +440,10 @@ function App(){
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0 6px",maxWidth:540,width:"100%"}}>
       <span style={{fontSize:13,fontWeight:700,color:P.accent,letterSpacing:3,cursor:"pointer"}} onClick={()=>window.location.href='/'}>LOVETYPE</span>
       <div style={{display:"flex",gap:12}}>
-        {res&&<span style={S.nav} onClick={()=>go(()=>{setVt(null);setVl(null);setPh("result");})}>我的报告</span>}
+        {res&&<span style={S.nav} onClick={()=>go(()=>{setVt(null);setVl(null);setPh(isVerified()?"result":"verify");})}>我的报告</span>}
         <span style={S.nav} onClick={()=>go(()=>{setVt(null);setVl(null);setPh("types");})}>16型总览</span>
         <span style={S.nav} onClick={()=>go(()=>{setVt(null);setVl(null);setPh("letters");})}>字母解读</span>
-        {res&&<span style={S.nav} onClick={()=>go(()=>{setVt(null);setVl(null);setPh("compat");})}>合盘</span>}
+        {res&&<span style={S.nav} onClick={()=>go(()=>{setVt(null);setVl(null);setPh(isVerified()?"compat":"verify");})}>合盘</span>}
       </div>
     </div>
   );
@@ -676,6 +725,48 @@ function App(){
       </div></div>
     );
   }
+
+  // ─── VERIFY GATE ───
+  if(ph==="verify")return(
+    <div style={S.pg}><div style={{...S.wr,opacity:fade?1:0,transition:"opacity 0.4s"}}>
+      <Nav/>
+      <div style={{textAlign:"center",padding:"34px 0 26px"}}>
+        <div style={{fontSize:10,letterSpacing:6,color:P.accent,fontWeight:600,marginBottom:14}}>VERIFICATION</div>
+        <h2 style={{fontSize:24,fontWeight:200,color:P.text,letterSpacing:3,margin:"0 0 12px"}}>测评完成</h2>
+        <p style={{fontSize:12.5,color:P.sub,lineHeight:1.9,fontWeight:300,padding:"0 12px",margin:0}}>
+          你的 16 型恋爱人格报告已生成。<br/>输入手机号验证后解锁完整报告。
+        </p>
+        <div style={{width:28,height:1,background:P.accent,margin:"22px auto 0",opacity:.4}}/>
+      </div>
+      <div style={S.cd}>
+        <div style={{display:"flex",gap:8,marginBottom:10}}>
+          <input value={vPhone} onChange={e=>setVPhone(e.target.value)} type="tel" maxLength={11} placeholder="手机号"
+            style={{flex:1,minWidth:0,padding:"12px 14px",fontSize:15,border:`1px solid ${P.bd}`,borderRadius:10,
+              background:"transparent",color:P.text,outline:"none",fontFamily:"inherit"}}/>
+          <button onClick={sendCode} disabled={vBusy||vCountdown>0}
+            style={{whiteSpace:"nowrap",padding:"0 14px",fontSize:12,fontWeight:500,letterSpacing:1,borderRadius:10,
+              fontFamily:"inherit",cursor:vCountdown>0?"default":"pointer",background:"transparent",
+              border:`1px solid ${vCountdown>0?P.bd:P.acM}`,color:vCountdown>0?P.mut:P.accent}}>
+            {vCountdown>0?vCountdown+"s":"获取验证码"}
+          </button>
+        </div>
+        <input value={vCode} onChange={e=>setVCode(e.target.value)} type="tel" maxLength={6} placeholder="6 位验证码"
+          onKeyDown={e=>{if(e.key==='Enter')verifyCode();}}
+          style={{width:"100%",padding:"12px 14px",fontSize:15,letterSpacing:4,border:`1px solid ${P.bd}`,borderRadius:10,
+            background:"transparent",color:P.text,outline:"none",fontFamily:"inherit"}}/>
+        <div style={{fontSize:11.5,color:"#C42B4B",minHeight:17,marginTop:8,lineHeight:1.5}}>{vErr}</div>
+        <button onClick={verifyCode} disabled={vBusy}
+          style={{width:"100%",padding:"14px",fontSize:14,fontWeight:500,color:"#fff",background:P.accent,border:"none",
+            borderRadius:10,cursor:"pointer",letterSpacing:3,fontFamily:"inherit",opacity:vBusy?0.6:1,
+            boxShadow:"0 4px 20px rgba(199,109,46,0.25)"}}>
+          {vBusy?"验证中···":"解锁我的报告"}
+        </button>
+      </div>
+      <p style={{fontSize:11,color:P.mut,textAlign:"center",lineHeight:1.9,marginTop:14}}>
+        手机号仅用于验证身份，不会公开展示。
+      </p>
+    </div></div>
+  );
 
   // ─── RESULT ───
   if(ph==="result"&&res){
