@@ -86,10 +86,16 @@ LERA gates its results behind SMS verification:
   informational views (16型总览 / 字母解读) stay open
 - Users with a pre-gate cached result are sent to the gate on next visit
 
-Credentials live in `wrangler.toml` `[vars]` — `TENCENT_SECRET_ID`,
-`TENCENT_SECRET_KEY`, `SMS_SDK_APP_ID`, `SMS_SIGN_NAME`, `SMS_TEMPLATE_ID`.
-Template must take two params: `{1}` = code, `{2}` = validity minutes.
-Endpoints return a 503 "SMS not configured" until these are filled.
+**Credentials.** `TENCENT_SECRET_ID` / `TENCENT_SECRET_KEY` are account-level
+credentials and are NOT in the repo — they live in Cloudflare's encrypted secret
+store (`wrangler pages secret put <NAME> --project-name=hangthedj`). The
+non-sensitive values are in `wrangler.toml` `[vars]`: `SMS_SDK_APP_ID`,
+`SMS_SIGN_NAME` (杭州知言智能科技), `SMS_TEMPLATE_ID` (2701472 = 注册/signup;
+2701475 = 登录/login is the alternate). Templates take two params:
+`{1}` = code, `{2}` = validity minutes. Endpoints return 503 if secrets are missing.
+
+Secrets are per-Pages-project, so a new project (or a preview environment
+configured separately) needs them re-uploaded.
 
 Pull phone + report together:
 ```sql
