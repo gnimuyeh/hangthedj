@@ -396,11 +396,8 @@ async function handleSaveResult(request, env) {
   const { test_type, code, scores } = await request.json();
   if (!test_type || !scores) return err("test_type and scores required");
 
-  // A retake overrides the previous report rather than stacking up beside it,
-  // so "your report" always resolves to exactly one row per test type.
-  await env.DB.prepare("DELETE FROM results WHERE user_id = ? AND test_type = ?")
-    .bind(user.id, test_type).run();
-
+  // Append-only: every take is kept for analytics. Reads collapse to the newest
+  // per test type, so a retake still *looks* like an override to the user.
   const id = crypto.randomUUID();
   await env.DB.prepare(
     "INSERT INTO results (id, user_id, test_type, code, scores) VALUES (?, ?, ?, ?, ?)"
@@ -414,8 +411,11 @@ async function handleGetResults(request, env) {
   const dev = requireDevice(request); if (dev) return dev;
   const user = await getUser(request, env);
 
+  // GROUP BY with MAX(): SQLite resolves the bare columns from the row that
+  // actually holds the maximum, giving the newest report per test type.
   const { results } = await env.DB.prepare(
-    "SELECT id, test_type, code, scores, created_at FROM results WHERE user_id = ? ORDER BY created_at DESC LIMIT 50"
+    "SELECT id, test_type, code, scores, MAX(created_at) AS created_at " +
+    "FROM results WHERE user_id = ? GROUP BY test_type ORDER BY created_at DESC"
   ).bind(user.id).all();
 
   // Parse scores JSON for each result
@@ -588,12 +588,6 @@ async function handleSmsVerify(request, env) {
     // would take the mapping with it.
     await env.DB.prepare("UPDATE user_devices SET user_id = ? WHERE device_id = ?").bind(owner.id, deviceId).run();
     await env.DB.prepare("DELETE FROM users WHERE id = ?").bind(user.id).run();
-    // The move can leave two reports of the same type on one identity. Keep the
-    // newest so the one-report-per-type rule still holds after a merge.
-    await env.DB.prepare(
-      "DELETE FROM results WHERE user_id = ?1 AND id NOT IN " +
-      "(SELECT id FROM (SELECT id, MAX(created_at) FROM results WHERE user_id = ?1 GROUP BY test_type))"
-    ).bind(owner.id).run();
     user = { id: owner.id };
   } else {
     await env.DB.prepare("UPDATE users SET phone = ?, updated_at = datetime('now') WHERE id = ?").bind(phone, user.id).run();

@@ -98,12 +98,21 @@ non-sensitive values are in `wrangler.toml` `[vars]`: `SMS_SDK_APP_ID`,
 Secrets are per-Pages-project, so a new project (or a preview environment
 configured separately) needs them re-uploaded.
 
-Pull phone + report together:
+Pull phone + report together. `results` is append-only, so this returns
+every take — add the `GROUP BY` to collapse to each person's current type:
+
 ```sql
+-- full history, one row per take
 SELECT u.phone, r.code, r.scores, r.created_at
 FROM results r JOIN users u ON r.user_id = u.id
 WHERE r.test_type = 'lovetype' AND u.phone IS NOT NULL
 ORDER BY r.created_at DESC;
+
+-- current type only, one row per person
+SELECT u.phone, r.code, r.scores, MAX(r.created_at) AS created_at
+FROM results r JOIN users u ON r.user_id = u.id
+WHERE r.test_type = 'lovetype' AND u.phone IS NOT NULL
+GROUP BY r.user_id ORDER BY created_at DESC;
 ```
 
 ### Auth
@@ -129,11 +138,17 @@ deleted, or `ON DELETE CASCADE` would take it along.
 the newest LERA report for that identity, so a new device can rebuild its
 report without retaking the test.
 
-**One live report per identity per test type.** `handleSaveResult` deletes
-any existing row of the same `test_type` before inserting, so a retake
-overrides rather than stacking. A merge can still land two reports of one
-type on a single identity, so the merge prunes to the newest per type
-afterwards.
+**Append-only storage, newest-wins reads.** `handleSaveResult` always
+inserts, so every take is retained for analytics. `handleGetResults` and the
+`restored` payload return only the newest row per `test_type`, so a retake
+looks like an override to the user while the trail survives underneath.
+The read leans on SQLite resolving bare columns from the row holding
+`MAX(created_at)`:
+
+```sql
+SELECT id, test_type, code, scores, MAX(created_at) AS created_at
+FROM results WHERE user_id = ? GROUP BY test_type
+```
 
 **Recovery entry points.** The landing page has 换了手机？用手机号找回报告,
 linking to `lovetype-test.html?recover=1`; LERA's intro carries the same
