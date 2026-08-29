@@ -18,6 +18,21 @@
   }
   .container { max-width: 440px; width: 100%; text-align: center; }
   .brand { font-size: 11px; letter-spacing: 6px; color: #C76D2E; font-weight: 600; margin-bottom: 16px; }
+  /* Sonder brand mark — text wordmark; swap for <img> when the logo file lands */
+  .brand-sonder {
+    font-size: 21px; font-weight: 200; letter-spacing: 11px; color: #111;
+    margin-bottom: 5px; text-indent: 11px; /* offset trailing letter-space so it optically centers */
+  }
+  .brand-sonder-tag {
+    font-size: 9px; letter-spacing: 5px; color: #C76D2E; font-weight: 600;
+    margin-bottom: 18px; text-indent: 5px;
+  }
+  /* Sponsor credit */
+  .sponsor { margin-top: 40px; padding-top: 22px; border-top: 1px solid rgba(0,0,0,0.06); }
+  .sponsor-title {
+    font-size: 10px; letter-spacing: 4px; color: #aaa; margin-bottom: 13px; text-indent: 4px;
+  }
+  .sponsor-logo { width: 132px; height: auto; opacity: 0.88; }
   h1 { font-size: 26px; font-weight: 200; color: #111; letter-spacing: 3px; margin-bottom: 6px; }
   .subtitle { font-size: 11px; color: #aaa; letter-spacing: 2px; margin-bottom: 24px; }
   .divider { width: 28px; height: 1px; background: #C76D2E; margin: 0 auto 28px; opacity: 0.4; }
@@ -92,7 +107,8 @@
 </head>
 <body>
 <div class="container">
-  <div class="brand">LOVETYPE</div>
+  <div class="brand-sonder">SONDER</div>
+  <div class="brand-sonder-tag">LOVETYPE</div>
   <h1>恋爱人格</h1>
   <div class="subtitle">Love Personality</div>
   <div class="divider"></div>
@@ -167,8 +183,14 @@
     -->
   </div>
 
-    <div class="footer">LOVETYPE · 恋爱人格</div>
   </div><!-- /main-content -->
+
+  <!-- Sponsor sits outside #main-content so it is visible on the name gate too -->
+  <div class="sponsor">
+    <div class="sponsor-title">特别鸣谢</div>
+    <img class="sponsor-logo" src="img/sponsor-xiclub.png" alt="禧又 CLUB" width="440" height="280">
+  </div>
+  <div class="footer">SONDER · 恋爱人格</div>
 </div>
 
 <script>
