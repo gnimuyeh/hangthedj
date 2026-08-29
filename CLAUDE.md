@@ -127,8 +127,21 @@ deleted, or `ON DELETE CASCADE` would take it along.
 
 `/api/sms/verify` returns `restored: { code, scores, created_at } | null` —
 the newest LERA report for that identity, so a new device can rebuild its
-report without retaking the test. LERA's intro has a 已经测过？用手机号找回报告
-link that opens the same verify screen in recovery mode.
+report without retaking the test.
+
+**One live report per identity per test type.** `handleSaveResult` deletes
+any existing row of the same `test_type` before inserting, so a retake
+overrides rather than stacking. A merge can still land two reports of one
+type on a single identity, so the merge prunes to the newest per type
+afterwards.
+
+**Recovery entry points.** The landing page has 换了手机？用手机号找回报告,
+linking to `lovetype-test.html?recover=1`; LERA's intro carries the same
+link. Both open the verify screen in recovery mode (`vMode="recover"`),
+which relabels the copy and, on success, restores the report without a
+retake. An unrecognised phone says so rather than showing an empty report.
+Pages 308-redirects `.html` to extensionless, and the query string
+survives.
 
 ### Design System
 

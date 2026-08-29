@@ -368,6 +368,10 @@ function App(){
       const a=window.localStorage?.getItem('lovetype_answers');
       const m=window.localStorage?.getItem('lovetype_mode');
       if(c&&a){setRes(JSON.parse(c));setAns(JSON.parse(a));if(m)setMode(m);setPh(isVerified()?"result":"verify");}
+      // Deep link from the landing page: jump straight into phone recovery
+      if(new URLSearchParams(window.location.search).get('recover')){
+        setVMode("recover");setVErr("");setPh("verify");
+      }
     }catch(e){}
   },[]);
 
