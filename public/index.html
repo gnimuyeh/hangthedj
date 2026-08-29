@@ -14,7 +14,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 54px 20px 20px;   /* top strip reserved for the corner brand mark */
+    padding: 54px 20px 104px;  /* strips reserved for the corner brand mark and footer */
     position: relative;        /* positioning context for .brand-sonder */
   }
   .container { max-width: 440px; width: 100%; text-align: center; }
@@ -25,12 +25,13 @@
     font-size: 14px; font-weight: 300; letter-spacing: 5px; color: #111;
     line-height: 1;
   }
-  /* Sponsor credit */
-  .sponsor { margin-top: 40px; padding-top: 22px; border-top: 1px solid rgba(0,0,0,0.06); }
+  /* Page footer — pinned bottom-right, mirroring the brand mark top-left */
+  .page-footer { position: absolute; bottom: 18px; right: 20px; text-align: right; }
   .sponsor-title {
-    font-size: 10px; letter-spacing: 4px; color: #aaa; margin-bottom: 13px; text-indent: 4px;
+    font-size: 9px; letter-spacing: 3px; color: #bbb; margin-bottom: 7px;
+    margin-right: -3px;   /* soak up the trailing letter-space so it aligns flush right */
   }
-  .sponsor-logo { width: 33px; height: auto; opacity: 0.88; }
+  .sponsor-logo { width: 33px; height: auto; opacity: 0.88; display: block; margin-left: auto; }
   h1 { font-size: 26px; font-weight: 200; color: #111; letter-spacing: 3px; margin-bottom: 6px; }
   .subtitle { font-size: 11px; color: #aaa; letter-spacing: 2px; margin-bottom: 24px; }
   .divider { width: 28px; height: 1px; background: #C76D2E; margin: 0 auto 28px; opacity: 0.4; }
@@ -81,7 +82,7 @@
   .btn:active { opacity: 0.8; transform: scale(0.98); }
   .btn-primary { background: #C76D2E; color: #fff; }
   .btn-secondary { background: transparent; color: #C76D2E; border: 1px solid rgba(199,109,46,0.2); }
-  .footer { margin-top: 32px; font-size: 10px; color: #ccc; letter-spacing: 2px; }
+  .footer { margin-top: 9px; font-size: 9px; color: #ccc; letter-spacing: 2px; margin-right: -2px; }
   .hidden { display: none; }
   /* Name gate */
   .name-gate { padding-top: 60px; }
@@ -182,12 +183,13 @@
   </div>
 
   </div><!-- /main-content -->
+</div>
 
-  <!-- Sponsor sits outside #main-content so it is visible on the name gate too -->
-  <div class="sponsor">
-    <div class="sponsor-title">合作伙伴</div>
-    <img class="sponsor-logo" src="img/sponsor-xiclub.png" alt="禧又 CLUB" width="440" height="280">
-  </div>
+<!-- Outside .container so it anchors to the page corner, and outside
+     #main-content so it shows on the name gate too -->
+<div class="page-footer">
+  <div class="sponsor-title">合作伙伴</div>
+  <img class="sponsor-logo" src="img/sponsor-xiclub.png" alt="禧又 CLUB" width="440" height="280">
   <div class="footer">SONDER · 恋爱人格</div>
 </div>
 
