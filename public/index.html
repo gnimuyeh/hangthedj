@@ -11,13 +11,17 @@
     -webkit-font-smoothing: antialiased;
     background: #FAFAF7;
     min-height: 100vh;
+    min-height: 100dvh;        /* vh counts browser chrome in WeChat; dvh does not */
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 54px 20px 104px;  /* strips reserved for the corner brand mark and footer */
+    padding: 54px 20px 18px;   /* top strip reserved for the corner brand mark */
     position: relative;        /* positioning context for .brand-sonder */
   }
-  .container { max-width: 440px; width: 100%; text-align: center; }
+  .container {
+    max-width: 440px; width: 100%; text-align: center;
+    flex: 1; display: flex; flex-direction: column; justify-content: center;
+  }
   .brand { font-size: 11px; letter-spacing: 6px; color: #C76D2E; font-weight: 600; margin-bottom: 16px; }
   /* Sonder brand mark — pinned top-left. Text wordmark; swap for <img> when the logo lands */
   .brand-sonder {
@@ -25,13 +29,13 @@
     font-size: 14px; font-weight: 300; letter-spacing: 5px; color: #111;
     line-height: 1;
   }
-  /* Page footer — pinned bottom-right, mirroring the brand mark top-left */
-  .page-footer { position: absolute; bottom: 18px; right: 20px; text-align: right; }
+  /* Page footer — sits at the bottom of the flex column, centred */
+  .page-footer { flex-shrink: 0; text-align: center; padding-top: 22px; }
   .sponsor-title {
     font-size: 9px; letter-spacing: 3px; color: #bbb; margin-bottom: 7px;
-    margin-right: -3px;   /* soak up the trailing letter-space so it aligns flush right */
+    text-indent: 3px;   /* offset trailing letter-space so it optically centres */
   }
-  .sponsor-logo { width: 33px; height: auto; opacity: 0.88; display: block; margin-left: auto; }
+  .sponsor-logo { width: 33px; height: auto; opacity: 0.88; display: block; margin: 0 auto; }
   h1 { font-size: 26px; font-weight: 200; color: #111; letter-spacing: 3px; margin-bottom: 6px; }
   .subtitle { font-size: 11px; color: #aaa; letter-spacing: 2px; margin-bottom: 24px; }
   .divider { width: 28px; height: 1px; background: #C76D2E; margin: 0 auto 28px; opacity: 0.4; }
@@ -82,7 +86,7 @@
   .btn:active { opacity: 0.8; transform: scale(0.98); }
   .btn-primary { background: #C76D2E; color: #fff; }
   .btn-secondary { background: transparent; color: #C76D2E; border: 1px solid rgba(199,109,46,0.2); }
-  .footer { margin-top: 9px; font-size: 9px; color: #ccc; letter-spacing: 2px; margin-right: -2px; }
+  .footer { margin-top: 9px; font-size: 9px; color: #ccc; letter-spacing: 2px; text-indent: 2px; }
   .recover-link {
     display: block; text-decoration: none; text-align: center;
     font-size: 11.5px; color: #C76D2E; margin-top: 4px; padding: 8px;
@@ -153,7 +157,7 @@
       <div class="card-desc">4个维度 · 16种恋爱人格<br>探索你在亲密关系中的真实模式</div>
       <div class="card-meta">32题快速版 / 60题完整版</div>
     </a>
-    <a class="recover-link" href="lovetype-test.html?recover=1">换了手机？用手机号找回报告 →</a>
+    <a class="recover-link" href="lovetype-test.html?recover=1">用手机号找回报告 →</a>
     <!-- Temporarily hidden — LERA-only launch. Restore by uncommenting.
     <a class="card" href="dbti/">
       <div class="card-icon">🧬</div>
@@ -191,8 +195,7 @@
   </div><!-- /main-content -->
 </div>
 
-<!-- Outside .container so it anchors to the page corner, and outside
-     #main-content so it shows on the name gate too -->
+<!-- Outside #main-content so it shows on the name gate too -->
 <div class="page-footer">
   <div class="sponsor-title">合作伙伴</div>
   <img class="sponsor-logo" src="img/sponsor-xiclub.png" alt="禧又 CLUB" width="440" height="280">
