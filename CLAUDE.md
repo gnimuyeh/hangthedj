@@ -66,7 +66,8 @@ Router → middleware → handler pattern.
 ### Database (D1)
 
 ```
-users:            id, device_id (unique), name, phone, avatar_url
+users:            id, device_id (unique, first device), name, phone (unique), avatar_url
+user_devices:     device_id (PK), user_id  -- many devices per identity
 results:          id, user_id, test_type ('lovetype'|'soulmate'), code, scores (JSON)
 quizzes:          id, creator_id, title, description, dimensions (JSON), questions (JSON), config (JSON)
 quiz_submissions: id, quiz_id, user_id, overall, scores (JSON), UNIQUE(quiz_id, user_id)
@@ -107,10 +108,27 @@ ORDER BY r.created_at DESC;
 
 ### Auth
 
-Device-based identity. No login required.
-- `lovetype_device_id` in localStorage → auto-creates user row in D1 on first API call
-- `lovetype_user_name` in localStorage → name gate on landing page, shared across all features
+Device-based identity, with the verified phone as a portable account.
+
+- `lovetype_device_id` in localStorage → resolved to a user via `user_devices`;
+  an unknown device auto-creates a `users` row plus its mapping
+- `lovetype_user_name` in localStorage → name gate on landing page
+- `lovetype_verified_phone` in localStorage → skips the SMS gate on return
 - `X-Device-Id` header sent on all API calls
+
+**Phone = portable identity.** `user_devices` lets one `users` row own many
+devices. When someone verifies a phone that already belongs to another
+identity, `handleSmsVerify` merges: results / quiz_submissions / quizzes are
+re-pointed to the phone's owner, the device mapping is re-pointed, and the
+throwaway device-only row is deleted. `quiz_submissions` has
+`UNIQUE(quiz_id, user_id)`, so colliding rows are dropped before the move.
+Order matters — the device mapping is re-pointed *before* the old row is
+deleted, or `ON DELETE CASCADE` would take it along.
+
+`/api/sms/verify` returns `restored: { code, scores, created_at } | null` —
+the newest LERA report for that identity, so a new device can rebuild its
+report without retaking the test. LERA's intro has a 已经测过？用手机号找回报告
+link that opens the same verify screen in recovery mode.
 
 ### Design System
 

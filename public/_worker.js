@@ -221,13 +221,15 @@ async function getUser(request, env) {
   const deviceId = request.headers.get("X-Device-Id");
   if (!deviceId) return null;
 
-  let user = await env.DB.prepare("SELECT * FROM users WHERE device_id = ?").bind(deviceId).first();
-  if (!user) {
-    const id = crypto.randomUUID();
-    await env.DB.prepare("INSERT INTO users (id, device_id) VALUES (?, ?)").bind(id, deviceId).run();
-    user = { id, device_id: deviceId };
-  }
-  return user;
+  const user = await env.DB.prepare(
+    "SELECT u.* FROM user_devices d JOIN users u ON u.id = d.user_id WHERE d.device_id = ?"
+  ).bind(deviceId).first();
+  if (user) return user;
+
+  const id = crypto.randomUUID();
+  await env.DB.prepare("INSERT INTO users (id, device_id) VALUES (?, ?)").bind(id, deviceId).run();
+  await env.DB.prepare("INSERT INTO user_devices (device_id, user_id) VALUES (?, ?)").bind(deviceId, id).run();
+  return { id, device_id: deviceId, name: null, phone: null };
 }
 
 /** Require device ID */
@@ -542,7 +544,7 @@ async function handleSmsVerify(request, env) {
   const cors = handleCORS(request); if (cors) return cors;
   const post = requirePOST(request); if (post) return post;
   const dev = requireDevice(request); if (dev) return dev;
-  const user = await getUser(request, env);
+  let user = await getUser(request, env);   // reassigned if this device merges into an existing identity
 
   const { phone, code } = await request.json();
   if (!/^1[3-9]\d{9}$/.test(phone || "")) return err("请输入正确的手机号");
@@ -559,14 +561,44 @@ async function handleSmsVerify(request, env) {
     return err("验证码不正确");
   }
 
-  // Success — clean up codes, attach phone to this device's user row
   await env.DB.prepare("DELETE FROM sms_codes WHERE phone = ?").bind(phone).run();
-  try {
+
+  // The phone is the portable identity. If it already belongs to a user, this
+  // device joins that identity and anything recorded under the throwaway
+  // device-only identity is carried across — that is what lets a report follow
+  // someone to a new phone or browser.
+  const deviceId = request.headers.get("X-Device-Id");
+  const owner = await env.DB.prepare("SELECT id FROM users WHERE phone = ?").bind(phone).first();
+
+  if (owner && owner.id !== user.id) {
+    // quiz_submissions has UNIQUE(quiz_id, user_id); drop the incoming
+    // duplicates first so the move cannot violate it.
+    await env.DB.prepare(
+      "DELETE FROM quiz_submissions WHERE user_id = ? AND quiz_id IN (SELECT quiz_id FROM quiz_submissions WHERE user_id = ?)"
+    ).bind(user.id, owner.id).run();
+    await env.DB.prepare("UPDATE quiz_submissions SET user_id = ? WHERE user_id = ?").bind(owner.id, user.id).run();
+    await env.DB.prepare("UPDATE results SET user_id = ? WHERE user_id = ?").bind(owner.id, user.id).run();
+    await env.DB.prepare("UPDATE quizzes SET creator_id = ? WHERE creator_id = ?").bind(owner.id, user.id).run();
+    // Re-point the device before deleting the old row, or ON DELETE CASCADE
+    // would take the mapping with it.
+    await env.DB.prepare("UPDATE user_devices SET user_id = ? WHERE device_id = ?").bind(owner.id, deviceId).run();
+    await env.DB.prepare("DELETE FROM users WHERE id = ?").bind(user.id).run();
+    user = { id: owner.id };
+  } else {
     await env.DB.prepare("UPDATE users SET phone = ?, updated_at = datetime('now') WHERE id = ?").bind(phone, user.id).run();
-  } catch (e) {
-    // Phone already attached to another user row (UNIQUE constraint) — verification still succeeds
   }
-  return json({ ok: true, verified: true });
+
+  // Hand back the most recent LERA report so a new device can restore it
+  // without making the person retake the test.
+  const prior = await env.DB.prepare(
+    "SELECT code, scores, created_at FROM results WHERE user_id = ? AND test_type = 'lovetype' ORDER BY created_at DESC LIMIT 1"
+  ).bind(user.id).first();
+
+  return json({
+    ok: true,
+    verified: true,
+    restored: prior ? { code: prior.code, scores: JSON.parse(prior.scores), created_at: prior.created_at } : null,
+  });
 }
 
 // ── Router ──

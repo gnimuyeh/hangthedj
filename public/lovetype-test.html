@@ -359,6 +359,7 @@ function App(){
   const[vErr,setVErr]=useState("");
   const[vBusy,setVBusy]=useState(false);
   const[vCountdown,setVCountdown]=useState(0);
+  const[vMode,setVMode]=useState("gate");   // "gate" = unlock a just-finished test, "recover" = pull an old report
 
   // Load cached result on mount
   useEffect(()=>{
@@ -404,7 +405,19 @@ function App(){
       const d=await r.json();
       if(d.error)throw new Error(d.error);
       try{localStorage.setItem('lovetype_verified_phone',phone)}catch(e){}
-      if(res)saveResultToServer(res.code,res.av);
+
+      if(res){
+        // Came from finishing the test — persist what they just scored.
+        saveResultToServer(res.code,res.av);
+      }else if(d.restored){
+        // New device with no local result: rebuild state from the server copy.
+        const r={code:d.restored.code,av:d.restored.scores};
+        setRes(r);
+        try{localStorage.setItem('lovetype_result',JSON.stringify(r));}catch(e){}
+      }else{
+        setVErr("这个手机号还没有测评记录，先做一次测试吧");
+        setVBusy(false);return;
+      }
       setVBusy(false);
       go(()=>setPh("result"));
     }catch(e){setVErr(e.message);setVBusy(false);}
@@ -424,7 +437,7 @@ function App(){
           const r=calc(na,mode);setRes(r);
           try{window.localStorage?.setItem('lovetype_result',JSON.stringify(r));window.localStorage?.setItem('lovetype_answers',JSON.stringify(na));window.localStorage?.setItem('lovetype_mode',mode);}catch(e){}
           if(isVerified()){saveResultToServer(r.code, r.av);setPh("result");}
-          else setPh("verify");
+          else {setVMode("gate");setVErr("");setPh("verify");}
         }
       });
     },280);
@@ -468,6 +481,12 @@ function App(){
       <div style={{display:"flex",justifyContent:"center",gap:20,marginTop:16}}>
         <span style={{fontSize:11,color:P.sub,cursor:"pointer",borderBottom:`1px solid ${P.bd}`,paddingBottom:2}} onClick={()=>go(()=>setPh("types"))}>浏览16种人格 →</span>
         <span style={{fontSize:11,color:P.sub,cursor:"pointer",borderBottom:`1px solid ${P.bd}`,paddingBottom:2}} onClick={()=>go(()=>setPh("letters"))}>了解字母含义 →</span>
+      </div>
+      <div style={{marginTop:22,paddingTop:16,borderTop:`1px solid ${P.bd}`}}>
+        <span style={{fontSize:11.5,color:P.accent,cursor:"pointer"}}
+          onClick={()=>go(()=>{setVMode("recover");setVErr("");setPh("verify");})}>
+          已经测过？用手机号找回报告 →
+        </span>
       </div>
     </div></div>
   );
@@ -732,9 +751,13 @@ function App(){
       <Nav/>
       <div style={{textAlign:"center",padding:"34px 0 26px"}}>
         <div style={{fontSize:10,letterSpacing:6,color:P.accent,fontWeight:600,marginBottom:14}}>VERIFICATION</div>
-        <h2 style={{fontSize:24,fontWeight:200,color:P.text,letterSpacing:3,margin:"0 0 12px"}}>测评完成</h2>
+        <h2 style={{fontSize:24,fontWeight:200,color:P.text,letterSpacing:3,margin:"0 0 12px"}}>
+          {vMode==="recover"?"找回报告":"测评完成"}
+        </h2>
         <p style={{fontSize:12.5,color:P.sub,lineHeight:1.9,fontWeight:300,padding:"0 12px",margin:0}}>
-          你的 16 型恋爱人格报告已生成。<br/>输入手机号验证后解锁完整报告。
+          {vMode==="recover"
+            ? <>输入之前验证过的手机号，<br/>找回你的恋爱人格报告。</>
+            : <>你的 16 型恋爱人格报告已生成。<br/>输入手机号验证后解锁完整报告。</>}
         </p>
         <div style={{width:28,height:1,background:P.accent,margin:"22px auto 0",opacity:.4}}/>
       </div>
@@ -759,7 +782,7 @@ function App(){
           style={{width:"100%",padding:"14px",fontSize:14,fontWeight:500,color:"#fff",background:P.accent,border:"none",
             borderRadius:10,cursor:"pointer",letterSpacing:3,fontFamily:"inherit",opacity:vBusy?0.6:1,
             boxShadow:"0 4px 20px rgba(199,109,46,0.25)"}}>
-          {vBusy?"验证中···":"解锁我的报告"}
+          {vBusy?"验证中···":(vMode==="recover"?"找回我的报告":"解锁我的报告")}
         </button>
       </div>
       <p style={{fontSize:11,color:P.mut,textAlign:"center",lineHeight:1.9,marginTop:14}}>

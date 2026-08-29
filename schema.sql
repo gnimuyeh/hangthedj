@@ -65,3 +65,15 @@ CREATE TABLE IF NOT EXISTS sms_codes (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sms_phone ON sms_codes(phone, created_at DESC);
+
+-- ── Device -> identity mapping ──
+-- One identity (users row) can own many devices. A device joins an existing
+-- identity when its owner verifies a phone number already on file, which is
+-- what lets reports follow the phone across devices.
+CREATE TABLE IF NOT EXISTS user_devices (
+  device_id  TEXT PRIMARY KEY,
+  user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_devices_user ON user_devices(user_id);
