@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>LoveType Admin</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'PingFang SC','Noto Sans SC',-apple-system,sans-serif;
+    -webkit-font-smoothing: antialiased;
+    background: #FAFAF7; color: #111; padding: 28px 16px 48px;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; }
+  .brand { font-size: 11px; letter-spacing: 6px; color: #C76D2E; font-weight: 600; margin-bottom: 6px; }
+  h1 { font-size: 22px; font-weight: 300; letter-spacing: 2px; }
+  h2 { font-size: 13px; font-weight: 600; color: #777; letter-spacing: 1px; margin: 28px 0 10px; }
+  .sub { font-size: 12px; color: #aaa; margin-top: 4px; }
+  .card {
+    background: rgba(255,255,255,0.92); border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 14px; padding: 16px;
+  }
+  button {
+    font: inherit; border: none; border-radius: 10px; padding: 10px 18px;
+    background: #C76D2E; color: #fff; cursor: pointer;
+  }
+  button.ghost { background: transparent; color: #777; border: 1px solid rgba(0,0,0,0.1); padding: 6px 12px; font-size: 12px; }
+  input {
+    font: inherit; width: 100%; padding: 10px 12px; border-radius: 10px;
+    border: 1px solid rgba(0,0,0,0.12); background: #fff; outline: none;
+  }
+  input:focus { border-color: #E8A86B; }
+
+  /* login */
+  #login { max-width: 320px; margin: 18vh auto 0; text-align: center; }
+  #login form { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+  .error { color: #b3261e; font-size: 12px; min-height: 16px; }
+
+  /* dashboard */
+  .head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 20px; }
+  .tile .n { font-size: 26px; font-weight: 300; }
+  .tile .l { font-size: 12px; color: #777; margin-top: 2px; }
+  .tile .h { font-size: 11px; color: #aaa; margin-top: 2px; }
+
+  .chart { display: flex; align-items: flex-end; gap: 1px; height: 140px; }
+  .bar { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+  .bar span { display: block; background: #C76D2E; border-radius: 2px 2px 0 0; }
+  .bar span.u { background: #E8A86B; border-radius: 0; }
+  .axis { display: flex; justify-content: space-between; font-size: 11px; color: #aaa; margin-top: 6px; }
+  .legend { font-size: 11px; color: #777; margin-bottom: 10px; }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin: 0 4px 0 10px; vertical-align: -1px; }
+
+  .types { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px 16px; }
+  .type { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .type b { width: 42px; font-weight: 600; letter-spacing: 1px; }
+  .type .track { flex: 1; height: 6px; background: rgba(0,0,0,0.05); border-radius: 3px; overflow: hidden; }
+  .type .track span { display: block; height: 100%; background: #E8A86B; }
+  .type em { font-style: normal; color: #777; width: 22px; text-align: right; }
+
+  .tools { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+  .tools input { max-width: 260px; padding: 7px 10px; font-size: 13px; }
+  .tools label { font-size: 12px; color: #777; white-space: nowrap; }
+  .tools input[type=checkbox] { width: auto; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-weight: 600; color: #777; font-size: 11px; letter-spacing: 1px; padding: 8px 10px; border-bottom: 1px solid rgba(0,0,0,0.08); white-space: nowrap; }
+  td { padding: 8px 10px; border-bottom: 1px solid rgba(0,0,0,0.04); white-space: nowrap; }
+  td.muted { color: #aaa; }
+  .code { font-weight: 600; letter-spacing: 1px; color: #C76D2E; }
+  .count { font-size: 12px; color: #aaa; margin-top: 8px; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="brand">LOVETYPE</div>
+  <h1>Admin</h1>
+  <form id="loginForm">
+    <input id="pw" type="password" placeholder="Password" autocomplete="current-password" autofocus>
+    <button type="submit">Sign in</button>
+    <div class="error" id="loginErr"></div>
+  </form>
+</div>
+
+<div id="dash" class="wrap hidden">
+  <div class="head">
+    <div>
+      <div class="brand">LOVETYPE</div>
+      <h1>Analytics</h1>
+      <div class="sub" id="asOf"></div>
+    </div>
+    <div>
+      <button class="ghost" id="refresh">Refresh</button>
+      <button class="ghost" id="logout">Sign out</button>
+    </div>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <h2>LAST 90 DAYS</h2>
+  <div class="card">
+    <div class="legend"><i style="background:#C76D2E"></i>Tests taken<i style="background:#E8A86B"></i>New users</div>
+    <div class="chart" id="chart"></div>
+    <div class="axis"><span id="axisL"></span><span id="axisR"></span></div>
+  </div>
+
+  <h2>TYPE DISTRIBUTION <span style="font-weight:400;color:#aaa">· current type per person</span></h2>
+  <div class="card"><div class="types" id="types"></div></div>
+
+  <h2>USERS</h2>
+  <div class="card">
+    <div class="tools">
+      <input id="search" placeholder="Search phone, name, type…">
+      <label><input type="checkbox" id="onlyTook" checked> Took a test</label>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Last test</th><th>Type</th><th>Phone</th><th>Name</th><th>Takes</th><th>Devices</th><th>First seen</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="count" id="count"></div>
+  </div>
+</div>
+
+<script>
+const KEY = "lovetype_admin_pw";
+let data = null;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+// D1 stores UTC "YYYY-MM-DD HH:MM:SS"; show it in the viewer's local time
+const local = t => t ? new Date(t.replace(" ", "T") + "Z").toLocaleString("zh-CN", { hour12: false }).replace(/:\d\d$/, "") : "";
+
+function getPw() { try { return sessionStorage.getItem(KEY) || ""; } catch { return ""; } }
+function setPw(v) { try { v ? sessionStorage.setItem(KEY, v) : sessionStorage.removeItem(KEY); } catch {} }
+
+async function load(pw) {
+  const r = await fetch("/api/admin/stats", { headers: { Authorization: "Bearer " + pw }, cache: "no-store" });
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(body.error || "HTTP " + r.status), { status: r.status });
+  return body;
+}
+
+async function signIn(pw) {
+  $("loginErr").textContent = "";
+  try {
+    data = await load(pw);
+    setPw(pw);
+    $("login").classList.add("hidden");
+    $("dash").classList.remove("hidden");
+    render();
+  } catch (e) {
+    setPw("");
+    $("login").classList.remove("hidden");
+    $("dash").classList.add("hidden");
+    $("loginErr").textContent = e.status === 401 ? "Wrong password" : e.message;
+  }
+}
+
+function render() {
+  const t = data.totals;
+  $("asOf").textContent = "As of " + local(t.now) + " · last test " + (t.last_result_at ? local(t.last_result_at) : "—");
+
+  const tiles = [
+    [t.lovetype_takers, "People who took LoveType", t.lovetype_takes + " takes incl. retakes"],
+    [t.verified, "Phone-verified", pct(t.verified, t.lovetype_takers) + " of takers"],
+    [t.identities, "Identities", t.devices + " devices"],
+    [t.takes_7d, "Tests, last 7 days", t.new_users_7d + " new users"],
+    [t.soulmate_takes, "AI灵魂画像 reports", ""],
+    [t.quizzes, "Custom quizzes", t.quiz_submissions + " submissions"],
+  ];
+  $("tiles").innerHTML = tiles.map(([n, l, h]) =>
+    `<div class="card tile"><div class="n">${n}</div><div class="l">${esc(l)}</div><div class="h">${esc(h)}</div></div>`).join("");
+
+  // chart: fill every day of the window, including empty ones
+  const byDay = Object.fromEntries(data.daily.map(d => [d.day, d]));
+  const days = [];
+  const end = new Date(t.now.replace(" ", "T") + "Z");
+  for (let i = 89; i >= 0; i--) {
+    const d = new Date(end); d.setUTCDate(d.getUTCDate() - i);
+    const k = d.toISOString().slice(0, 10);
+    days.push({ day: k, takes: byDay[k]?.takes || 0, new_users: byDay[k]?.new_users || 0 });
+  }
+  const max = Math.max(1, ...days.map(d => d.takes + d.new_users));
+  $("chart").innerHTML = days.map(d =>
+    `<div class="bar" title="${d.day}: ${d.takes} tests, ${d.new_users} new users">` +
+    `<span class="u" style="height:${d.new_users / max * 100}%"></span>` +
+    `<span style="height:${d.takes / max * 100}%"></span></div>`).join("");
+  $("axisL").textContent = days[0].day;
+  $("axisR").textContent = days[days.length - 1].day;
+
+  const tmax = Math.max(1, ...data.types.map(x => x.n));
+  $("types").innerHTML = data.types.map(x =>
+    `<div class="type"><b>${esc(x.code || "?")}</b><div class="track"><span style="width:${x.n / tmax * 100}%"></span></div><em>${x.n}</em></div>`).join("")
+    || `<div class="sub">No results yet</div>`;
+
+  renderRows();
+}
+
+function renderRows() {
+  const q = $("search").value.trim().toLowerCase();
+  const only = $("onlyTook").checked;
+  const rows = data.users.filter(u =>
+    (!only || u.takes > 0) &&
+    (!q || [u.phone, u.name, u.code].some(v => String(v || "").toLowerCase().includes(q))));
+  $("rows").innerHTML = rows.map(u => `<tr>
+    <td>${u.last_result_at ? esc(local(u.last_result_at)) : '<span class="muted">—</span>'}</td>
+    <td class="code">${esc(u.code || "")}</td>
+    <td>${u.phone ? esc(u.phone) : '<span class="muted">—</span>'}</td>
+    <td>${esc(u.name || "")}</td>
+    <td>${u.takes}</td>
+    <td>${u.devices}</td>
+    <td class="muted">${esc(local(u.created_at))}</td>
+  </tr>`).join("");
+  $("count").textContent = `${rows.length} of ${data.users.length} identities` + (data.users.length >= 500 ? " (newest 500 shown)" : "");
+}
+
+function pct(a, b) { return b ? Math.round(a / b * 100) + "%" : "—"; }
+
+$("loginForm").addEventListener("submit", e => { e.preventDefault(); signIn($("pw").value); });
+$("refresh").addEventListener("click", () => signIn(getPw()));
+$("logout").addEventListener("click", () => { setPw(""); data = null; $("pw").value = ""; $("dash").classList.add("hidden"); $("login").classList.remove("hidden"); });
+$("search").addEventListener("input", renderRows);
+$("onlyTook").addEventListener("change", renderRows);
+
+if (getPw()) signIn(getPw());
+</script>
+</body>
+</html>

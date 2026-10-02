@@ -21,6 +21,7 @@ LoveType is a relationship personality test platform. Users take quizzes to disc
 │   ├── create.html          # Feature 2: 创建专属灵魂测试 (AI quiz generator)
 │   ├── quiz.html            # Feature 2: Quiz template (data-driven, loads from /api/quiz/:id)
 │   ├── soulmate.html        # Feature 3: AI灵魂画像 (deep conversation persona)
+│   ├── admin.html           # Password-protected analytics + user list (/admin)
 │   └── jason/index.html     # Feature 4: 恋爱契合度测试 (13-dimension compatibility)
 ├── CLAUDE.md
 └── .gitignore
@@ -62,6 +63,7 @@ Router → middleware → handler pattern.
 | POST | /api/quiz/:id/submit | handleQuizSubmit | Save taker's result (one per device per quiz) |
 | GET | /api/quiz/:id/submissions | handleQuizSubmissions | Creator views all submissions |
 | GET | /api/quiz/:id/my-result | handleQuizMyResult | Check if device already submitted |
+| GET | /api/admin/stats | handleAdminStats | Admin analytics (`Authorization: Bearer <ADMIN_PASSWORD>`) |
 
 ### Database (D1)
 
@@ -114,6 +116,18 @@ FROM results r JOIN users u ON r.user_id = u.id
 WHERE r.test_type = 'lovetype' AND u.phone IS NOT NULL
 GROUP BY r.user_id ORDER BY created_at DESC;
 ```
+
+### Admin Page
+
+`/admin` (`public/admin.html`) shows totals, a 90-day activity chart, the type
+distribution and a searchable user list (phone, name, current type, takes,
+devices). It calls `GET /api/admin/stats` with `Authorization: Bearer <password>`;
+the password is kept in `sessionStorage` for the tab only.
+
+The password is the `ADMIN_PASSWORD` secret — not in the repo:
+`wrangler pages secret put ADMIN_PASSWORD --project-name=hangthedj`.
+The endpoint returns 503 until it is set, and 401 (after a 500ms delay) on a
+wrong password. For local dev put `ADMIN_PASSWORD=...` in `.dev.vars` (gitignored).
 
 ### Auth
 

@@ -606,6 +606,83 @@ async function handleSmsVerify(request, env) {
   });
 }
 
+// ── Admin ──
+
+/** Compare via SHA-256 digests so the check takes the same time however much of the guess is right */
+async function passwordMatches(given, expected) {
+  const enc = new TextEncoder();
+  const [a, b] = await Promise.all([
+    crypto.subtle.digest("SHA-256", enc.encode(given)),
+    crypto.subtle.digest("SHA-256", enc.encode(expected)),
+  ]);
+  const x = new Uint8Array(a), y = new Uint8Array(b);
+  let diff = 0;
+  for (let i = 0; i < x.length; i++) diff |= x[i] ^ y[i];
+  return diff === 0;
+}
+
+/** Admin auth — `Authorization: Bearer <ADMIN_PASSWORD>`. Returns an error response, or null if allowed. */
+async function requireAdmin(request, env) {
+  if (!env.ADMIN_PASSWORD) return err("Admin not configured — set the ADMIN_PASSWORD secret", 503);
+  const auth = request.headers.get("Authorization") || "";
+  const given = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  if (!given || !(await passwordMatches(given, env.ADMIN_PASSWORD))) {
+    await new Promise(r => setTimeout(r, 500));   // slow down guessing
+    return err("Unauthorized", 401);
+  }
+  return null;
+}
+
+// GET /api/admin/stats — totals, daily activity, type distribution, user list
+async function handleAdminStats(request, env) {
+  const cors = handleCORS(request); if (cors) return cors;
+  const denied = await requireAdmin(request, env); if (denied) return denied;
+
+  const [totals, daily, types, users] = await env.DB.batch([
+    env.DB.prepare(`SELECT
+      (SELECT COUNT(*) FROM users)                                             AS identities,
+      (SELECT COUNT(*) FROM user_devices)                                      AS devices,
+      (SELECT COUNT(*) FROM users WHERE phone IS NOT NULL)                     AS verified,
+      (SELECT COUNT(DISTINCT user_id) FROM results WHERE test_type='lovetype') AS lovetype_takers,
+      (SELECT COUNT(*) FROM results WHERE test_type='lovetype')                AS lovetype_takes,
+      (SELECT COUNT(*) FROM results WHERE test_type='soulmate')                AS soulmate_takes,
+      (SELECT COUNT(*) FROM quizzes)                                           AS quizzes,
+      (SELECT COUNT(*) FROM quiz_submissions)                                  AS quiz_submissions,
+      (SELECT COUNT(*) FROM users   WHERE created_at > datetime('now','-7 days')) AS new_users_7d,
+      (SELECT COUNT(*) FROM results WHERE created_at > datetime('now','-7 days')) AS takes_7d,
+      (SELECT MAX(created_at) FROM results)                                    AS last_result_at,
+      datetime('now')                                                          AS now`),
+    // last 90 days, one row per day that had any activity
+    env.DB.prepare(`SELECT day, SUM(new_users) AS new_users, SUM(takes) AS takes FROM (
+        SELECT date(created_at) AS day, 1 AS new_users, 0 AS takes FROM users
+        WHERE created_at > datetime('now','-90 days')
+        UNION ALL
+        SELECT date(created_at), 0, 1 FROM results
+        WHERE test_type = 'lovetype' AND created_at > datetime('now','-90 days')
+      ) GROUP BY day ORDER BY day`),
+    // current type per person (newest take wins)
+    env.DB.prepare(`SELECT code, COUNT(*) AS n FROM (
+        SELECT code, MAX(created_at) FROM results WHERE test_type = 'lovetype' GROUP BY user_id
+      ) GROUP BY code ORDER BY n DESC`),
+    env.DB.prepare(`SELECT u.id, u.name, u.phone, u.created_at,
+        (SELECT COUNT(*) FROM user_devices d WHERE d.user_id = u.id)  AS devices,
+        (SELECT COUNT(*) FROM results r WHERE r.user_id = u.id)       AS takes,
+        (SELECT code FROM results r WHERE r.user_id = u.id AND r.test_type = 'lovetype'
+           ORDER BY r.created_at DESC LIMIT 1)                        AS code,
+        (SELECT MAX(created_at) FROM results r WHERE r.user_id = u.id) AS last_result_at
+      FROM users u ORDER BY COALESCE(last_result_at, u.created_at) DESC LIMIT 500`),
+  ]);
+
+  return new Response(JSON.stringify({
+    totals: totals.results[0],
+    daily: daily.results,
+    types: types.results,
+    users: users.results,
+  }), {
+    headers: { ...CORS_HEADERS, "Content-Type": "application/json", "Cache-Control": "no-store" },
+  });
+}
+
 // ── Router ──
 
 // ── Quiz Handlers ──
@@ -755,6 +832,7 @@ const routes = {
   "POST /api/sms/verify":  handleSmsVerify,
   "GET /api/results":      handleGetResults,
   "POST /api/quiz/generate": handleQuizGenerate,
+  "GET /api/admin/stats":  handleAdminStats,
 };
 
 function matchRoute(method, pathname) {
