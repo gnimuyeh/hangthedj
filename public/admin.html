@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>LoveType Admin</title>
+<title>LoveType 管理后台</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -77,10 +77,10 @@
 
 <div id="login">
   <div class="brand">LOVETYPE</div>
-  <h1>Admin</h1>
+  <h1>管理后台</h1>
   <form id="loginForm">
-    <input id="pw" type="password" placeholder="Password" autocomplete="current-password" autofocus>
-    <button type="submit">Sign in</button>
+    <input id="pw" type="password" placeholder="密码" autocomplete="current-password" autofocus>
+    <button type="submit">登录</button>
     <div class="error" id="loginErr"></div>
   </form>
 </div>
@@ -89,36 +89,36 @@
   <div class="head">
     <div>
       <div class="brand">LOVETYPE</div>
-      <h1>Analytics</h1>
+      <h1>数据概览</h1>
       <div class="sub" id="asOf"></div>
     </div>
     <div>
-      <button class="ghost" id="refresh">Refresh</button>
-      <button class="ghost" id="logout">Sign out</button>
+      <button class="ghost" id="refresh">刷新</button>
+      <button class="ghost" id="logout">退出登录</button>
     </div>
   </div>
 
   <div class="tiles" id="tiles"></div>
 
-  <h2>LAST 90 DAYS</h2>
+  <h2>近 90 天</h2>
   <div class="card">
-    <div class="legend"><i style="background:#C76D2E"></i>Tests taken<i style="background:#E8A86B"></i>New users</div>
+    <div class="legend"><i style="background:#C76D2E"></i>测试次数<i style="background:#E8A86B"></i>新用户</div>
     <div class="chart" id="chart"></div>
     <div class="axis"><span id="axisL"></span><span id="axisR"></span></div>
   </div>
 
-  <h2>TYPE DISTRIBUTION <span style="font-weight:400;color:#aaa">· current type per person</span></h2>
+  <h2>人格类型分布 <span style="font-weight:400;color:#aaa">· 按每人最新结果</span></h2>
   <div class="card"><div class="types" id="types"></div></div>
 
-  <h2>USERS</h2>
+  <h2>用户列表</h2>
   <div class="card">
     <div class="tools">
-      <input id="search" placeholder="Search phone, name, type…">
-      <label><input type="checkbox" id="onlyTook" checked> Took a test</label>
+      <input id="search" placeholder="搜索手机号、昵称、类型…">
+      <label><input type="checkbox" id="onlyTook" checked> 仅看已测试</label>
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Last test</th><th>Type</th><th>Phone</th><th>Name</th><th>Takes</th><th>Devices</th><th>First seen</th></tr></thead>
+        <thead><tr><th>最近测试</th><th>类型</th><th>手机号</th><th>昵称</th><th>测试次数</th><th>设备数</th><th>首次访问</th></tr></thead>
         <tbody id="rows"></tbody>
       </table>
     </div>
@@ -157,21 +157,21 @@ async function signIn(pw) {
     setPw("");
     $("login").classList.remove("hidden");
     $("dash").classList.add("hidden");
-    $("loginErr").textContent = e.status === 401 ? "Wrong password" : e.message;
+    $("loginErr").textContent = e.status === 401 ? "密码错误" : e.status === 503 ? "后台未配置密码（ADMIN_PASSWORD）" : "加载失败：" + e.message;
   }
 }
 
 function render() {
   const t = data.totals;
-  $("asOf").textContent = "As of " + local(t.now) + " · last test " + (t.last_result_at ? local(t.last_result_at) : "—");
+  $("asOf").textContent = "数据截至 " + local(t.now) + " · 最近一次测试 " + (t.last_result_at ? local(t.last_result_at) : "—");
 
   const tiles = [
-    [t.lovetype_takers, "People who took LoveType", t.lovetype_takes + " takes incl. retakes"],
-    [t.verified, "Phone-verified", pct(t.verified, t.lovetype_takers) + " of takers"],
-    [t.identities, "Identities", t.devices + " devices"],
-    [t.takes_7d, "Tests, last 7 days", t.new_users_7d + " new users"],
-    [t.soulmate_takes, "AI灵魂画像 reports", ""],
-    [t.quizzes, "Custom quizzes", t.quiz_submissions + " submissions"],
+    [t.lovetype_takers, "完成恋爱人格测试人数", "共 " + t.lovetype_takes + " 次（含重测）"],
+    [t.verified, "已验证手机号", "占测试人数 " + pct(t.verified, t.lovetype_takers)],
+    [t.identities, "用户总数", t.devices + " 台设备"],
+    [t.takes_7d, "近 7 天测试次数", "新用户 " + t.new_users_7d],
+    [t.soulmate_takes, "AI灵魂画像报告", ""],
+    [t.quizzes, "自定义测试", t.quiz_submissions + " 份答卷"],
   ];
   $("tiles").innerHTML = tiles.map(([n, l, h]) =>
     `<div class="card tile"><div class="n">${n}</div><div class="l">${esc(l)}</div><div class="h">${esc(h)}</div></div>`).join("");
@@ -187,7 +187,7 @@ function render() {
   }
   const max = Math.max(1, ...days.map(d => d.takes + d.new_users));
   $("chart").innerHTML = days.map(d =>
-    `<div class="bar" title="${d.day}: ${d.takes} tests, ${d.new_users} new users">` +
+    `<div class="bar" title="${d.day}：测试 ${d.takes} 次，新用户 ${d.new_users}">` +
     `<span class="u" style="height:${d.new_users / max * 100}%"></span>` +
     `<span style="height:${d.takes / max * 100}%"></span></div>`).join("");
   $("axisL").textContent = days[0].day;
@@ -196,7 +196,7 @@ function render() {
   const tmax = Math.max(1, ...data.types.map(x => x.n));
   $("types").innerHTML = data.types.map(x =>
     `<div class="type"><b>${esc(x.code || "?")}</b><div class="track"><span style="width:${x.n / tmax * 100}%"></span></div><em>${x.n}</em></div>`).join("")
-    || `<div class="sub">No results yet</div>`;
+    || `<div class="sub">暂无结果</div>`;
 
   renderRows();
 }
@@ -216,7 +216,7 @@ function renderRows() {
     <td>${u.devices}</td>
     <td class="muted">${esc(local(u.created_at))}</td>
   </tr>`).join("");
-  $("count").textContent = `${rows.length} of ${data.users.length} identities` + (data.users.length >= 500 ? " (newest 500 shown)" : "");
+  $("count").textContent = `显示 ${rows.length} / ${data.users.length} 位用户` + (data.users.length >= 500 ? "（仅显示最新 500 位）" : "");
 }
 
 function pct(a, b) { return b ? Math.round(a / b * 100) + "%" : "—"; }
