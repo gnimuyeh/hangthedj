@@ -121,7 +121,8 @@ const QUIZ_GEN_SYSTEM = `你是一个专业的恋爱契合度测试生成器。�
 }`;
 
 
-const MINIMAX_KEY = "sk-api-gwYvxa2sX0-B38idARiZPVmdq70lBjiw3xEsyO71psEkk-bHJHI_3O8vBRkx9r1D_r-x6QGlVrTpDBiV-UxBKCAN3ctFEVZ3MD9E2oNwIWGBj5ZwQMLCup8";
+// MINIMAX_KEY lives in Cloudflare's secret store (env.MINIMAX_KEY):
+//   wrangler pages secret put MINIMAX_KEY --project-name=hangthedj
 const MINIMAX_CHAT_URL = "https://api.minimaxi.com/v1/chat/completions";
 const MINIMAX_IMAGE_URL = "https://api.minimaxi.com/v1/image_generation";
 const MINIMAX_MODEL = "MiniMax-M2.5-highspeed";
@@ -185,7 +186,7 @@ async function bufferMiniMaxStream(resp) {
 }
 
 /** Call MiniMax API with streaming enabled */
-async function callMiniMax(system, messages, maxTokens, temperature = 0.85) {
+async function callMiniMax(env, system, messages, maxTokens, temperature = 0.85) {
   const msgs = [];
   if (system) msgs.push({ role: "system", content: system });
   for (const m of messages) msgs.push({ role: m.role, content: m.content });
@@ -195,7 +196,7 @@ async function callMiniMax(system, messages, maxTokens, temperature = 0.85) {
 
   return fetch(MINIMAX_CHAT_URL, {
     method: "POST",
-    headers: { "Authorization": "Bearer " + MINIMAX_KEY, "Content-Type": "application/json" },
+    headers: { "Authorization": "Bearer " + env.MINIMAX_KEY, "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
 }
@@ -232,6 +233,12 @@ async function getUser(request, env) {
   return { id, device_id: deviceId, name: null, phone: null };
 }
 
+/** Require the MiniMax secret */
+function requireMiniMax(env) {
+  if (!env.MINIMAX_KEY) return err("AI not configured — set the MINIMAX_KEY secret", 503);
+  return null;
+}
+
 /** Require device ID */
 function requireDevice(request) {
   if (!request.headers.get("X-Device-Id")) return err("X-Device-Id header required", 400);
@@ -241,13 +248,14 @@ function requireDevice(request) {
 // ── Route Handlers ──
 
 // POST /api/chat — buffered MiniMax response
-async function handleChat(request) {
+async function handleChat(request, env) {
   const cors = handleCORS(request); if (cors) return cors;
   const post = requirePOST(request); if (post) return post;
+  const ai = requireMiniMax(env); if (ai) return ai;
 
   try {
     const { system, messages, max_tokens, temperature } = await request.json();
-    const resp = await callMiniMax(system, messages, max_tokens, temperature);
+    const resp = await callMiniMax(env, system, messages, max_tokens, temperature);
     if (!resp.ok) {
       const errText = await resp.text();
       return err("MiniMax HTTP " + resp.status + ": " + errText.substring(0, 200), 502);
@@ -260,13 +268,14 @@ async function handleChat(request) {
 }
 
 // POST /api/chat/stream — SSE relay from MiniMax
-async function handleChatStream(request) {
+async function handleChatStream(request, env) {
   const cors = handleCORS(request); if (cors) return cors;
   const post = requirePOST(request); if (post) return post;
+  const ai = requireMiniMax(env); if (ai) return ai;
 
   try {
     const { system, messages, max_tokens, temperature } = await request.json();
-    const resp = await callMiniMax(system, messages, max_tokens, temperature);
+    const resp = await callMiniMax(env, system, messages, max_tokens, temperature);
     if (!resp.ok) {
       const errText = await resp.text();
       return err("MiniMax HTTP " + resp.status + ": " + errText.substring(0, 200), 502);
@@ -338,9 +347,10 @@ async function handleChatStream(request) {
 }
 
 // POST /api/image — MiniMax image generation
-async function handleImage(request) {
+async function handleImage(request, env) {
   const cors = handleCORS(request); if (cors) return cors;
   const post = requirePOST(request); if (post) return post;
+  const ai = requireMiniMax(env); if (ai) return ai;
 
   try {
     const { prompt } = await request.json();
@@ -348,7 +358,7 @@ async function handleImage(request) {
 
     const resp = await fetch(MINIMAX_IMAGE_URL, {
       method: "POST",
-      headers: { "Authorization": "Bearer " + MINIMAX_KEY, "Content-Type": "application/json" },
+      headers: { "Authorization": "Bearer " + env.MINIMAX_KEY, "Content-Type": "application/json" },
       body: JSON.stringify({ model: "image-01", prompt, aspect_ratio: "16:9", response_format: "url", n: 1 }),
     });
     if (!resp.ok) {
@@ -699,6 +709,7 @@ function shortId(len = 8) {
 async function handleQuizGenerate(request, env) {
   const cors = handleCORS(request); if (cors) return cors;
   const post = requirePOST(request); if (post) return post;
+  const ai = requireMiniMax(env); if (ai) return ai;
   const dev = requireDevice(request); if (dev) return dev;
   const user = await getUser(request, env);
 
@@ -706,7 +717,7 @@ async function handleQuizGenerate(request, env) {
   if (!transcript) return err("transcript required");
 
   // Call MiniMax to generate quiz from interview
-  const resp = await callMiniMax(QUIZ_GEN_SYSTEM, [{role: "user", content: transcript}], 8192, 0.5);
+  const resp = await callMiniMax(env, QUIZ_GEN_SYSTEM, [{role: "user", content: transcript}], 8192, 0.5);
   if (!resp.ok) {
     const errText = await resp.text();
     return err("MiniMax HTTP " + resp.status + ": " + errText.substring(0, 200), 502);

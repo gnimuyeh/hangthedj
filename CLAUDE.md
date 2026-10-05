@@ -44,7 +44,7 @@ Router → middleware → handler pattern.
 
 **Helpers:** `json()`, `err()`, `callMiniMax()`, `bufferMiniMaxStream()`, `stripThinkTags()`
 
-**Middleware:** `handleCORS()`, `requirePOST()`, `getUser()` (device-based), `requireDevice()`
+**Middleware:** `handleCORS()`, `requirePOST()`, `getUser()` (device-based), `requireDevice()`, `requireMiniMax()`
 
 **Routes:**
 | Method | Path | Handler | Description |
@@ -186,7 +186,9 @@ survives.
 
 - **Endpoint:** `https://api.minimaxi.com/v1/chat/completions` (note the `i` in minimaxi)
 - **Model:** `MiniMax-M2.5-highspeed`
-- **Key:** In `_worker.js` as `MINIMAX_KEY`
+- **Key:** `MINIMAX_KEY` secret in Cloudflare's secret store, read as `env.MINIMAX_KEY` — not in the repo:
+  `wrangler pages secret put MINIMAX_KEY --project-name=hangthedj`. AI routes return 503 until it is set;
+  for local dev put it in `.dev.vars`.
 - **Quirk:** M2.5 wraps reasoning in `<think>` tags — must strip them
 - **Streaming:** Always use `stream: true`, buffer or relay via SSE
 
