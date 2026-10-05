@@ -833,9 +833,9 @@ async function handleQuizMyResult(request, env, quizId) {
 }
 
 const routes = {
-  "POST /api/chat":        (req, env) => handleChat(req),
-  "POST /api/chat/stream": (req, env) => handleChatStream(req),
-  "POST /api/image":       (req, env) => handleImage(req),
+  "POST /api/chat":        handleChat,
+  "POST /api/chat/stream": handleChatStream,
+  "POST /api/image":       handleImage,
   "GET /api/auth/me":      handleMe,
   "POST /api/auth/name":   handleSetName,
   "POST /api/results":     handleSaveResult,
